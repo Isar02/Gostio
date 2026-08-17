@@ -1,9 +1,12 @@
 using Gostio.Services.Configuration;
+using Gostio.Services.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuration is loaded once, here, and injected everywhere else.
 var settings = builder.Services.AddGostioConfiguration();
+
+builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

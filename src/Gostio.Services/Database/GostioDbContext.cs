@@ -23,6 +23,14 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
     private const int MoneyPrecision = 18;
     private const int MoneyScale = 2;
 
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+
+    public DbSet<HostVerificationRequest> HostVerificationRequests => Set<HostVerificationRequest>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

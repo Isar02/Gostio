@@ -1,0 +1,31 @@
+# Let Git decide what is text and normalize line endings on commit
+* text=auto
+
+# Force LF for files consumed by Linux containers
+*.sh          text eol=lf
+Dockerfile    text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+.env.example  text eol=lf
+
+# Force CRLF for Windows-specific scripts
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+*.ps1         text eol=crlf
+
+# Binary files -- no diff, no normalization
+*.png         binary
+*.jpg         binary
+*.jpeg        binary
+*.gif         binary
+*.ico         binary
+*.webp        binary
+*.pdf         binary
+*.zip         binary
+*.apk         binary
+*.exe         binary
+*.dll         binary
+*.ttf         binary
+*.otf         binary
+*.woff        binary
+*.woff2       binary

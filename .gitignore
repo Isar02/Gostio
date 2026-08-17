@@ -1,0 +1,146 @@
+# ---------------------------------------------------------------------------
+# Configuration and secrets -- never commit
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+secrets.json
+*.pfx
+*.p12
+*.keystore
+*.jks
+key.properties
+google-services.json
+GoogleService-Info.plist
+
+# ---------------------------------------------------------------------------
+# .NET / Visual Studio
+# ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+PublishScripts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+.vs/
+.vscode/
+!.vscode/extensions.json
+*.dbmdl
+*.jfm
+*.pubxml
+*.pubxml.user
+*.azurePubxml
+*.tss
+*.VisualState.xml
+TestResult.xml
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+.msbuild.log
+msbuild.binlog
+*.received.*
+
+# ---------------------------------------------------------------------------
+# Flutter / Dart (desktop + mobile)
+# ---------------------------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+*.dart.js
+*.info.json
+*.js_
+*.js.deps
+*.js.map
+.flutter-versions
+devtools_options.yaml
+
+# Flutter -- Android
+**/android/**/gradle-wrapper.jar
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+
+# Flutter -- Windows desktop
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# NOTE: generated Dart files (*.g.dart, *.freezed.dart) are committed on
+# purpose, so the project builds from source without running build_runner.
+
+# ---------------------------------------------------------------------------
+# Release build output -- published via GitHub Releases, not repo history
+# ---------------------------------------------------------------------------
+*.apk
+*.aab
+*.appbundle
+fit-build-*.zip
+
+# ---------------------------------------------------------------------------
+# Database and local data
+# ---------------------------------------------------------------------------
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.dbmdl
+.docker-data/
+docker-volumes/
+
+# ---------------------------------------------------------------------------
+# Uploaded content and temporary files
+# ---------------------------------------------------------------------------
+uploads/
+wwwroot/uploads/
+tmp/
+temp/
+*.tmp
+*.log
+
+# ---------------------------------------------------------------------------
+# OS and tooling
+# ---------------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.idea/
+*.iml
+*.swp
+*~

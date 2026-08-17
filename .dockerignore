@@ -1,0 +1,27 @@
+# Keep the build context small and never ship secrets or local build output
+# into an image layer.
+
+.git/
+.gitignore
+.gitattributes
+.dockerignore
+
+.env
+.env.*
+!.env.example
+
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/.vscode/
+**/.idea/
+
+ui/
+**/build/
+**/.dart_tool/
+
+**/*.user
+**/*.suo
+**/*.log
+**/TestResults/

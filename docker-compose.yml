@@ -1,0 +1,129 @@
+# Full runtime environment for the project: database, message broker, the main
+# REST API service and the auxiliary worker service.
+#
+# All values come from the .env file in this folder. Image tags are pinned to
+# explicit versions so that a rebuild months from now produces the same stack.
+#
+#   docker compose up -d --build
+
+name: gostio
+
+services:
+  # --------------------------------------------------------------------------
+  # Database
+  # --------------------------------------------------------------------------
+  gostio-db:
+    image: mcr.microsoft.com/mssql/server:2022-CU26-ubuntu-22.04
+    container_name: gostio-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_SA_PASSWORD}
+      MSSQL_PID: Developer
+    ports:
+      # Published on DB_PORT because a locally installed SQL Server instance
+      # may already be listening on the default 1433.
+      - "${DB_PORT}:1433"
+    volumes:
+      - gostio-db-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - gostio-network
+
+  # --------------------------------------------------------------------------
+  # Message broker
+  # --------------------------------------------------------------------------
+  gostio-rabbitmq:
+    image: rabbitmq:4.3.4-management
+    container_name: gostio-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VIRTUAL_HOST}
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    volumes:
+      - gostio-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - gostio-network
+
+  # --------------------------------------------------------------------------
+  # Main REST API service
+  # --------------------------------------------------------------------------
+  gostio-api:
+    build:
+      context: .
+      dockerfile: src/Gostio.API/Dockerfile
+    container_name: gostio-api
+    env_file:
+      - .env
+    environment:
+      # Inside the compose network the services are reached by service name,
+      # not by localhost. These two overrides are the only place where the
+      # container view differs from the host view; the underlying values still
+      # come from .env and are not duplicated.
+      DATABASE_CONNECTION_STRING: "Server=gostio-db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True"
+      RABBITMQ_HOST: gostio-rabbitmq
+      RABBITMQ_PORT: 5672
+      ASPNETCORE_URLS: http://+:8080
+    ports:
+      - "${API_HTTP_PORT}:8080"
+    depends_on:
+      gostio-db:
+        condition: service_healthy
+      gostio-rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - gostio-network
+
+  # --------------------------------------------------------------------------
+  # Auxiliary worker service (separate project, separate container)
+  # --------------------------------------------------------------------------
+  gostio-worker:
+    build:
+      context: .
+      dockerfile: src/Gostio.Worker/Dockerfile
+    container_name: gostio-worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_CONNECTION_STRING: "Server=gostio-db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True"
+      RABBITMQ_HOST: gostio-rabbitmq
+      RABBITMQ_PORT: 5672
+      # The generic host reads DOTNET_ENVIRONMENT, not ASPNETCORE_ENVIRONMENT,
+      # so the worker needs its own variable to match the API.
+      DOTNET_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+    depends_on:
+      gostio-db:
+        condition: service_healthy
+      gostio-rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - gostio-network
+
+networks:
+  gostio-network:
+    driver: bridge
+
+volumes:
+  gostio-db-data:
+  gostio-rabbitmq-data:

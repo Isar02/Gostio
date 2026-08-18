@@ -3,21 +3,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Database;
 
-/// <summary>
-/// The single database context for the whole system.
-///
-/// Two rules hold across every entity configuration in this assembly:
-/// every relationship states its <c>OnDelete</c> behaviour explicitly, and
-/// nothing relies on the conventional cascade, because the reservation graph
-/// reaches users through more than one path and SQL Server rejects multiple
-/// cascade paths to the same table.
-/// </summary>
+// Every relationship in this assembly states OnDelete explicitly: the reservation
+// graph reaches Users by more than one path, and SQL Server rejects multiple
+// cascade paths to the same table.
 public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbContext(options)
 {
-    /// <summary>
-    /// Applied to every string column that does not set its own length, so an
-    /// unconfigured property can never silently become <c>nvarchar(max)</c>.
-    /// </summary>
+    // Keeps an unconfigured string column from silently becoming nvarchar(max).
     private const int DefaultStringLength = 256;
 
     private const int MoneyPrecision = 18;

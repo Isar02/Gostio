@@ -39,8 +39,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(ColumnLengths.PasswordHash);
 
-        // Both are login identifiers, so the database rejects duplicates even
-        // if a validation rule is ever missed.
+        // Login identifiers, so the database rejects duplicates even if validation misses one.
         builder
             .HasIndex(user => user.Username)
             .IsUnique();

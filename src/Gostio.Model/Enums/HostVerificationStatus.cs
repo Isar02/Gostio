@@ -1,10 +1,6 @@
 namespace Gostio.Model.Enums;
 
-/// <summary>
-/// Outcome of an administrator's review of a host application. Stored as the
-/// underlying integer, so the values are part of the database contract and must
-/// not be renumbered.
-/// </summary>
+// Stored as the underlying integer, so these values must never be renumbered.
 public enum HostVerificationStatus
 {
     Pending = 1,

@@ -3,30 +3,16 @@ using Microsoft.Data.SqlClient;
 
 namespace Gostio.Services.Configuration;
 
-/// <summary>
-/// The one and only place that reads raw configuration values.
-///
-/// Locally the values come from the .env file at the repository root; inside
-/// Docker they are supplied by the container environment (env_file in
-/// docker-compose.yml), in which case no .env file is present and the loader
-/// falls back to the process environment. Either way, no configuration value
-/// is hardcoded in source.
-/// </summary>
+// The only place that reads environment variables: the .env file locally, the
+// container environment in Docker.
 public static class AppSettingsLoader
 {
     private const string EnvFileName = ".env";
     private const int MaximumParentDirectoriesSearched = 8;
     private const int MinimumJwtKeyLengthInBytes = 32;
 
-    /// <summary>
-    /// Loads the .env file when running outside a container, then builds and
-    /// validates <see cref="AppSettings"/> from the process environment.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when a value the application cannot start without is missing or
-    /// malformed. Failing at startup is deliberate: a half-configured service
-    /// is worse than one that refuses to boot with a clear message.
-    /// </exception>
+    // Throws when a value the application cannot start without is missing, so a
+    // half-configured service never boots.
     public static AppSettings Load()
     {
         LoadEnvFileIfPresent();
@@ -89,11 +75,8 @@ public static class AppSettingsLoader
         return settings;
     }
 
-    /// <summary>
-    /// Walks up from the current directory looking for a .env file, so the
-    /// application can be started from the repository root, from the project
-    /// folder, or from a build output folder without any path juggling.
-    /// </summary>
+    // Walks up from the current directory, so the application can be started from
+    // the repository root, the project folder or a build output folder.
     private static void LoadEnvFileIfPresent()
     {
         var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -111,20 +94,11 @@ public static class AppSettingsLoader
             directory = directory.Parent;
         }
 
-        // No .env file found. This is the normal case inside a container,
-        // where the environment is populated by docker-compose instead.
+        // No .env file: the normal case inside a container.
     }
 
-    /// <summary>
-    /// Produces the connection string without stating the database name or the
-    /// password more than once.
-    ///
-    /// A ready-made DATABASE_CONNECTION_STRING wins when it is present, which
-    /// is how docker-compose points the containers at the database service name
-    /// instead of localhost. When it is absent, the string is composed from the
-    /// individual DB_* values, so a local .env file needs to declare the name
-    /// and the password exactly once.
-    /// </summary>
+    // A ready-made DATABASE_CONNECTION_STRING wins when present, which is how
+    // compose points the containers at the database service name instead of localhost.
     private static string ResolveConnectionString()
     {
         var explicitConnectionString = OptionalValue("DATABASE_CONNECTION_STRING");
@@ -134,8 +108,7 @@ public static class AppSettingsLoader
             return explicitConnectionString;
         }
 
-        // SqlConnectionStringBuilder is used rather than string concatenation
-        // so that passwords containing separators are escaped correctly.
+        // A builder rather than concatenation, so a password containing separators is escaped.
         var builder = new SqlConnectionStringBuilder
         {
             DataSource = $"{RequireValue("DB_HOST")},{RequireInteger("DB_PORT")}",

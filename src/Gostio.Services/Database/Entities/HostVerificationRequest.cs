@@ -2,11 +2,8 @@ using Gostio.Model.Enums;
 
 namespace Gostio.Services.Database.Entities;
 
-/// <summary>
-/// A guest asking to become a host, and the administrator's decision on it.
-/// Kept as its own table rather than a flag on <see cref="User"/> so the reason
-/// behind a rejection survives a later re-application.
-/// </summary>
+// Its own table rather than a flag on User, so the reason behind a rejection
+// survives a later re-application.
 public class HostVerificationRequest
 {
     public int Id { get; set; }
@@ -25,6 +22,5 @@ public class HostVerificationRequest
 
     public DateTime? ReviewedAt { get; set; }
 
-    /// <summary>Shown to the applicant, so a rejection is never unexplained.</summary>
     public string? DecisionReason { get; set; }
 }

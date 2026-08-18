@@ -1,9 +1,7 @@
 namespace Gostio.Services.Database.Entities;
 
-/// <summary>
-/// What a listing is good for: seaside, mountain, city break. Independent of
-/// <see cref="AccommodationType"/>, which describes the property itself.
-/// </summary>
+// What a listing is good for: seaside, mountain, city break. Independent of
+// AccommodationType, which describes the property itself.
 public class AccommodationCategory : ILookupEntity
 {
     public int Id { get; set; }

@@ -3,7 +3,6 @@ using Gostio.Services.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuration is loaded once, here, and injected everywhere else.
 var settings = builder.Services.AddGostioConfiguration();
 
 builder.Services.AddGostioDatabase(settings.Database);
@@ -12,7 +11,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS is configured in exactly one place, with explicitly listed origins.
 const string CorsPolicyName = "GostioCorsPolicy";
 
 builder.Services.AddCors(options =>
@@ -31,9 +29,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// HTTPS redirection is intentionally not enabled: the clients talk to the API
-// over plain HTTP, which avoids self-signed certificate problems on the
-// Android emulator and on a fresh Windows machine.
+// No HTTPS redirection: plain HTTP avoids self-signed certificate trouble on the Android emulator.
 
 app.UseCors(CorsPolicyName);
 

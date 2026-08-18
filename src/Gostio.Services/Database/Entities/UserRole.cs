@@ -1,9 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-/// <summary>
-/// A user holds many roles at once: the same account can host a listing and
-/// book somebody else's.
-/// </summary>
+// One account can hold several roles: a host also books other people's listings.
 public class UserRole
 {
     public int UserId { get; set; }

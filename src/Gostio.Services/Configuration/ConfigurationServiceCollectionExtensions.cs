@@ -4,17 +4,8 @@ namespace Gostio.Services.Configuration;
 
 public static class ConfigurationServiceCollectionExtensions
 {
-    /// <summary>
-    /// Loads configuration once at startup and registers it as a singleton.
-    /// Every service that needs a configuration value injects
-    /// <see cref="AppSettings"/> instead of reading the environment itself,
-    /// which keeps environment access in a single place and avoids re-reading
-    /// the same variables on every request.
-    /// </summary>
-    /// <returns>
-    /// The loaded settings, so the caller can use them while still building
-    /// the application (for example when configuring JWT authentication).
-    /// </returns>
+    // Returns the settings so the caller can use them while still building the
+    // application, for example when configuring JWT authentication.
     public static AppSettings AddGostioConfiguration(this IServiceCollection services)
     {
         var settings = AppSettingsLoader.Load();

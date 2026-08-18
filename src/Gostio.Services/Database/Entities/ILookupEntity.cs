@@ -1,11 +1,7 @@
 namespace Gostio.Services.Database.Entities;
 
-/// <summary>
-/// Reference ("lookup") tables: a short list of named rows that classifies the
-/// main tables and is maintained from the administrator client. Implementing
-/// this interface is what gives an entity the shared key, length and uniqueness
-/// rules in <c>LookupEntityConfiguration</c>.
-/// </summary>
+// Marks a reference table, which is what gives it the shared rules in
+// LookupEntityConfiguration.
 public interface ILookupEntity
 {
     int Id { get; set; }

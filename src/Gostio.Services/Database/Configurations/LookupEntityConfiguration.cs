@@ -4,11 +4,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Gostio.Services.Database.Configurations;
 
-/// <summary>
-/// Rules every reference table shares. Derived configurations override
-/// <see cref="Configure"/> and call the base implementation first when they
-/// need to add columns or relationships of their own.
-/// </summary>
+// Rules every reference table shares. A derived configuration calls the base
+// first when it adds columns or relationships of its own.
 public abstract class LookupEntityConfiguration<TEntity> : IEntityTypeConfiguration<TEntity>
     where TEntity : class, ILookupEntity
 {

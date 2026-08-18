@@ -8,8 +8,7 @@ public sealed class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
 {
     public void Configure(EntityTypeBuilder<UserRole> builder)
     {
-        // The pair is the key, which makes assigning the same role twice
-        // impossible without a separate unique index.
+        // The pair is the key, so the same role cannot be assigned twice.
         builder.HasKey(userRole => new { userRole.UserId, userRole.RoleId });
 
         builder

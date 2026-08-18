@@ -2,16 +2,7 @@ using Gostio.Services.Configuration;
 
 namespace Gostio.Worker;
 
-/// <summary>
-/// Background service that will consume messages published by the API through
-/// RabbitMQ and carry out the asynchronous work: sending e-mail over SMTP and
-/// processing notifications.
-///
-/// At this stage it only reports the configuration it resolved, which confirms
-/// that the container is wired to the broker settings correctly. The RabbitMQ
-/// connection and message handlers are added together with the messaging
-/// module.
-/// </summary>
+// Scaffolding for the messaging phase: reports the resolved broker settings and idles.
 public sealed class MessageConsumerService(
     ILogger<MessageConsumerService> logger,
     RabbitMqSettings rabbitMqSettings) : BackgroundService

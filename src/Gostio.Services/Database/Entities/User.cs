@@ -14,18 +14,13 @@ public class User
 
     public string? PhoneNumber { get; set; }
 
-    /// <summary>
-    /// BCrypt hash. The salt is part of the hash, so it needs no column of its
-    /// own, and the plain password is never stored or logged.
-    /// </summary>
+    // BCrypt; the salt is part of the hash, so it needs no column of its own.
     public string PasswordHash { get; set; } = null!;
 
     public byte[]? ProfileImage { get; set; }
 
-    /// <summary>
-    /// Cleared by an administrator instead of deleting the row, so reservations
-    /// and reviews keep pointing at a real user.
-    /// </summary>
+    // Cleared instead of deleting the row, so reservations and reviews keep
+    // pointing at a real user.
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; }

@@ -6,7 +6,7 @@ public class Country : ILookupEntity
 
     public string Name { get; set; } = null!;
 
-    /// <summary>ISO 3166-1 alpha-2 code, used by the clients to render flags.</summary>
+    // ISO 3166-1 alpha-2.
     public string IsoCode { get; set; } = null!;
 
     public ICollection<City> Cities { get; set; } = [];

@@ -15,8 +15,7 @@ public sealed class HostVerificationRequestConfiguration : IEntityTypeConfigurat
             .Property(request => request.DecisionReason)
             .HasMaxLength(ColumnLengths.Reason);
 
-        // Both paths restrict: this table is an audit trail, and deleting a
-        // user must not be able to take the record of a decision with it.
+        // An audit trail: deleting a user must not take the record of a decision with it.
         builder
             .HasOne(request => request.User)
             .WithMany(user => user.HostVerificationRequests)
@@ -29,15 +28,13 @@ public sealed class HostVerificationRequestConfiguration : IEntityTypeConfigurat
             .HasForeignKey(request => request.ReviewedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // A user may reapply after a decision, but may never have two open
-        // applications at once. The filter is built from the enum so that
-        // renumbering the values cannot silently disable the constraint.
+        // A user may reapply after a decision but never hold two open applications.
+        // The filter is built from the enum so renumbering cannot silently disable it.
         builder
             .HasIndex(request => request.UserId)
             .IsUnique()
             .HasFilter($"[{nameof(HostVerificationRequest.Status)}] = {(int)HostVerificationStatus.Pending}");
 
-        // The administrator queue is the only list screen over this table.
         builder.HasIndex(request => request.Status);
     }
 }

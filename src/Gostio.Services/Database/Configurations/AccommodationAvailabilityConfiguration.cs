@@ -37,6 +37,14 @@ public sealed class AccommodationAvailabilityConfiguration
                 "CK_AccommodationAvailability_PriceOverride",
                 $"[{nameof(AccommodationAvailability.PriceOverride)}] IS NULL"
                 + $" OR [{nameof(AccommodationAvailability.PriceOverride)}] > 0");
+
+            // A row must either block the dates or set a price, otherwise it says
+            // nothing the base price does not already say. A blocked row may keep
+            // its price, so unblocking it does not lose what the host typed.
+            table.HasCheckConstraint(
+                "CK_AccommodationAvailability_Purpose",
+                $"[{nameof(AccommodationAvailability.IsAvailable)}] = 0"
+                + $" OR [{nameof(AccommodationAvailability.PriceOverride)}] IS NOT NULL");
         });
     }
 }

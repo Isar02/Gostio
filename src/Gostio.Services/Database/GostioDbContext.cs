@@ -22,6 +22,14 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<HostVerificationRequest> HostVerificationRequests => Set<HostVerificationRequest>();
 
+    public DbSet<Accommodation> Accommodations => Set<Accommodation>();
+
+    public DbSet<AccommodationPhoto> AccommodationPhotos => Set<AccommodationPhoto>();
+
+    public DbSet<AccommodationAmenity> AccommodationAmenities => Set<AccommodationAmenity>();
+
+    public DbSet<AccommodationAvailability> AccommodationAvailability => Set<AccommodationAvailability>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

@@ -5,6 +5,12 @@ internal static class ColumnLengths
 {
     public const int Name = 100;
 
+    public const int Title = 200;
+
+    public const int Description = 2000;
+
+    public const int Address = 250;
+
     public const int IsoCode = 2;
 
     public const int Username = 50;

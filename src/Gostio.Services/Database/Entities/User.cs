@@ -30,4 +30,6 @@ public class User
     public ICollection<UserRole> UserRoles { get; set; } = [];
 
     public ICollection<HostVerificationRequest> HostVerificationRequests { get; set; } = [];
+
+    public ICollection<Accommodation> Accommodations { get; set; } = [];
 }

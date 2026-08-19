@@ -5,6 +5,9 @@ internal static class ColumnLengths
 {
     public const int Name = 100;
 
+    // A system identifier a reader matches on, not a sentence.
+    public const int Code = 30;
+
     public const int Title = 200;
 
     public const int Description = 2000;

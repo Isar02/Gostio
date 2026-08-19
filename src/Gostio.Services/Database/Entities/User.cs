@@ -34,4 +34,6 @@ public class User
     public ICollection<Accommodation> Accommodations { get; set; } = [];
 
     public ICollection<Experience> Experiences { get; set; } = [];
+
+    public ICollection<Reservation> Reservations { get; set; } = [];
 }

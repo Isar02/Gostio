@@ -36,6 +36,11 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<ExperienceSlot> ExperienceSlots => Set<ExperienceSlot>();
 
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+
+    public DbSet<ReservationStatusHistory> ReservationStatusHistory =>
+        Set<ReservationStatusHistory>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();
@@ -47,6 +52,8 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
     public DbSet<ExperienceCategory> ExperienceCategories => Set<ExperienceCategory>();
 
     public DbSet<Amenity> Amenities => Set<Amenity>();
+
+    public DbSet<ReservationStatus> ReservationStatuses => Set<ReservationStatus>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

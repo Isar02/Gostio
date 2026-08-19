@@ -30,6 +30,12 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<AccommodationAvailability> AccommodationAvailability => Set<AccommodationAvailability>();
 
+    public DbSet<Experience> Experiences => Set<Experience>();
+
+    public DbSet<ExperiencePhoto> ExperiencePhotos => Set<ExperiencePhoto>();
+
+    public DbSet<ExperienceSlot> ExperienceSlots => Set<ExperienceSlot>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

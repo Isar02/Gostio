@@ -32,4 +32,6 @@ public class User
     public ICollection<HostVerificationRequest> HostVerificationRequests { get; set; } = [];
 
     public ICollection<Accommodation> Accommodations { get; set; } = [];
+
+    public ICollection<Experience> Experiences { get; set; } = [];
 }

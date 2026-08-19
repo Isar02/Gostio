@@ -62,8 +62,14 @@ public sealed class ReservationConfiguration : IEntityTypeConfiguration<Reservat
             })
             .HasFilter($"[{nameof(Reservation.ExperienceSlotId)}] IS NOT NULL");
 
-        // Serves the job that sweeps up expired holds.
-        builder.HasIndex(reservation => reservation.ReservationStatusId);
+        // The job that sweeps up expired holds reads both columns, and the
+        // status leads, so this also answers a plain lookup by status.
+        builder
+            .HasIndex(reservation => new
+            {
+                reservation.ReservationStatusId,
+                reservation.ExpiresAt
+            });
 
         builder.ToTable(table =>
         {

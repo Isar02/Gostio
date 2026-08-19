@@ -18,8 +18,9 @@ public class ReservationStatusHistory
 
     public ReservationStatus NewStatus { get; set; } = null!;
 
-    // Null when the change was the system's: an expired hold, or a term the
-    // host cancelled through the reschedule path.
+    // Null only when nobody acted: an expired hold swept up by the job. A
+    // cancellation or a reschedule a host started names that host, even when it
+    // moves reservations the host never looked at.
     public int? ChangedByUserId { get; set; }
 
     public User? ChangedByUser { get; set; }

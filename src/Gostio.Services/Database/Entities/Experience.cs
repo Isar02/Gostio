@@ -26,7 +26,8 @@ public class Experience
 
     public decimal Longitude { get; set; }
 
-    // A slot carries only its start, so the end of a term is derived from this.
+    // Only the default for a new slot, which copies it. The slot owns the term
+    // from then on.
     public int DurationMinutes { get; set; }
 
     public decimal PricePerPerson { get; set; }

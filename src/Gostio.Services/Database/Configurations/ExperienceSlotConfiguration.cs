@@ -24,6 +24,10 @@ public sealed class ExperienceSlotConfiguration : IEntityTypeConfiguration<Exper
             table.HasCheckConstraint(
                 "CK_ExperienceSlots_Capacity",
                 $"[{nameof(ExperienceSlot.Capacity)}] > 0");
+
+            table.HasCheckConstraint(
+                "CK_ExperienceSlots_Duration",
+                $"[{nameof(ExperienceSlot.DurationMinutes)}] > 0");
         });
     }
 }

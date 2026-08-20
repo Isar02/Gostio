@@ -45,6 +45,10 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<Refund> Refunds => Set<Refund>();
 
+    public DbSet<Review> Reviews => Set<Review>();
+
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

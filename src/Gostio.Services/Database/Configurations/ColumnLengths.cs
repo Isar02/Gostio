@@ -34,4 +34,8 @@ internal static class ColumnLengths
 
     // ISO 4217.
     public const int CurrencyCode = 3;
+
+    // What a guest writes about a stay, which is shorter than a listing's own
+    // description.
+    public const int Comment = 1000;
 }

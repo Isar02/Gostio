@@ -55,6 +55,10 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.ToTable(table =>
         {
             table.HasCheckConstraint(
+                "CK_Payments_Status",
+                EnumCheckConstraint.Values<PaymentStatus>(nameof(Payment.Status)));
+
+            table.HasCheckConstraint(
                 "CK_Payments_Amount",
                 $"[{nameof(Payment.Amount)}] > 0");
 

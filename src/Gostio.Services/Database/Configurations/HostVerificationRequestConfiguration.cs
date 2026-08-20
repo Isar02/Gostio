@@ -36,5 +36,13 @@ public sealed class HostVerificationRequestConfiguration : IEntityTypeConfigurat
             .HasFilter($"[{nameof(HostVerificationRequest.Status)}] = {(int)HostVerificationStatus.Pending}");
 
         builder.HasIndex(request => request.Status);
+
+        builder.ToTable(table =>
+        {
+            table.HasCheckConstraint(
+                "CK_HostVerificationRequests_Status",
+                EnumCheckConstraint.Values<HostVerificationStatus>(
+                    nameof(HostVerificationRequest.Status)));
+        });
     }
 }

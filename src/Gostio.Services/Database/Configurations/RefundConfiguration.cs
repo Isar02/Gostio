@@ -50,6 +50,10 @@ public sealed class RefundConfiguration : IEntityTypeConfiguration<Refund>
         builder.ToTable(table =>
         {
             table.HasCheckConstraint(
+                "CK_Refunds_Status",
+                EnumCheckConstraint.Values<RefundStatus>(nameof(Refund.Status)));
+
+            table.HasCheckConstraint(
                 "CK_Refunds_Amount",
                 $"[{nameof(Refund.Amount)}] > 0");
 

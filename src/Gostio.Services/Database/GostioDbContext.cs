@@ -41,6 +41,8 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
     public DbSet<ReservationStatusHistory> ReservationStatusHistory =>
         Set<ReservationStatusHistory>();
 
+    public DbSet<Payment> Payments => Set<Payment>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

@@ -27,4 +27,11 @@ internal static class ColumnLengths
     public const int PasswordHash = 100;
 
     public const int Reason = 1000;
+
+    // Issued by the payment provider; Stripe promises no length, so this is the
+    // maximum its documentation tells a caller to store.
+    public const int ExternalId = 255;
+
+    // ISO 4217.
+    public const int CurrencyCode = 3;
 }

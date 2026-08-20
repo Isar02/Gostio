@@ -11,12 +11,6 @@ public sealed class ReservationStatusConfiguration : LookupEntityConfiguration<R
     {
         base.Configure(builder);
 
-        // A closed set, so no row is ever inserted at runtime and the ids stay
-        // the ones the enum names.
-        builder
-            .Property(status => status.Id)
-            .ValueGeneratedNever();
-
         builder
             .Property(status => status.Code)
             .IsRequired()
@@ -30,9 +24,8 @@ public sealed class ReservationStatusConfiguration : LookupEntityConfiguration<R
             .HasIndex(status => status.Code)
             .IsUnique();
 
-        // Seeded here rather than with the demo data in the seeding step: the
-        // enum names these ids, so the model is broken without the rows, and
-        // they belong in the migration that creates the table.
+        // Seeded here rather than with the demo data: ReservationStatusCode names
+        // these four ids, so the model is broken without the rows.
         builder.HasData(
             Row(ReservationStatusCode.Pending,
                 "Held until the payment deadline, after which the place is free again."),
@@ -44,7 +37,6 @@ public sealed class ReservationStatusConfiguration : LookupEntityConfiguration<R
                 "The stay or the term is over, which is what opens a review."));
     }
 
-    // Name starts as the code and is the half an administrator may reword.
     private static ReservationStatus Row(ReservationStatusCode code, string description) =>
         new()
         {

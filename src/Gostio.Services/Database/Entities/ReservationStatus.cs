@@ -1,8 +1,7 @@
 namespace Gostio.Services.Database.Entities;
 
-// A closed set: every row is seeded and its id is a ReservationStatusCode. An
-// administrator may reword Name and Description, because those are only shown,
-// but Code is what a reader matches against the enum and never changes.
+// Four rows are seeded with the ids ReservationStatusCode names; an
+// administrator may add others, which the state machine never assigns.
 public class ReservationStatus : ILookupEntity
 {
     public int Id { get; set; }

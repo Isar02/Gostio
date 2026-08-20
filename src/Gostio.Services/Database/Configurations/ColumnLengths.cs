@@ -5,6 +5,15 @@ internal static class ColumnLengths
 {
     public const int Name = 100;
 
+    // A system identifier a reader matches on, not a sentence.
+    public const int Code = 30;
+
+    public const int Title = 200;
+
+    public const int Description = 2000;
+
+    public const int Address = 250;
+
     public const int IsoCode = 2;
 
     public const int Username = 50;
@@ -18,4 +27,18 @@ internal static class ColumnLengths
     public const int PasswordHash = 100;
 
     public const int Reason = 1000;
+
+    // Issued by the payment provider; Stripe promises no length, so this is the
+    // maximum its documentation tells a caller to store.
+    public const int ExternalId = 255;
+
+    // ISO 4217.
+    public const int CurrencyCode = 3;
+
+    // A SHA-256 hex digest is 64 characters; the rest is headroom.
+    public const int TokenHash = 128;
+
+    // What a guest writes about a stay, which is shorter than a listing's own
+    // description.
+    public const int Comment = 1000;
 }

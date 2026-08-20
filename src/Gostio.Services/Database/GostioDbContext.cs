@@ -22,6 +22,35 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<HostVerificationRequest> HostVerificationRequests => Set<HostVerificationRequest>();
 
+    public DbSet<Accommodation> Accommodations => Set<Accommodation>();
+
+    public DbSet<AccommodationPhoto> AccommodationPhotos => Set<AccommodationPhoto>();
+
+    public DbSet<AccommodationAmenity> AccommodationAmenities => Set<AccommodationAmenity>();
+
+    public DbSet<AccommodationAvailability> AccommodationAvailability => Set<AccommodationAvailability>();
+
+    public DbSet<Experience> Experiences => Set<Experience>();
+
+    public DbSet<ExperiencePhoto> ExperiencePhotos => Set<ExperiencePhoto>();
+
+    public DbSet<ExperienceSlot> ExperienceSlots => Set<ExperienceSlot>();
+
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+
+    public DbSet<ReservationStatusHistory> ReservationStatusHistory =>
+        Set<ReservationStatusHistory>();
+
+    public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<Refund> Refunds => Set<Refund>();
+
+    public DbSet<Review> Reviews => Set<Review>();
+
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();
@@ -33,6 +62,8 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
     public DbSet<ExperienceCategory> ExperienceCategories => Set<ExperienceCategory>();
 
     public DbSet<Amenity> Amenities => Set<Amenity>();
+
+    public DbSet<ReservationStatus> ReservationStatuses => Set<ReservationStatus>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

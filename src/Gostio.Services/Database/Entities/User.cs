@@ -23,6 +23,10 @@ public class User
     // pointing at a real user.
     public bool IsActive { get; set; } = true;
 
+    // Raised on logout, and carried as a claim, so tokens issued earlier are
+    // refused by the server rather than only dropped by the client.
+    public int TokenVersion { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? ModifiedAt { get; set; }
@@ -30,4 +34,14 @@ public class User
     public ICollection<UserRole> UserRoles { get; set; } = [];
 
     public ICollection<HostVerificationRequest> HostVerificationRequests { get; set; } = [];
+
+    public ICollection<Accommodation> Accommodations { get; set; } = [];
+
+    public ICollection<Experience> Experiences { get; set; } = [];
+
+    public ICollection<Reservation> Reservations { get; set; } = [];
+
+    public ICollection<Favorite> Favorites { get; set; } = [];
+
+    public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = [];
 }

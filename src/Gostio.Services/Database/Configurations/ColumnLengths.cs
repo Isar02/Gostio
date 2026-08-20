@@ -35,6 +35,9 @@ internal static class ColumnLengths
     // ISO 4217.
     public const int CurrencyCode = 3;
 
+    // A SHA-256 hex digest is 64 characters; the rest is headroom.
+    public const int TokenHash = 128;
+
     // What a guest writes about a stay, which is shorter than a listing's own
     // description.
     public const int Comment = 1000;

@@ -24,9 +24,6 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .Property(payment => payment.FailureReason)
             .HasMaxLength(ColumnLengths.Reason);
 
-        // A financial record, so it outlives everything it points at. No
-        // collection on the reservation either: whether it is paid is a
-        // projection in a query, not a count over rows already loaded.
         builder
             .HasOne(payment => payment.Reservation)
             .WithMany()
@@ -35,16 +32,13 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasIndex(payment => payment.ReservationId);
 
-        // The last line of defence behind the webhook, which resolves a payment
-        // with a conditional update and so already ignores a repeat delivery.
         builder
             .HasIndex(payment => payment.StripePaymentIntentId)
             .IsUnique()
             .HasFilter($"[{nameof(Payment.StripePaymentIntentId)}] IS NOT NULL");
 
-        // One live payment per reservation. A decline leaves the row pending and
-        // reuses its intent, so only a cancellation Stripe has confirmed frees
-        // this index for a new one.
+        // One live payment per reservation. A decline keeps the row pending and
+        // reuses its intent, so only a cancellation Stripe confirmed frees this.
         builder
             .HasIndex(payment => payment.ReservationId, "IX_Payments_ReservationId_Open")
             .IsUnique()
@@ -62,7 +56,6 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
                 "CK_Payments_Amount",
                 $"[{nameof(Payment.Amount)}] > 0");
 
-            // A resolved payment records when it resolved, a pending one cannot.
             table.HasCheckConstraint(
                 "CK_Payments_Processed",
                 $"([{nameof(Payment.Status)}] = {(int)PaymentStatus.Pending}"

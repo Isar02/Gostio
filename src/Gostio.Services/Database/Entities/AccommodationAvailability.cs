@@ -1,8 +1,5 @@
 namespace Gostio.Services.Database.Entities;
 
-// Exceptions to the calendar: a listing is bookable at its base price unless a
-// row here blocks the dates or overrides the price. Both dates are inclusive,
-// the way a host reads a calendar.
 public class AccommodationAvailability
 {
     public int Id { get; set; }
@@ -11,6 +8,8 @@ public class AccommodationAvailability
 
     public Accommodation Accommodation { get; set; } = null!;
 
+    // Both dates are inclusive, the way a host reads a calendar, while a stay
+    // covers the nights [CheckInDate, CheckOutDate).
     public DateOnly StartDate { get; set; }
 
     public DateOnly EndDate { get; set; }

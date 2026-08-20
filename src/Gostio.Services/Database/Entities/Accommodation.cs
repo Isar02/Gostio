@@ -38,11 +38,8 @@ public class Accommodation
 
     public decimal PricePerNight { get; set; }
 
-    // Charged once per reservation, on top of the nightly price.
     public decimal CleaningFee { get; set; }
 
-    // Cleared to take the listing off the market, so reservations and reviews
-    // keep pointing at it.
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; }

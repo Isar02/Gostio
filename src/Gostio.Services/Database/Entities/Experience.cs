@@ -26,14 +26,10 @@ public class Experience
 
     public decimal Longitude { get; set; }
 
-    // Only the default for a new slot, which copies it. The slot owns the term
-    // from then on.
     public int DurationMinutes { get; set; }
 
     public decimal PricePerPerson { get; set; }
 
-    // Cleared to take the experience off the market, so reservations and reviews
-    // keep pointing at it.
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; }

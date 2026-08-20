@@ -28,8 +28,6 @@ public sealed class AccommodationConfiguration : IEntityTypeConfiguration<Accomm
             .IsRequired()
             .HasMaxLength(ColumnLengths.Address);
 
-        // The (18, 2) the context gives every decimal would round a coordinate
-        // away, so both get their own precision.
         builder
             .Property(accommodation => accommodation.Latitude)
             .HasPrecision(CoordinatePrecision, CoordinateScale);
@@ -38,7 +36,6 @@ public sealed class AccommodationConfiguration : IEntityTypeConfiguration<Accomm
             .Property(accommodation => accommodation.Longitude)
             .HasPrecision(CoordinatePrecision, CoordinateScale);
 
-        // A host with listings cannot be deleted, only deactivated.
         builder
             .HasOne(accommodation => accommodation.Host)
             .WithMany(user => user.Accommodations)

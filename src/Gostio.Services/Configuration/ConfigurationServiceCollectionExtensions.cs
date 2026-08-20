@@ -4,8 +4,6 @@ namespace Gostio.Services.Configuration;
 
 public static class ConfigurationServiceCollectionExtensions
 {
-    // Returns the settings so the caller can use them while still building the
-    // application, for example when configuring JWT authentication.
     public static AppSettings AddGostioConfiguration(this IServiceCollection services)
     {
         var settings = AppSettingsLoader.Load();

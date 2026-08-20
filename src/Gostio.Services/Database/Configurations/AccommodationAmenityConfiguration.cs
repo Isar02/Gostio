@@ -8,7 +8,6 @@ public sealed class AccommodationAmenityConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<AccommodationAmenity> builder)
     {
-        // The pair is the key, so the same amenity cannot be listed twice.
         builder.HasKey(accommodationAmenity => new
         {
             accommodationAmenity.AccommodationId,

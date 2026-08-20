@@ -1,7 +1,5 @@
 namespace Gostio.Services.Database.Entities;
 
-// A guest favourites a listing rather than a term, so this points at the
-// experience itself while a reservation points at one of its slots.
 public class Favorite
 {
     public int Id { get; set; }

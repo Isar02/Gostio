@@ -1,8 +1,7 @@
 namespace Gostio.Model.Enums;
 
-// The values are the primary keys seeded into ReservationStatuses, so they must
-// never be renumbered. The table stores what a status is called; this decides
-// what the code does with it, and only these four exist.
+// These values are the seeded primary keys in ReservationStatuses, so they must
+// never be renumbered.
 public enum ReservationStatusCode
 {
     Pending = 1,

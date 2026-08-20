@@ -24,8 +24,8 @@ public sealed class ReservationStatusConfiguration : LookupEntityConfiguration<R
             .HasIndex(status => status.Code)
             .IsUnique();
 
-        // Seeded here rather than with the demo data: ReservationStatusCode names
-        // these four ids, so the model is broken without the rows.
+        // Seeded here, not with the demo data: ReservationStatusCode names these
+        // ids and the model is broken without the rows.
         builder.HasData(
             Row(ReservationStatusCode.Pending,
                 "Held until the payment deadline, after which the place is free again."),

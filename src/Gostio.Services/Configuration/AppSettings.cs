@@ -43,7 +43,6 @@ public sealed class RabbitMqSettings
     public required string NotificationQueue { get; init; }
 }
 
-// Values stay empty until the mail module is configured.
 public sealed class SmtpSettings
 {
     public required string Host { get; init; }
@@ -58,7 +57,6 @@ public sealed class SmtpSettings
         !string.IsNullOrWhiteSpace(Host) && !string.IsNullOrWhiteSpace(FromEmail);
 }
 
-// Values stay empty until the payment module is configured.
 public sealed class StripeSettings
 {
     public required string PublishableKey { get; init; }

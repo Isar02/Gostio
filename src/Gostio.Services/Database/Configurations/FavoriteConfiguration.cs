@@ -10,9 +10,6 @@ public sealed class FavoriteConfiguration : IEntityTypeConfiguration<Favorite>
     {
         builder.HasKey(favorite => favorite.Id);
 
-        // A favourite is part of the guest who kept it, not a record that has to
-        // outlive them, so it cascades like UserRoles. Both listings restrict,
-        // the way everything pointing at a listing does.
         builder
             .HasOne(favorite => favorite.User)
             .WithMany(user => user.Favorites)
@@ -31,8 +28,6 @@ public sealed class FavoriteConfiguration : IEntityTypeConfiguration<Favorite>
             .HasForeignKey(favorite => favorite.ExperienceId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // One index per subject rather than one across both nullable columns:
-        // each stays narrow and says on its own which duplicate it forbids.
         builder
             .HasIndex(favorite => new { favorite.UserId, favorite.AccommodationId })
             .IsUnique()
@@ -45,7 +40,6 @@ public sealed class FavoriteConfiguration : IEntityTypeConfiguration<Favorite>
 
         builder.ToTable(table =>
         {
-            // Exactly one subject, as on Reservations.
             table.HasCheckConstraint(
                 "CK_Favorites_Subject",
                 $"([{nameof(Favorite.AccommodationId)}] IS NOT NULL"

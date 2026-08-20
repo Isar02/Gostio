@@ -15,7 +15,6 @@ public sealed class CityConfiguration : IEntityTypeConfiguration<City>
             .IsRequired()
             .HasMaxLength(ColumnLengths.Name);
 
-        // City names repeat across countries, so uniqueness is per country.
         builder
             .HasIndex(city => new { city.CountryId, city.Name })
             .IsUnique();

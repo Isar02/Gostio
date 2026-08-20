@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Database;
 
-// Every relationship in this assembly states OnDelete explicitly: the reservation
-// graph reaches Users by more than one path, and SQL Server rejects multiple
-// cascade paths to the same table.
+// Every relationship states OnDelete explicitly: the reservation graph reaches
+// Users by more than one path, and SQL Server rejects multiple cascade paths.
 public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbContext(options)
 {
-    // Keeps an unconfigured string column from silently becoming nvarchar(max).
     private const int DefaultStringLength = 256;
 
     private const int MoneyPrecision = 18;

@@ -4,7 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-Gostio.Worker-8e44ae92-5296-43c2-84a2-f2c7e4946666</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

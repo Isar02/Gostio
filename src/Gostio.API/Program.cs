@@ -5,8 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 var settings = builder.Services.AddGostioConfiguration();
 
-// The container sets ASPNETCORE_URLS and binds every interface; on a developer
-// machine the port comes from .env, so it is configured in one place either way.
+// The container sets ASPNETCORE_URLS and owns its port; elsewhere the port comes
+// from configuration, so it is declared once either way.
 if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
 {
     builder.WebHost.UseUrls($"http://localhost:{settings.Api.HttpPort}");
@@ -35,8 +35,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-// No HTTPS redirection: plain HTTP avoids self-signed certificate trouble on the Android emulator.
 
 app.UseCors(CorsPolicyName);
 

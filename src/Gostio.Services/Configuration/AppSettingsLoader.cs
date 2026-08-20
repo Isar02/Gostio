@@ -10,6 +10,8 @@ public static class AppSettingsLoader
     private const string EnvFileName = ".env";
     private const int MaximumParentDirectoriesSearched = 8;
     private const int MinimumJwtKeyLengthInBytes = 32;
+    private const int MaximumPort = 65535;
+    private const int MaximumJwtLifetimeInMinutes = 60 * 24 * 30;
 
     // Throws when a value the application cannot start without is missing, so a
     // half-configured service never boots.
@@ -22,7 +24,7 @@ public static class AppSettingsLoader
             Api = new ApiSettings
             {
                 BaseUrl = RequireValue("API_BASE_URL"),
-                HttpPort = RequireInteger("API_HTTP_PORT")
+                HttpPort = RequirePort("API_HTTP_PORT")
             },
             Database = new DatabaseSettings
             {
@@ -34,12 +36,16 @@ public static class AppSettingsLoader
                 Key = RequireValue("JWT_KEY"),
                 Issuer = RequireValue("JWT_ISSUER"),
                 Audience = RequireValue("JWT_AUDIENCE"),
-                ExpiresMinutes = RequireInteger("JWT_EXPIRES_MINUTES")
+                ExpiresMinutes = RequireRange(
+                    "JWT_EXPIRES_MINUTES",
+                    RequireInteger("JWT_EXPIRES_MINUTES"),
+                    1,
+                    MaximumJwtLifetimeInMinutes)
             },
             RabbitMq = new RabbitMqSettings
             {
                 Host = RequireValue("RABBITMQ_HOST"),
-                Port = RequireInteger("RABBITMQ_PORT"),
+                Port = RequirePort("RABBITMQ_PORT"),
                 Username = RequireValue("RABBITMQ_USERNAME"),
                 Password = RequireValue("RABBITMQ_PASSWORD"),
                 VirtualHost = OptionalValue("RABBITMQ_VIRTUAL_HOST", "/"),
@@ -49,7 +55,7 @@ public static class AppSettingsLoader
             Smtp = new SmtpSettings
             {
                 Host = OptionalValue("SMTP_HOST"),
-                Port = OptionalInteger("SMTP_PORT", 587),
+                Port = RequireRange("SMTP_PORT", OptionalInteger("SMTP_PORT", 587), 1, MaximumPort),
                 Username = OptionalValue("SMTP_USERNAME"),
                 Password = OptionalValue("SMTP_PASSWORD"),
                 UseSsl = OptionalBoolean("SMTP_USE_SSL", true),
@@ -111,7 +117,7 @@ public static class AppSettingsLoader
         // A builder rather than concatenation, so a password containing separators is escaped.
         var builder = new SqlConnectionStringBuilder
         {
-            DataSource = $"{RequireValue("DB_HOST")},{RequireInteger("DB_PORT")}",
+            DataSource = $"{RequireValue("DB_HOST")},{RequirePort("DB_PORT")}",
             InitialCatalog = RequireValue("DB_NAME"),
             UserID = RequireValue("DB_USER"),
             Password = RequireValue("DB_SA_PASSWORD"),
@@ -178,17 +184,58 @@ public static class AppSettingsLoader
         return string.IsNullOrWhiteSpace(value) ? defaultValue : value.Trim();
     }
 
+    // A default stands in for an absent value, never for an unreadable one: a
+    // mistyped port that silently becomes 587 is the failure nobody notices.
     private static int OptionalInteger(string variableName, int defaultValue)
     {
         var raw = OptionalValue(variableName);
 
-        return int.TryParse(raw, out var value) ? value : defaultValue;
+        if (raw.Length == 0)
+        {
+            return defaultValue;
+        }
+
+        if (!int.TryParse(raw, out var value))
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{variableName}' must be a whole number, but was '{raw}'.");
+        }
+
+        return value;
     }
 
     private static bool OptionalBoolean(string variableName, bool defaultValue)
     {
         var raw = OptionalValue(variableName);
 
-        return bool.TryParse(raw, out var value) ? value : defaultValue;
+        if (raw.Length == 0)
+        {
+            return defaultValue;
+        }
+
+        if (!bool.TryParse(raw, out var value))
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{variableName}' must be true or false, but was '{raw}'.");
+        }
+
+        return value;
+    }
+
+    private static int RequirePort(string variableName)
+    {
+        return RequireRange(variableName, RequireInteger(variableName), 1, MaximumPort);
+    }
+
+    private static int RequireRange(string variableName, int value, int minimum, int maximum)
+    {
+        if (value < minimum || value > maximum)
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{variableName}' must be between {minimum} and {maximum}, "
+                + $"but was {value}.");
+        }
+
+        return value;
     }
 }

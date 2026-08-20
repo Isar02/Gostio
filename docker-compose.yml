@@ -75,14 +75,12 @@ services:
     env_file:
       - .env
     environment:
-      # Inside the compose network the services are reached by service name,
-      # not by localhost. These two overrides are the only place where the
-      # container view differs from the host view; the underlying values still
-      # come from .env and are not duplicated.
+      # Inside the compose network the services are reached by service name and
+      # by their internal ports, not through the ports published on the host.
+      # ASPNETCORE_URLS is left to the Dockerfile, which owns the container port.
       DATABASE_CONNECTION_STRING: "Server=gostio-db,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True"
       RABBITMQ_HOST: gostio-rabbitmq
       RABBITMQ_PORT: 5672
-      ASPNETCORE_URLS: http://+:8080
     ports:
       - "${API_HTTP_PORT}:8080"
     depends_on:

@@ -5,6 +5,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 var settings = builder.Services.AddGostioConfiguration();
 
+// The container sets ASPNETCORE_URLS and binds every interface; on a developer
+// machine the port comes from .env, so it is configured in one place either way.
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls($"http://localhost:{settings.Api.HttpPort}");
+}
+
 builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();

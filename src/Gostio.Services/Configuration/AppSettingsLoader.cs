@@ -3,8 +3,6 @@ using Microsoft.Data.SqlClient;
 
 namespace Gostio.Services.Configuration;
 
-// The only place that reads environment variables: the .env file locally, the
-// container environment in Docker.
 public static class AppSettingsLoader
 {
     private const string EnvFileName = ".env";
@@ -13,8 +11,6 @@ public static class AppSettingsLoader
     private const int MaximumPort = 65535;
     private const int MaximumJwtLifetimeInMinutes = 60 * 24 * 30;
 
-    // Throws when a value the application cannot start without is missing, so a
-    // half-configured service never boots.
     public static AppSettings Load()
     {
         LoadEnvFileIfPresent();
@@ -81,8 +77,6 @@ public static class AppSettingsLoader
         return settings;
     }
 
-    // Walks up from the current directory, so the application can be started from
-    // the repository root, the project folder or a build output folder.
     private static void LoadEnvFileIfPresent()
     {
         var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -100,11 +94,8 @@ public static class AppSettingsLoader
             directory = directory.Parent;
         }
 
-        // No .env file: the normal case inside a container.
     }
 
-    // A ready-made DATABASE_CONNECTION_STRING wins when present, which is how
-    // compose points the containers at the database service name instead of localhost.
     private static string ResolveConnectionString()
     {
         var explicitConnectionString = OptionalValue("DATABASE_CONNECTION_STRING");
@@ -114,7 +105,6 @@ public static class AppSettingsLoader
             return explicitConnectionString;
         }
 
-        // A builder rather than concatenation, so a password containing separators is escaped.
         var builder = new SqlConnectionStringBuilder
         {
             DataSource = $"{RequireValue("DB_HOST")},{RequirePort("DB_PORT")}",
@@ -184,7 +174,7 @@ public static class AppSettingsLoader
         return string.IsNullOrWhiteSpace(value) ? defaultValue : value.Trim();
     }
 
-    // A default stands in for an absent value, never for an unreadable one: a
+    // A default stands in for an absent value, never an unreadable one: a
     // mistyped port that silently becomes 587 is the failure nobody notices.
     private static int OptionalInteger(string variableName, int defaultValue)
     {

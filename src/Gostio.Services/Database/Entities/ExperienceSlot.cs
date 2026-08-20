@@ -10,16 +10,12 @@ public class ExperienceSlot
 
     public DateTime StartTime { get; set; }
 
-    // Copied from the experience when the slot is created and owned here after
-    // that, so editing the experience never moves the end of a booked term. With
-    // the start time, this is the whole term: a reservation snapshots neither.
+    // Copied from the experience when the slot is created and owned by the slot
+    // from then on, so editing the experience cannot move a booked term.
     public int DurationMinutes { get; set; }
 
-    // Total places, never the remaining ones. Free places are counted from the
-    // active reservations inside the transaction that books one.
     public int Capacity { get; set; }
 
-    // Cleared to cancel the term, so its reservations keep pointing at it.
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; }

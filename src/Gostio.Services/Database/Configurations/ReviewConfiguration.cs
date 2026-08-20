@@ -20,8 +20,6 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<Review>
             .HasForeignKey(review => review.ReservationId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // One review per reservation. That the stay is over is a service rule,
-        // because saying it here would name a status id inside the schema.
         builder
             .HasIndex(review => review.ReservationId)
             .IsUnique();

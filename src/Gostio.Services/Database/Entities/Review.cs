@@ -1,7 +1,5 @@
 namespace Gostio.Services.Database.Entities;
 
-// The reservation names both the author and what was reviewed, so neither is
-// repeated here. One review per reservation, and only once it is completed.
 public class Review
 {
     public int Id { get; set; }

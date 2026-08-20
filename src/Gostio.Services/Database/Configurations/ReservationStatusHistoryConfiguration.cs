@@ -15,8 +15,6 @@ public sealed class ReservationStatusHistoryConfiguration
             .Property(history => history.Reason)
             .HasMaxLength(ColumnLengths.Reason);
 
-        // The only cascade into this table. A trail without its reservation
-        // records nothing, and reservations are cancelled rather than deleted.
         builder
             .HasOne(history => history.Reservation)
             .WithMany(reservation => reservation.StatusHistory)
@@ -35,7 +33,6 @@ public sealed class ReservationStatusHistoryConfiguration
             .HasForeignKey(history => history.NewStatusId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Deleting a user must not take the record of what they decided.
         builder
             .HasOne(history => history.ChangedByUser)
             .WithMany()
@@ -46,7 +43,6 @@ public sealed class ReservationStatusHistoryConfiguration
 
         builder.ToTable(table =>
         {
-            // Null previous status is the creation row; anything else is a move.
             table.HasCheckConstraint(
                 "CK_ReservationStatusHistory_Change",
                 $"[{nameof(ReservationStatusHistory.PreviousStatusId)}] IS NULL"

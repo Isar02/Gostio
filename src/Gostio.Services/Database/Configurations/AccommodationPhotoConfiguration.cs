@@ -20,11 +20,8 @@ public sealed class AccommodationPhotoConfiguration : IEntityTypeConfiguration<A
             .HasForeignKey(photo => photo.AccommodationId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // The gallery reads in this order. DisplayOrder is deliberately not
-        // unique, because swapping two photos would then need a spare value.
         builder.HasIndex(photo => new { photo.AccommodationId, photo.DisplayOrder });
 
-        // At most one cover per listing.
         builder
             .HasIndex(photo => photo.AccommodationId)
             .IsUnique()

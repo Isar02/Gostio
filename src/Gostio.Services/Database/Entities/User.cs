@@ -14,17 +14,14 @@ public class User
 
     public string? PhoneNumber { get; set; }
 
-    // BCrypt; the salt is part of the hash, so it needs no column of its own.
     public string PasswordHash { get; set; } = null!;
 
     public byte[]? ProfileImage { get; set; }
 
-    // Cleared instead of deleting the row, so reservations and reviews keep
-    // pointing at a real user.
     public bool IsActive { get; set; } = true;
 
-    // Raised on logout, and carried as a claim, so tokens issued earlier are
-    // refused by the server rather than only dropped by the client.
+    // Raised on logout and carried as a claim, so the server refuses tokens
+    // issued earlier instead of trusting the client to drop them.
     public int TokenVersion { get; set; }
 
     public DateTime CreatedAt { get; set; }

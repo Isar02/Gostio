@@ -15,7 +15,6 @@ public sealed class HostVerificationRequestConfiguration : IEntityTypeConfigurat
             .Property(request => request.DecisionReason)
             .HasMaxLength(ColumnLengths.Reason);
 
-        // An audit trail: deleting a user must not take the record of a decision with it.
         builder
             .HasOne(request => request.User)
             .WithMany(user => user.HostVerificationRequests)
@@ -28,8 +27,6 @@ public sealed class HostVerificationRequestConfiguration : IEntityTypeConfigurat
             .HasForeignKey(request => request.ReviewedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // A user may reapply after a decision but never hold two open applications.
-        // The filter is built from the enum so renumbering cannot silently disable it.
         builder
             .HasIndex(request => request.UserId)
             .IsUnique()

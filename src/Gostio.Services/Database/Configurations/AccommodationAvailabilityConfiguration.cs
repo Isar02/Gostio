@@ -17,8 +17,6 @@ public sealed class AccommodationAvailabilityConfiguration
             .HasForeignKey(availability => availability.AccommodationId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Serves the calendar screen and the overlap check the reservation
-        // service runs before it accepts a stay.
         builder.HasIndex(availability => new
         {
             availability.AccommodationId,
@@ -38,9 +36,6 @@ public sealed class AccommodationAvailabilityConfiguration
                 $"[{nameof(AccommodationAvailability.PriceOverride)}] IS NULL"
                 + $" OR [{nameof(AccommodationAvailability.PriceOverride)}] > 0");
 
-            // A row must either block the dates or set a price, otherwise it says
-            // nothing the base price does not already say. A blocked row may keep
-            // its price, so unblocking it does not lose what the host typed.
             table.HasCheckConstraint(
                 "CK_AccommodationAvailability_Purpose",
                 $"[{nameof(AccommodationAvailability.IsAvailable)}] = 0"

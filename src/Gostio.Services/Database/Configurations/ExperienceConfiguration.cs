@@ -28,8 +28,6 @@ public sealed class ExperienceConfiguration : IEntityTypeConfiguration<Experienc
             .IsRequired()
             .HasMaxLength(ColumnLengths.Address);
 
-        // The (18, 2) the context gives every decimal would round a coordinate
-        // away, so both get their own precision.
         builder
             .Property(experience => experience.Latitude)
             .HasPrecision(CoordinatePrecision, CoordinateScale);
@@ -38,7 +36,6 @@ public sealed class ExperienceConfiguration : IEntityTypeConfiguration<Experienc
             .Property(experience => experience.Longitude)
             .HasPrecision(CoordinatePrecision, CoordinateScale);
 
-        // A host with experiences cannot be deleted, only deactivated.
         builder
             .HasOne(experience => experience.Host)
             .WithMany(user => user.Experiences)

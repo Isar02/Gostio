@@ -16,7 +16,6 @@ public sealed class ExperienceSlotConfiguration : IEntityTypeConfiguration<Exper
             .HasForeignKey(slot => slot.ExperienceId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Not unique: two groups may start at the same time.
         builder.HasIndex(slot => new { slot.ExperienceId, slot.StartTime });
 
         builder.ToTable(table =>

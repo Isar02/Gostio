@@ -2,8 +2,6 @@ using Gostio.Model.Enums;
 
 namespace Gostio.Services.Database.Entities;
 
-// Its own table rather than a flag on User, so the reason behind a rejection
-// survives a later re-application.
 public class HostVerificationRequest
 {
     public int Id { get; set; }

@@ -1,11 +1,12 @@
 namespace Gostio.Model.Enums;
 
 // Stored as the underlying integer, so these values must never be renumbered.
-// Each one is the resting place of a Stripe payment intent event.
+// There is no Failed: a declined card returns the Stripe intent to a reusable
+// state rather than a terminal one, so the payment stays Pending and is retried
+// against the same intent. Succeeded and Cancelled are the only ways out.
 public enum PaymentStatus
 {
     Pending = 1,
     Succeeded = 2,
-    Failed = 3,
-    Cancelled = 4
+    Cancelled = 3
 }

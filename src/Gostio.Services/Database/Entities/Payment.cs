@@ -27,5 +27,7 @@ public class Payment
     // When the webhook resolved the payment, whichever way it went.
     public DateTime? ProcessedAt { get; set; }
 
+    // The last decline, kept on a row that is still pending, because the guest
+    // may try again on the same intent. Only the latest one is kept.
     public string? FailureReason { get; set; }
 }

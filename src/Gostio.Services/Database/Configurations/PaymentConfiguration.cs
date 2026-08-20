@@ -42,8 +42,9 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsUnique()
             .HasFilter($"[{nameof(Payment.StripePaymentIntentId)}] IS NOT NULL");
 
-        // One payment per reservation that is open or already settled; a second
-        // attempt is only allowed once the previous one failed or was cancelled.
+        // One live payment per reservation. A decline leaves the row pending and
+        // reuses its intent, so only a cancellation Stripe has confirmed frees
+        // this index for a new one.
         builder
             .HasIndex(payment => payment.ReservationId, "IX_Payments_ReservationId_Open")
             .IsUnique()

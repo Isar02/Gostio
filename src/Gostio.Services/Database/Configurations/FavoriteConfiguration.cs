@@ -10,9 +10,9 @@ public sealed class FavoriteConfiguration : IEntityTypeConfiguration<Favorite>
     {
         builder.HasKey(favorite => favorite.Id);
 
-        // The one cascade from Users: a favourite is part of the guest who kept
-        // it, not a record that has to outlive them. Both listings restrict, the
-        // way everything pointing at a listing does.
+        // A favourite is part of the guest who kept it, not a record that has to
+        // outlive them, so it cascades like UserRoles. Both listings restrict,
+        // the way everything pointing at a listing does.
         builder
             .HasOne(favorite => favorite.User)
             .WithMany(user => user.Favorites)

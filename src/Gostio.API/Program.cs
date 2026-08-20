@@ -5,9 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var settings = builder.Services.AddGostioConfiguration();
 
-// The container sets ASPNETCORE_URLS and owns its port; elsewhere the port comes
-// from configuration, so it is declared once either way.
-if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+// Only when nothing higher in the ASP.NET precedence chain named a URL, so
+// ASPNETCORE_URLS in the container and --urls on the command line both still win.
+if (string.IsNullOrWhiteSpace(builder.Configuration[WebHostDefaults.ServerUrlsKey]))
 {
     builder.WebHost.UseUrls($"http://localhost:{settings.Api.HttpPort}");
 }

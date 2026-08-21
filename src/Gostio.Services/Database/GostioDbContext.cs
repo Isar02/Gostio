@@ -56,6 +56,10 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<Message> Messages => Set<Message>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<News> News => Set<News>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

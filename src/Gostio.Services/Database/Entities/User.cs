@@ -41,4 +41,6 @@ public class User
     public ICollection<Favorite> Favorites { get; set; } = [];
 
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = [];
+
+    public ICollection<Notification> Notifications { get; set; } = [];
 }

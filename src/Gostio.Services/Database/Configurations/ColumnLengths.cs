@@ -34,4 +34,8 @@ internal static class ColumnLengths
     public const int Comment = 1000;
 
     public const int MessageBody = 2000;
+
+    public const int NotificationBody = 1000;
+
+    public const int NewsBody = 4000;
 }

@@ -60,6 +60,8 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<News> News => Set<News>();
 
+    public DbSet<SearchHistory> SearchHistory => Set<SearchHistory>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

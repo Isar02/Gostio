@@ -38,4 +38,6 @@ internal static class ColumnLengths
     public const int NotificationBody = 1000;
 
     public const int NewsBody = 4000;
+
+    public const int SearchTerm = 200;
 }

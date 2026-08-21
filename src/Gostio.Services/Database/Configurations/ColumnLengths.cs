@@ -32,4 +32,6 @@ internal static class ColumnLengths
     public const int TokenHash = 128;
 
     public const int Comment = 1000;
+
+    public const int MessageBody = 2000;
 }

@@ -49,6 +49,13 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+
+    public DbSet<ConversationParticipant> ConversationParticipants =>
+        Set<ConversationParticipant>();
+
+    public DbSet<Message> Messages => Set<Message>();
+
     public DbSet<Country> Countries => Set<Country>();
 
     public DbSet<City> Cities => Set<City>();

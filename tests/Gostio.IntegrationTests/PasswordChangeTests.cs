@@ -4,6 +4,7 @@ using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Gostio.IntegrationTests;
@@ -32,7 +33,12 @@ public class PasswordChangeTests(DatabaseFixture fixture)
         var userId = await fixture.AddUserAsync(Password);
         var before = await VersionOnTheRowAsync(userId);
 
-        var responses = await Task.WhenAll(ChangeAsync(userId), ChangeAsync(userId));
+        var barrier = new CommandBarrier(callers: 2, "UPDATE", "TokenVersion");
+
+        var responses = await Task.WhenAll(
+            ChangeAsync(userId, barrier), ChangeAsync(userId, barrier));
+
+        Assert.Equal(2, barrier.Arrived);
 
         var handedOut = responses.Select(VersionIn).Order().ToArray();
 
@@ -40,9 +46,9 @@ public class PasswordChangeTests(DatabaseFixture fixture)
         Assert.Equal(before + 2, await VersionOnTheRowAsync(userId));
     }
 
-    private async Task<AuthResponse> ChangeAsync(int userId)
+    private async Task<AuthResponse> ChangeAsync(int userId, params IInterceptor[] interceptors)
     {
-        await using var db = fixture.CreateContext();
+        await using var db = fixture.CreateContext(interceptors);
 
         var auth = new AuthService(
             db, new JwtTokenService(fixture.Jwt), new SignedInUser(userId));

@@ -4,6 +4,7 @@ using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Gostio.IntegrationTests;
 
@@ -67,9 +68,10 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await db.Database.EnsureDeletedAsync();
     }
 
-    public GostioDbContext CreateContext() =>
+    public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<GostioDbContext>()
             .UseSqlServer(connectionString)
+            .AddInterceptors(interceptors)
             .Options);
 
     // A test that writes to a user gets one of its own, so the row it counts on

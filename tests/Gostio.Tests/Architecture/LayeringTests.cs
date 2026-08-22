@@ -1,18 +1,21 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Gostio.API.Middleware;
+using Gostio.Services.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Tests.Architecture;
 
 // The API reaches Entity Framework and the entities transitively through
 // Gostio.Services, so the compiler allows a controller to take a DbContext or
-// hand an entity straight back. Nothing but these two tests stops it.
+// hand an entity straight back. Nothing but these tests stops it.
 public class LayeringTests
 {
     private const string EntityFrameworkNamespace = "Microsoft.EntityFrameworkCore";
 
     private const string EntityNamespace = "Gostio.Services.Database.Entities";
+
+    private const string DatabaseNamespace = "Gostio.Services.Database";
 
     private const BindingFlags AllDeclared =
         BindingFlags.Public
@@ -21,12 +24,17 @@ public class LayeringTests
         | BindingFlags.Static
         | BindingFlags.DeclaredOnly;
 
+    private const BindingFlags PublicDeclared =
+        BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+
     private static readonly Assembly Api = typeof(ExceptionHandlingMiddleware).Assembly;
+
+    private static readonly Assembly Services = typeof(GostioDbContext).Assembly;
 
     [Fact]
     public void NoApiSignatureTakesAnEntityFrameworkType()
     {
-        var offenders = Offenders(IsEntityFramework);
+        var offenders = Offenders(Api, AllDeclared, IsEntityFramework);
 
         Assert.True(
             offenders.Count == 0,
@@ -38,7 +46,7 @@ public class LayeringTests
     [Fact]
     public void NoApiSignatureExposesADatabaseEntity()
     {
-        var offenders = Offenders(type => type.Namespace == EntityNamespace);
+        var offenders = Offenders(Api, AllDeclared, IsEntity);
 
         Assert.True(
             offenders.Count == 0,
@@ -47,26 +55,46 @@ public class LayeringTests
                 + string.Join(Environment.NewLine, offenders));
     }
 
-    private static List<string> Offenders(Func<Type, bool> forbidden) =>
-        [.. Api.GetTypes()
+    // The database namespace owns the entities and says so in its signatures.
+    // Everything a caller outside it can see has to speak in DTOs, or the API
+    // ends up holding an entity that no test above would catch.
+    [Fact]
+    public void NoServiceAboveTheDatabaseLayerExposesADatabaseEntity()
+    {
+        var offenders = Offenders(Services, PublicDeclared, IsEntity, OwnsTheEntities);
+
+        Assert.True(
+            offenders.Count == 0,
+            "A service must return DTOs, never entities:"
+                + Environment.NewLine
+                + string.Join(Environment.NewLine, offenders));
+    }
+
+    private static List<string> Offenders(
+        Assembly assembly,
+        BindingFlags declared,
+        Func<Type, bool> forbidden,
+        Func<Type, bool>? exempt = null) =>
+        [.. assembly.GetTypes()
             .Where(type => !type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false))
-            .SelectMany(type => Referenced(type).Select(used => (Owner: type, Used: used)))
+            .Where(type => exempt is null || !exempt(type))
+            .SelectMany(type => Referenced(type, declared).Select(used => (Owner: type, Used: used)))
             .Where(pair => forbidden(pair.Used))
             .Select(pair => $"  {pair.Owner.Name} refers to {pair.Used.Name}")
             .Distinct()
             .Order()];
 
-    private static IEnumerable<Type> Referenced(Type type)
+    private static IEnumerable<Type> Referenced(Type type, BindingFlags declared)
     {
-        var declared = type
-            .GetConstructors(AllDeclared)
+        var used = type
+            .GetConstructors(declared)
             .SelectMany(constructor => constructor.GetParameters())
             .Select(parameter => parameter.ParameterType)
-            .Concat(type.GetFields(AllDeclared).Select(field => field.FieldType))
-            .Concat(type.GetProperties(AllDeclared).Select(property => property.PropertyType))
-            .Concat(type.GetMethods(AllDeclared).SelectMany(Signature));
+            .Concat(type.GetFields(declared).Select(field => field.FieldType))
+            .Concat(type.GetProperties(declared).Select(property => property.PropertyType))
+            .Concat(type.GetMethods(declared).SelectMany(Signature));
 
-        return declared.SelectMany(Expand);
+        return used.SelectMany(Expand);
     }
 
     private static IEnumerable<Type> Signature(MethodInfo method) =>
@@ -92,6 +120,12 @@ public class LayeringTests
             yield return argument;
         }
     }
+
+    private static bool OwnsTheEntities(Type type) =>
+        !type.IsVisible
+        || (type.Namespace?.StartsWith(DatabaseNamespace, StringComparison.Ordinal) ?? false);
+
+    private static bool IsEntity(Type type) => type.Namespace == EntityNamespace;
 
     private static bool IsEntityFramework(Type type) =>
         typeof(DbContext).IsAssignableFrom(type)

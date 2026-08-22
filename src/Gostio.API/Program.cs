@@ -1,5 +1,6 @@
 using Gostio.API.Authentication;
 using Gostio.API.Middleware;
+using Gostio.API.Swagger;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 
@@ -19,8 +20,7 @@ builder.Services.AddGostioDatabase(settings.Database);
 builder.Services.AddControllers();
 builder.Services.AddGostioValidationErrors();
 builder.Services.AddGostioAuthentication(settings.Jwt);
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddGostioSwagger();
 
 const string CorsPolicyName = "GostioCorsPolicy";
 

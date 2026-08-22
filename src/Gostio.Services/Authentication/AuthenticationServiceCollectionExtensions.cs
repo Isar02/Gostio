@@ -12,6 +12,7 @@ public static class AuthenticationServiceCollectionExtensions
         services.AddSingleton<JwtTokenService>();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IUserSessionValidator, UserSessionValidator>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

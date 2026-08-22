@@ -7,22 +7,27 @@ namespace Gostio.Services.Database;
 
 public static class QueryablePagingExtensions
 {
-    // The caller orders the query: without an ORDER BY the database may return
-    // rows in any order, so page two can repeat page one. The projection runs
-    // inside the page, so a list never drags the image columns an entity holds.
+    // IOrderedQueryable rather than IQueryable: skipping over an unordered
+    // query lets the database return rows in any order it likes, so page two
+    // can repeat page one. The projection runs inside the page, so a list never
+    // drags the image columns an entity holds.
     public static async Task<PagedResult<TResult>> ToPagedResultAsync<TSource, TResult>(
-        this IQueryable<TSource> source,
+        this IOrderedQueryable<TSource> source,
         PagedRequest request,
         Expression<Func<TSource, TResult>> selector,
         CancellationToken cancellationToken)
     {
         var totalCount = await source.CountAsync(cancellationToken);
 
-        var items = await source
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(selector)
-            .ToListAsync(cancellationToken);
+        // A page beginning past the last row has nothing to fetch, and its
+        // offset need not even fit in the int that Skip takes.
+        List<TResult> items = request.Offset >= totalCount
+            ? []
+            : await source
+                .Skip((int)request.Offset)
+                .Take(request.PageSize)
+                .Select(selector)
+                .ToListAsync(cancellationToken);
 
         return new PagedResult<TResult>
         {

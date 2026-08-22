@@ -23,4 +23,8 @@ public class PagedRequest
         get => pageSize;
         set => pageSize = Math.Clamp(value, 1, MaxPageSize);
     }
+
+    // Long, because Page is bounded from below only: in int arithmetic a large
+    // page overflows into a negative offset, which the database then rejects.
+    public long Offset => ((long)Page - 1) * PageSize;
 }

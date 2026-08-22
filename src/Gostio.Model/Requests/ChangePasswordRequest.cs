@@ -7,6 +7,7 @@ namespace Gostio.Model.Requests;
 public sealed class ChangePasswordRequest
 {
     [Required(ErrorMessage = "Enter your current password.")]
+    [Utf8Length(PasswordRules.MaximumBytes)]
     public string CurrentPassword { get; set; } = null!;
 
     [Required(ErrorMessage = "Enter a new password.")]

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Gostio.API.Middleware;
 using Microsoft.EntityFrameworkCore;
 
-namespace Gostio.ArchitectureTests;
+namespace Gostio.Tests.Architecture;
 
 // The API reaches Entity Framework and the entities transitively through
 // Gostio.Services, so the compiler allows a controller to take a DbContext or
@@ -24,7 +24,7 @@ public class LayeringTests
     private static readonly Assembly Api = typeof(ExceptionHandlingMiddleware).Assembly;
 
     [Fact]
-    public void NoApiTypeTouchesEntityFramework()
+    public void NoApiSignatureTakesAnEntityFrameworkType()
     {
         var offenders = Offenders(IsEntityFramework);
 

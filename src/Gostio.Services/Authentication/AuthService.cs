@@ -60,6 +60,8 @@ public sealed class AuthService(
         var hash = PasswordHasher.Hash(request.NewPassword);
         DateTime? changedAt = DateTime.UtcNow;
 
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
         await db.Users
             .Where(user => user.Id == account.Id)
             .ExecuteUpdateAsync(
@@ -69,9 +71,16 @@ public sealed class AuthService(
                     .SetProperty(user => user.ModifiedAt, changedAt),
                 cancellationToken);
 
-        // Every token issued before the change is stale now, this caller's
-        // included, so the reply carries the one that replaces it.
-        return Issue(account, account.TokenVersion + 1);
+        // Read back rather than computed: the update holds the row until this
+        // commits, so two callers at once cannot be handed the same version.
+        var tokenVersion = await db.Users
+            .Where(user => user.Id == account.Id)
+            .Select(user => user.TokenVersion)
+            .SingleAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return Issue(account, tokenVersion);
     }
 
     public async Task LogoutAsync(CancellationToken cancellationToken)

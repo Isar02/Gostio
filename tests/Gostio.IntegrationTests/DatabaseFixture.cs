@@ -30,6 +30,14 @@ public sealed class DatabaseFixture : IAsyncLifetime
         }.ConnectionString;
     }
 
+    public JwtSettings Jwt { get; } = new()
+    {
+        Key = "an-integration-test-signing-key-long-enough-for-hmac-sha256",
+        Issuer = "Gostio.IntegrationTests",
+        Audience = "Gostio.IntegrationTests.Clients",
+        ExpiresMinutes = 30,
+    };
+
     public async Task InitializeAsync()
     {
         await using var db = CreateContext();
@@ -47,15 +55,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
                 failure);
         }
 
-        db.Users.Add(new User
-        {
-            FirstName = "Integration",
-            LastName = "Tests",
-            Username = SeededUsername,
-            Email = "integration@example.com",
-            PasswordHash = PasswordHasher.Hash(SeededPassword),
-            CreatedAt = DateTime.UtcNow,
-        });
+        db.Users.Add(NewUser(SeededUsername, "integration@example.com", SeededPassword));
 
         await db.SaveChangesAsync();
     }
@@ -71,4 +71,30 @@ public sealed class DatabaseFixture : IAsyncLifetime
         new(new DbContextOptionsBuilder<GostioDbContext>()
             .UseSqlServer(connectionString)
             .Options);
+
+    // A test that writes to a user gets one of its own, so the row it counts on
+    // is never the row another test has already moved.
+    public async Task<int> AddUserAsync(string password)
+    {
+        await using var db = CreateContext();
+
+        var name = $"user-{Guid.NewGuid():N}";
+        var user = NewUser(name, $"{name}@example.com", password);
+
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        return user.Id;
+    }
+
+    private static User NewUser(string username, string email, string password) =>
+        new()
+        {
+            FirstName = "Integration",
+            LastName = "Tests",
+            Username = username,
+            Email = email,
+            PasswordHash = PasswordHasher.Hash(password),
+            CreatedAt = DateTime.UtcNow,
+        };
 }

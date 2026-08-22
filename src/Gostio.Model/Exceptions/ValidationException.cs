@@ -4,7 +4,7 @@ namespace Gostio.Model.Exceptions;
 
 public sealed class ValidationException : GostioException
 {
-    private const string DefaultMessage = "One or more values are not valid.";
+    public const string DefaultMessage = "One or more values are not valid.";
 
     public ValidationException(string field, string message)
         : this(new Dictionary<string, string[]> { [field] = [message] })

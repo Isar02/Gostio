@@ -16,6 +16,7 @@ if (string.IsNullOrWhiteSpace(builder.Configuration[WebHostDefaults.ServerUrlsKe
 builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();
+builder.Services.AddGostioValidationErrors();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -35,6 +36,7 @@ await app.Services.InitialiseDatabaseAsync(settings);
 
 // First in the pipeline, so nothing downstream can fail without a reply.
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseGostioStatusCodeErrors();
 
 if (app.Environment.IsDevelopment())
 {

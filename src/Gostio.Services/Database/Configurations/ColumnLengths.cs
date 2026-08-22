@@ -32,4 +32,12 @@ internal static class ColumnLengths
     public const int TokenHash = 128;
 
     public const int Comment = 1000;
+
+    public const int MessageBody = 2000;
+
+    public const int NotificationBody = 1000;
+
+    public const int NewsBody = 4000;
+
+    public const int SearchTerm = 200;
 }

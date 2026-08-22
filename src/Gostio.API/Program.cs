@@ -30,6 +30,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+await app.Services.InitialiseDatabaseAsync(settings);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

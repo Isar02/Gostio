@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
 using Gostio.Services.Authentication;
@@ -17,8 +15,6 @@ internal sealed record UserSeedResult(
 
 internal static class UserSeed
 {
-    private const int ResetTokenBytes = 32;
-
     public static async Task<UserSeedResult> SeedAsync(
         GostioDbContext db,
         LookupSeedResult lookups,
@@ -90,7 +86,7 @@ internal static class UserSeed
             .ToDictionary(group => group.Key, group => group.Select(entry => entry.User).ToList());
 
         db.AddRange(VerificationRequests(byUsername, now));
-        db.AddRange(ResetTokens(byUsername, now));
+        db.AddRange(IssuedTokens(byUsername, now));
 
         await db.SaveChangesAsync(cancellationToken);
 
@@ -141,31 +137,26 @@ internal static class UserSeed
         };
     }
 
-    private static IEnumerable<PasswordResetToken> ResetTokens(
+    private static IEnumerable<PasswordResetToken> IssuedTokens(
         IReadOnlyDictionary<string, User> users,
         DateTime now)
     {
-        yield return Issued(users["ivana.matic"], now.AddHours(-2), now.AddHours(22));
+        yield return Issued(users["ivana.matic"], now.AddHours(-2));
 
-        var used = Issued(users["emir.kovac"], now.AddDays(-11), now.AddDays(-10));
+        var used = Issued(users["emir.kovac"], now.AddDays(-11));
         used.UsedAt = used.CreatedAt.AddMinutes(9);
 
         yield return used;
 
-        yield return Issued(users["vedran.kos"], now.AddDays(-30), now.AddDays(-29));
+        yield return Issued(users["vedran.kos"], now.AddDays(-30));
     }
 
-    private static PasswordResetToken Issued(User user, DateTime created, DateTime expires)
-    {
-        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(ResetTokenBytes));
-
-        return new PasswordResetToken
+    private static PasswordResetToken Issued(User user, DateTime created) =>
+        new()
         {
             User = user,
-            TokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)))
-                .ToLowerInvariant(),
+            TokenHash = ResetTokens.Hash(ResetTokens.Create()),
             CreatedAt = created,
-            ExpiresAt = expires,
+            ExpiresAt = created + ResetTokens.Lifetime,
         };
-    }
 }

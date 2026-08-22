@@ -35,4 +35,28 @@ public sealed class AuthController(IAuthService auth) : ControllerBase
 
         return NoContent();
     }
+
+    // Accepted rather than a 404 or an OK carrying a hint: the same answer
+    // whether or not the address belongs to an account.
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(
+        ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await auth.ForgotPasswordAsync(request, cancellationToken);
+
+        return Accepted();
+    }
+
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await auth.ResetPasswordAsync(request, cancellationToken);
+
+        return NoContent();
+    }
 }

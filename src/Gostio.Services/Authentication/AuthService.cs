@@ -2,6 +2,7 @@ using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Database;
+using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Authentication;
@@ -102,6 +103,79 @@ public sealed class AuthService(
                     user => user.TokenVersion, user => user.TokenVersion + 1),
                 cancellationToken);
     }
+
+    public async Task ForgotPasswordAsync(
+        ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = await db.Users
+            .Where(user => user.Email == request.Email && user.IsActive)
+            .Select(user => (int?)user.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (userId is null)
+        {
+            return;
+        }
+
+        var issuedAt = DateTime.UtcNow;
+
+        // The row keeps the hash. The token leaves by mail and by no other
+        // road: never through a reply, never through the log.
+        db.PasswordResetTokens.Add(new PasswordResetToken
+        {
+            UserId = userId.Value,
+            TokenHash = ResetTokens.Hash(ResetTokens.Create()),
+            CreatedAt = issuedAt,
+            ExpiresAt = issuedAt + ResetTokens.Lifetime,
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var tokenHash = ResetTokens.Hash(request.Token);
+        var passwordHash = PasswordHasher.Hash(request.NewPassword);
+        var usedAt = DateTime.UtcNow;
+        DateTime? changedAt = usedAt;
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var token = await db.PasswordResetTokens
+            .Where(candidate => candidate.TokenHash == tokenHash)
+            .Select(candidate => new { candidate.Id, candidate.UserId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // Spending the token is what decides the request, and it is one
+        // statement, so two requests carrying it cannot both get past here.
+        if (token is null || await SpendAsync(token.Id, usedAt, cancellationToken) != 1)
+        {
+            throw new ValidationException(
+                nameof(request.Token), "This reset link is no longer valid. Ask for a new one.");
+        }
+
+        await db.Users
+            .Where(user => user.Id == token.UserId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.PasswordHash, passwordHash)
+                    .SetProperty(user => user.TokenVersion, user => user.TokenVersion + 1)
+                    .SetProperty(user => user.ModifiedAt, changedAt),
+                cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private Task<int> SpendAsync(int tokenId, DateTime usedAt, CancellationToken cancellationToken) =>
+        db.PasswordResetTokens
+            .Where(token =>
+                token.Id == tokenId && token.UsedAt == null && token.ExpiresAt > usedAt)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(token => token.UsedAt, (DateTime?)usedAt),
+                cancellationToken);
 
     private async Task<UserAccount> RequireAccountAsync(CancellationToken cancellationToken)
     {

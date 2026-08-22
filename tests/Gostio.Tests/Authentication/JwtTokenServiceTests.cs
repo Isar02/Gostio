@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Gostio.Model.Authorization;
 using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
@@ -20,12 +19,19 @@ public class JwtTokenServiceTests
     [Fact]
     public void ATokenCarriesEveryClaimTheServerReadsBack()
     {
-        var principal = Read(Issue().Value);
+        var token = new JsonWebToken(Issue().Value);
 
-        Assert.Equal(42, principal.UserId());
-        Assert.Equal(3, principal.TokenVersion());
-        Assert.Equal("administrator", principal.Username());
-        Assert.Equal([RoleNames.Administrator, RoleNames.Host], principal.Roles());
+        Assert.Equal("42", token.GetClaim(GostioClaimTypes.UserId).Value);
+        Assert.Equal("administrator", token.GetClaim(GostioClaimTypes.Username).Value);
+        Assert.Equal("administrator@example.com", token.GetClaim(GostioClaimTypes.Email).Value);
+        Assert.Equal("3", token.GetClaim(GostioClaimTypes.TokenVersion).Value);
+
+        Assert.Equal(
+            [RoleNames.Administrator, RoleNames.Host],
+            token.Claims
+                .Where(claim => claim.Type == GostioClaimTypes.Role)
+                .Select(claim => claim.Value)
+                .ToArray());
     }
 
     // A reply that promises one expiry while the token states another sends the
@@ -61,7 +67,4 @@ public class JwtTokenServiceTests
             Audience = "Gostio.Tests.Clients",
             ExpiresMinutes = LifetimeInMinutes,
         }).Issue(Subject);
-
-    private static ClaimsPrincipal Read(string token) =>
-        new(new ClaimsIdentity(new JsonWebToken(token).Claims, "Test"));
 }

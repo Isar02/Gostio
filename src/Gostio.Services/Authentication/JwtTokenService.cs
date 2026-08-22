@@ -6,9 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Gostio.Services.Authentication;
 
-// Signing here and validation in the API read the same JwtSettings and the same
-// algorithm constant, so the issuer, the audience, the key and the signature
-// cannot drift apart into tokens this server refuses to accept.
 public sealed class JwtTokenService(JwtSettings settings)
 {
     public const string SigningAlgorithm = SecurityAlgorithms.HmacSha256;

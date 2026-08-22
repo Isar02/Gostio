@@ -35,9 +35,8 @@ public sealed class AuthService(
             throw new UnauthorizedException(CredentialsRejected);
         }
 
-        // Checked after the password and not before it: an answer that tells a
-        // deactivated account apart from an unknown one only helps somebody who
-        // already knows the password.
+        // After the password and not before it: telling a deactivated account
+        // apart from an unknown one only helps somebody who has the password.
         if (!account.IsActive)
         {
             throw new ForbiddenException(

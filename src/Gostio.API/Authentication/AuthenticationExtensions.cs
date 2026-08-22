@@ -14,9 +14,6 @@ public static class AuthenticationExtensions
         this IServiceCollection services,
         JwtSettings jwt)
     {
-        // The services come with the scheme: the events below resolve one of
-        // them per request, and a scheme registered without them would fail at
-        // the first authenticated call rather than at start-up.
         services.AddGostioAuthenticationServices();
 
         services
@@ -49,9 +46,6 @@ public static class AuthenticationExtensions
                 };
             });
 
-        // A fallback rather than something each controller repeats: an
-        // endpoint that forgets [Authorize] is closed, not open. The
-        // attributes are still written where they belong, roles and all.
         services.AddAuthorization(options =>
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()

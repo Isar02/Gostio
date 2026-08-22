@@ -1,3 +1,4 @@
+using Gostio.Model.Authorization;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Database.Seeding;
@@ -13,15 +14,11 @@ internal sealed record LookupSeedResult(
 // ReservationStatuses are absent here: HasData owns them, so their ids stay fixed.
 internal static class LookupSeed
 {
-    public const string Administrator = "Administrator";
-    public const string Host = "Host";
-    public const string Guest = "Guest";
-
     public static async Task<LookupSeedResult> SeedAsync(
         GostioDbContext db,
         CancellationToken cancellationToken)
     {
-        var roles = ByName<Role>([Administrator, Host, Guest]);
+        var roles = ByName<Role>(RoleNames.All);
 
         var countries = ByName(
             new[]

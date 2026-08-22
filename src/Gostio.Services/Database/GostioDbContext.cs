@@ -1,3 +1,4 @@
+using Gostio.Services.Database.Configurations;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -80,6 +81,7 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
     {
         configurationBuilder.Properties<string>().HaveMaxLength(DefaultStringLength);
         configurationBuilder.Properties<decimal>().HavePrecision(MoneyPrecision, MoneyScale);
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,3 +1,6 @@
+using Gostio.API.Authentication;
+using Gostio.API.Middleware;
+using Gostio.API.Swagger;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 
@@ -15,8 +18,9 @@ if (string.IsNullOrWhiteSpace(builder.Configuration[WebHostDefaults.ServerUrlsKe
 builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddGostioValidationErrors();
+builder.Services.AddGostioAuthentication(settings.Jwt);
+builder.Services.AddGostioSwagger();
 
 const string CorsPolicyName = "GostioCorsPolicy";
 
@@ -32,6 +36,10 @@ var app = builder.Build();
 
 await app.Services.InitialiseDatabaseAsync(settings);
 
+// First in the pipeline, so nothing downstream can fail without a reply.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseGostioStatusCodeErrors();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -39,6 +47,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(CorsPolicyName);
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

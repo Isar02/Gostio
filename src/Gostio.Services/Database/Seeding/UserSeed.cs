@@ -1,6 +1,6 @@
-using System.Security.Cryptography;
-using System.Text;
+using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
+using Gostio.Services.Authentication;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Database.Seeding;
@@ -15,8 +15,6 @@ internal sealed record UserSeedResult(
 
 internal static class UserSeed
 {
-    private const int ResetTokenBytes = 32;
-
     public static async Task<UserSeedResult> SeedAsync(
         GostioDbContext db,
         LookupSeedResult lookups,
@@ -24,7 +22,7 @@ internal static class UserSeed
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var hash = BCrypt.Net.BCrypt.HashPassword(password);
+        var hash = PasswordHasher.Hash(password);
         var created = now.AddMonths(-14);
 
         var users = new List<User>();
@@ -56,25 +54,25 @@ internal static class UserSeed
         }
 
         // The desktop client serves administrators and hosts, so its account holds both.
-        Add("desktop", "Dina", "Kovačević", 1, LookupSeed.Administrator, LookupSeed.Host);
-        Add("mobile", "Amar", "Selimović", 2, LookupSeed.Guest);
-        Add("administrator", "Nedim", "Alispahić", 3, LookupSeed.Administrator);
-        Add("host", "Lamija", "Hadžić", 4, LookupSeed.Host);
-        Add("guest", "Vedad", "Terzić", 5, LookupSeed.Guest);
+        Add("desktop", "Dina", "Kovačević", 1, RoleNames.Administrator, RoleNames.Host);
+        Add("mobile", "Amar", "Selimović", 2, RoleNames.Guest);
+        Add("administrator", "Nedim", "Alispahić", 3, RoleNames.Administrator);
+        Add("host", "Lamija", "Hadžić", 4, RoleNames.Host);
+        Add("guest", "Vedad", "Terzić", 5, RoleNames.Guest);
 
-        Add("amina.hodzic", "Amina", "Hodžić", 6, LookupSeed.Host);
-        Add("marko.perisic", "Marko", "Perišić", null, LookupSeed.Host);
-        Add("lejla.begic", "Lejla", "Begić", null, LookupSeed.Host);
-        Add("nikola.savic", "Nikola", "Savić", null, LookupSeed.Host);
+        Add("amina.hodzic", "Amina", "Hodžić", 6, RoleNames.Host);
+        Add("marko.perisic", "Marko", "Perišić", null, RoleNames.Host);
+        Add("lejla.begic", "Lejla", "Begić", null, RoleNames.Host);
+        Add("nikola.savic", "Nikola", "Savić", null, RoleNames.Host);
 
-        Add("emir.kovac", "Emir", "Kovač", null, LookupSeed.Guest);
-        Add("sara.jukic", "Sara", "Jukić", null, LookupSeed.Guest);
-        Add("tarik.mujic", "Tarik", "Mujić", null, LookupSeed.Guest);
-        Add("ivana.matic", "Ivana", "Matić", null, LookupSeed.Guest);
-        Add("denis.softic", "Denis", "Softić", null, LookupSeed.Guest);
-        Add("maja.popovic", "Maja", "Popović", null, LookupSeed.Guest);
+        Add("emir.kovac", "Emir", "Kovač", null, RoleNames.Guest);
+        Add("sara.jukic", "Sara", "Jukić", null, RoleNames.Guest);
+        Add("tarik.mujic", "Tarik", "Mujić", null, RoleNames.Guest);
+        Add("ivana.matic", "Ivana", "Matić", null, RoleNames.Guest);
+        Add("denis.softic", "Denis", "Softić", null, RoleNames.Guest);
+        Add("maja.popovic", "Maja", "Popović", null, RoleNames.Guest);
 
-        var suspended = Add("vedran.kos", "Vedran", "Kos", null, LookupSeed.Guest);
+        var suspended = Add("vedran.kos", "Vedran", "Kos", null, RoleNames.Guest);
         suspended.IsActive = false;
 
         db.AddRange(users);
@@ -88,14 +86,14 @@ internal static class UserSeed
             .ToDictionary(group => group.Key, group => group.Select(entry => entry.User).ToList());
 
         db.AddRange(VerificationRequests(byUsername, now));
-        db.AddRange(ResetTokens(byUsername, now));
+        db.AddRange(IssuedTokens(byUsername, now));
 
         await db.SaveChangesAsync(cancellationToken);
 
         return new UserSeedResult(
             byUsername,
-            byRole[LookupSeed.Host],
-            byRole[LookupSeed.Guest]);
+            byRole[RoleNames.Host],
+            byRole[RoleNames.Guest]);
     }
 
     private static IEnumerable<HostVerificationRequest> VerificationRequests(
@@ -139,31 +137,26 @@ internal static class UserSeed
         };
     }
 
-    private static IEnumerable<PasswordResetToken> ResetTokens(
+    private static IEnumerable<PasswordResetToken> IssuedTokens(
         IReadOnlyDictionary<string, User> users,
         DateTime now)
     {
-        yield return Issued(users["ivana.matic"], now.AddHours(-2), now.AddHours(22));
+        yield return Issued(users["ivana.matic"], now.AddHours(-2));
 
-        var used = Issued(users["emir.kovac"], now.AddDays(-11), now.AddDays(-10));
+        var used = Issued(users["emir.kovac"], now.AddDays(-11));
         used.UsedAt = used.CreatedAt.AddMinutes(9);
 
         yield return used;
 
-        yield return Issued(users["vedran.kos"], now.AddDays(-30), now.AddDays(-29));
+        yield return Issued(users["vedran.kos"], now.AddDays(-30));
     }
 
-    private static PasswordResetToken Issued(User user, DateTime created, DateTime expires)
-    {
-        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(ResetTokenBytes));
-
-        return new PasswordResetToken
+    private static PasswordResetToken Issued(User user, DateTime created) =>
+        new()
         {
             User = user,
-            TokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)))
-                .ToLowerInvariant(),
+            TokenHash = ResetTokens.Hash(ResetTokens.Create()),
             CreatedAt = created,
-            ExpiresAt = expires,
+            ExpiresAt = created + ResetTokens.Lifetime,
         };
-    }
 }

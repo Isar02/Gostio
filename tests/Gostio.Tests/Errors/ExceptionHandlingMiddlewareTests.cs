@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Gostio.API.Middleware;
 using Gostio.Model.Exceptions;
@@ -11,10 +12,12 @@ public class ExceptionHandlingMiddlewareTests
 {
     private const string Secret = "Login failed for user 'sa'.";
 
+    private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
     [Fact]
     public async Task AnExpectedFailureKeepsItsStatusAndMessage()
     {
-        var body = await RunAsync(new NotFoundException("No accommodation has that id."));
+        var (_, body) = await RunAsync(new NotFoundException("No accommodation has that id."));
 
         Assert.Equal(StatusCodes.Status404NotFound, body.Status);
         Assert.Equal("No accommodation has that id.", body.Message);
@@ -24,7 +27,7 @@ public class ExceptionHandlingMiddlewareTests
     [Fact]
     public async Task AValidationFailureCarriesTheFieldThatCausedIt()
     {
-        var body = await RunAsync(
+        var (_, body) = await RunAsync(
             new ValidationException("Email", "Enter an address in the form name@example.com."));
 
         Assert.Equal(StatusCodes.Status400BadRequest, body.Status);
@@ -35,17 +38,30 @@ public class ExceptionHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task AnUnexpectedFailureTellsTheClientNothingButTheTraceId()
+    public async Task AnUnexpectedFailureAnswersOneFixedSentenceAndNothingElse()
     {
-        var body = await RunAsync(new InvalidOperationException(Secret));
+        var (json, body) = await RunAsync(new InvalidOperationException(Secret));
 
         Assert.Equal(StatusCodes.Status500InternalServerError, body.Status);
-        Assert.DoesNotContain(Secret, body.Message);
-        Assert.DoesNotContain("sa", body.Message);
+        Assert.Equal(
+            "The request could not be completed. Quote the trace id when reporting this.",
+            body.Message);
+        Assert.Null(body.Errors);
         Assert.False(string.IsNullOrWhiteSpace(body.TraceId));
+
+        // The literal above and this list are the whole public contract of a
+        // failed request: the reply may not grow a field that smuggles the
+        // exception out with it.
+        using var document = JsonDocument.Parse(json);
+
+        string[] expected = ["status", "message", "errors", "traceId"];
+
+        Assert.Equal(
+            expected,
+            document.RootElement.EnumerateObject().Select(property => property.Name));
     }
 
-    private static async Task<ErrorResponse> RunAsync(Exception thrown)
+    private static async Task<(string Json, ErrorResponse Body)> RunAsync(Exception thrown)
     {
         var context = new DefaultHttpContext();
         var written = new MemoryStream();
@@ -58,10 +74,8 @@ public class ExceptionHandlingMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        written.Position = 0;
+        var json = Encoding.UTF8.GetString(written.ToArray());
 
-        return (await JsonSerializer.DeserializeAsync<ErrorResponse>(
-            written,
-            new JsonSerializerOptions(JsonSerializerDefaults.Web)))!;
+        return (json, JsonSerializer.Deserialize<ErrorResponse>(json, Web)!);
     }
 }

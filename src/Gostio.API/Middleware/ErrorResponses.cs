@@ -1,6 +1,7 @@
 using Gostio.Model.Exceptions;
 using Gostio.Model.Responses;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Gostio.API.Middleware;
 
@@ -10,6 +11,11 @@ namespace Gostio.API.Middleware;
 // would have to read three shapes for one class of problem.
 public static class ErrorResponses
 {
+    // A ModelError carries either a message or the exception that produced it.
+    // That exception's message is the one thing that may not be sent, so an
+    // error without a message of its own gets this rather than an empty string.
+    private const string UnreadableValueMessage = "This value could not be read.";
+
     public static IServiceCollection AddGostioValidationErrors(this IServiceCollection services) =>
         services.Configure<ApiBehaviorOptions>(options =>
             options.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(
@@ -21,9 +27,7 @@ public static class ErrorResponses
                         .Where(entry => entry.Value is not null && entry.Value.Errors.Count > 0)
                         .ToDictionary(
                             entry => entry.Key,
-                            entry => entry.Value!.Errors
-                                .Select(error => error.ErrorMessage)
-                                .ToArray()),
+                            entry => entry.Value!.Errors.Select(Readable).ToArray()),
                     TraceId = context.HttpContext.TraceIdentifier,
                 }));
 
@@ -39,6 +43,11 @@ public static class ErrorResponses
                 TraceId = context.HttpContext.TraceIdentifier,
             });
         });
+
+    private static string Readable(ModelError error) =>
+        string.IsNullOrWhiteSpace(error.ErrorMessage)
+            ? UnreadableValueMessage
+            : error.ErrorMessage;
 
     private static string MessageFor(int statusCode) => statusCode switch
     {

@@ -1,3 +1,4 @@
+using Gostio.API.Middleware;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 
@@ -31,6 +32,9 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 await app.Services.InitialiseDatabaseAsync(settings);
+
+// First in the pipeline, so nothing downstream can fail without a reply.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

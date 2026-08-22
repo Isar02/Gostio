@@ -1,3 +1,4 @@
+using Gostio.API.Authentication;
 using Gostio.API.Middleware;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
@@ -17,6 +18,7 @@ builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();
 builder.Services.AddGostioValidationErrors();
+builder.Services.AddGostioAuthentication(settings.Jwt);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -45,6 +47,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(CorsPolicyName);
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

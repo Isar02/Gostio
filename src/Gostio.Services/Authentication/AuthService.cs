@@ -21,7 +21,16 @@ public sealed class AuthService(
     {
         var account = await FindByUsernameAsync(request.Username, cancellationToken);
 
-        if (account is null || !PasswordHasher.Verify(request.Password, account.PasswordHash))
+        if (account is null)
+        {
+            // Not a wasted call: without it an unknown username answers
+            // sooner than a wrong password and the clock names the accounts.
+            PasswordHasher.VerifyAgainstNothing(request.Password);
+
+            throw new UnauthorizedException(CredentialsRejected);
+        }
+
+        if (!PasswordHasher.Verify(request.Password, account.PasswordHash))
         {
             throw new UnauthorizedException(CredentialsRejected);
         }

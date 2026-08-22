@@ -27,4 +27,16 @@ public class PasswordHasherTests
     {
         Assert.StartsWith("$2a$11$", PasswordHasher.Hash("anything"));
     }
+
+    // A constant that bcrypt cannot parse would throw rather than return
+    // false, turning every sign in with an unknown username into a 500.
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("password")]
+    [InlineData("a-password-worth-keeping")]
+    public void NothingVerifiesAgainstTheHashAnUnknownUsernameIsChargedFor(string password)
+    {
+        Assert.False(PasswordHasher.VerifyAgainstNothing(password));
+    }
 }

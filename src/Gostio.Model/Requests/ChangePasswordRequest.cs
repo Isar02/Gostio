@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Gostio.Model.Authorization;
+using Gostio.Model.Validation;
 
 namespace Gostio.Model.Requests;
 
@@ -9,10 +10,10 @@ public sealed class ChangePasswordRequest
     public string CurrentPassword { get; set; } = null!;
 
     [Required(ErrorMessage = "Enter a new password.")]
-    [StringLength(
-        PasswordRules.MaximumLength,
-        MinimumLength = PasswordRules.MinimumLength,
-        ErrorMessage = "A password is between {2} and {1} characters long.")]
+    [MinLength(
+        PasswordRules.MinimumLength,
+        ErrorMessage = "A password is at least {1} characters long.")]
+    [Utf8Length(PasswordRules.MaximumBytes)]
     public string NewPassword { get; set; } = null!;
 
     [Required(ErrorMessage = "Repeat the new password.")]

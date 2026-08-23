@@ -66,42 +66,57 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         UserRolesRequest request,
         CancellationToken cancellationToken)
     {
-        var user = await RequireAsync(id, cancellationToken);
         var wanted = await RequireRoleIdsAsync(
             request.Roles, nameof(request.Roles), cancellationToken);
 
-        await Db.Entry(user).Collection(account => account.UserRoles).LoadAsync(cancellationToken);
+        var now = DateTime.UtcNow;
 
-        var held = user.UserRoles.ToList();
+        await using var transaction = await Db.Database.BeginTransactionAsync(cancellationToken);
+
+        // Raised in the database and raised first: the statement holds the row
+        // until this commits, so a second caller cannot write a version it read
+        // before this one wrote, nor diff the roles this one is replacing.
+        var found = await Db.Users
+            .Where(user => user.Id == id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.TokenVersion, user => user.TokenVersion + 1)
+                    .SetProperty(user => user.ModifiedAt, (DateTime?)now),
+                cancellationToken);
+
+        if (found == 0)
+        {
+            throw Missing(id);
+        }
+
+        var held = await Db.UserRoles
+            .Where(assignment => assignment.UserId == id)
+            .ToListAsync(cancellationToken);
 
         var dropped = held.Where(assignment => !wanted.Contains(assignment.RoleId)).ToList();
         var added = wanted
             .Where(roleId => held.All(assignment => assignment.RoleId != roleId))
             .ToList();
 
+        // Rolled back rather than committed, so saving a form that changed
+        // nothing does not sign the account holder out.
         if (dropped.Count == 0 && added.Count == 0)
         {
+            await transaction.RollbackAsync(cancellationToken);
+
             return await ReadAsync(id, cancellationToken);
         }
 
-        var now = DateTime.UtcNow;
-
-        foreach (var assignment in dropped)
+        Db.UserRoles.RemoveRange(dropped);
+        Db.UserRoles.AddRange(added.Select(roleId => new UserRole
         {
-            user.UserRoles.Remove(assignment);
-        }
-
-        foreach (var roleId in added)
-        {
-            user.UserRoles.Add(new UserRole { RoleId = roleId, AssignedAt = now });
-        }
-
-        // The roles a token carries were written into it when it was issued, so
-        // the session has to end before the change means anything.
-        user.TokenVersion++;
-        user.ModifiedAt = now;
+            UserId = id,
+            RoleId = roleId,
+            AssignedAt = now,
+        }));
 
         await Db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return await ReadAsync(id, cancellationToken);
     }

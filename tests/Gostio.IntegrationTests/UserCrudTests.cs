@@ -6,6 +6,7 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Users;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
@@ -148,6 +149,38 @@ public class UserCrudTests(DatabaseFixture fixture)
         Assert.Equal(1, await TokenVersionOfAsync(created.Id));
     }
 
+    // The barrier holds both callers at the statement that raises the version,
+    // so they collide on purpose rather than by luck. A version computed from a
+    // value read before the other caller wrote leaves this at one.
+    [Fact]
+    public async Task TwoRoleChangesAtOnceRaiseTheVersionTwice()
+    {
+        await fixture.EnsureRoleAsync(RoleNames.Guest);
+        await fixture.EnsureRoleAsync(RoleNames.Host);
+        await fixture.EnsureRoleAsync(RoleNames.Administrator);
+
+        var created = await AsAdministratorAsync(users =>
+            users.CreateAsync(New("selma.dizdar", RoleNames.Guest), CancellationToken.None));
+
+        var before = await TokenVersionOfAsync(created.Id);
+        var barrier = new CommandBarrier(callers: 2, "UPDATE", "TokenVersion");
+
+        await Task.WhenAll(
+            SetRolesAsync(created.Id, barrier, RoleNames.Host),
+            SetRolesAsync(created.Id, barrier, RoleNames.Administrator));
+
+        Assert.Equal(2, barrier.Arrived);
+        Assert.Equal(before + 2, await TokenVersionOfAsync(created.Id));
+
+        var left = await AsAdministratorAsync(
+            users => users.GetAsync(created.Id, CancellationToken.None));
+
+        Assert.True(
+            left.Roles.SequenceEqual([RoleNames.Host])
+            || left.Roles.SequenceEqual([RoleNames.Administrator]),
+            $"One of the two writes should have won outright, not [{string.Join(", ", left.Roles)}].");
+    }
+
     [Fact]
     public async Task AnAccountWithNoRoleAtAllIsRefused()
     {
@@ -286,6 +319,15 @@ public class UserCrudTests(DatabaseFixture fixture)
             ConfirmPassword = Password,
             Roles = [role],
         };
+
+    private async Task SetRolesAsync(int id, IInterceptor barrier, params string[] roles)
+    {
+        await using var services = fixture.BuildServices(
+            new SignedInUser(0, RoleNames.Administrator), barrier);
+
+        await services.GetRequiredService<IUserService>().SetRolesAsync(
+            id, new UserRolesRequest { Roles = [.. roles] }, CancellationToken.None);
+    }
 
     private async Task<int> TokenVersionOfAsync(int userId)
     {

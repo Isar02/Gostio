@@ -139,5 +139,5 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
         failure is SqlException { Number: ForeignKeyViolation }
         || failure.InnerException is SqlException { Number: ForeignKeyViolation };
 
-    private NotFoundException Missing(int id) => new($"No {Noun} has the id {id}.");
+    protected NotFoundException Missing(int id) => new($"No {Noun} has the id {id}.");
 }

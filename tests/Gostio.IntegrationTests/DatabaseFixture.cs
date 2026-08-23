@@ -73,11 +73,13 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // Resolved through the real registrations rather than constructed, so a
     // service the container cannot build fails here as well as at start-up.
-    public ServiceProvider BuildServices(ICurrentUser? caller = null)
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller = null,
+        params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
 
-        services.AddScoped(_ => CreateContext());
+        services.AddScoped(_ => CreateContext(interceptors));
         services.AddScoped(_ => caller ?? new AnonymousUser());
         services.AddGostioLookupServices();
         services.AddGostioUserServices();

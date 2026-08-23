@@ -6,7 +6,6 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Listings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
@@ -14,6 +13,8 @@ namespace Gostio.IntegrationTests;
 public class AccommodationAvailabilityTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-a-calendar-owner";
+
+    private readonly ListingWorkspace workspace = new(fixture);
 
     private static DateOnly Day(int offset) =>
         DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(offset);
@@ -215,7 +216,7 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
         var administrator = await fixture.AddUserAsync(Password, RoleNames.Administrator);
 
         var blocked = await AsAsync(
-            Caller(administrator, RoleNames.Administrator),
+            ListingWorkspace.Caller(administrator, RoleNames.Administrator),
             ranges => ranges.AddAsync(listing, Blocked(10, 14), default));
 
         Assert.False(blocked.IsAvailable);
@@ -231,7 +232,7 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
         await WithdrawAsync(host, listing);
 
         await Assert.ThrowsAsync<NotFoundException>(() => AsAsync(
-            Caller(guest, RoleNames.Guest),
+            ListingWorkspace.Caller(guest, RoleNames.Guest),
             ranges => ranges.SearchAsync(listing, new(), default)));
     }
 
@@ -344,9 +345,6 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
             PriceOverride = price,
         };
 
-    private static ICurrentUser Caller(int userId, params string[] roles) =>
-        new SignedInUser(userId, roles);
-
     private Task<AccommodationAvailabilityResponse> AddAsync(
         int host,
         int listing,
@@ -359,12 +357,13 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
         AccommodationAvailabilityRequest request,
         IInterceptor barrier)
     {
-        await using var services = fixture.BuildServices(Caller(host, RoleNames.Host), barrier);
-
         try
         {
-            await services.GetRequiredService<IAccommodationAvailabilityService>()
-                .AddAsync(listing, request, CancellationToken.None);
+            await workspace.AsAsync(
+                ListingWorkspace.Caller(host, RoleNames.Host),
+                (IAccommodationAvailabilityService ranges) =>
+                    ranges.AddAsync(listing, request, CancellationToken.None),
+                barrier);
 
             return true;
         }
@@ -384,65 +383,20 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
             .ToListAsync();
     }
 
-    private async Task<ListingReferences> ReferencesAsync() =>
-        new(
-            await fixture.EnsureCityAsync("Sarajevo"),
-            await fixture.EnsureAccommodationTypeAsync("Apartment"),
-            await fixture.EnsureAccommodationCategoryAsync("City break"));
+    private Task<(int Host, int Listing)> AListingAsync() => workspace.AListingAsync(Password);
 
-    private async Task<(int Host, int Listing)> AListingAsync()
-    {
-        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
-        var references = await ReferencesAsync();
-
-        var created = await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.CreateAsync(
-                ListingRequests.New(references, $"A listing {Guid.NewGuid():N}"), default),
-            services => services.GetRequiredService<IAccommodationService>());
-
-        return (host, created.Id);
-    }
-
-    private async Task WithdrawAsync(int host, int listing)
-    {
-        var withdrawn = ListingRequests.Edit(
-            await ReferencesAsync(), "Taken off the market", isActive: false);
-
-        await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.UpdateAsync(listing, withdrawn, default),
-            services => services.GetRequiredService<IAccommodationService>());
-    }
+    private Task WithdrawAsync(int host, int listing) => workspace.WithdrawAsync(host, listing);
 
     private Task<TResult> AsHostAsync<TResult>(
         int host,
         Func<IAccommodationAvailabilityService, Task<TResult>> work) =>
-        AsAsync(Caller(host, RoleNames.Host), work);
+        workspace.AsHostAsync(host, work);
 
     private Task AsHostAsync(int host, Func<IAccommodationAvailabilityService, Task> work) =>
-        AsHostAsync(host, async ranges =>
-        {
-            await work(ranges);
+        workspace.AsHostAsync(host, work);
 
-            return true;
-        });
-
-    private async Task<TResult> AsAsync<TResult>(
+    private Task<TResult> AsAsync<TResult>(
         ICurrentUser caller,
         Func<IAccommodationAvailabilityService, Task<TResult>> work) =>
-        await AsAsync(
-            caller,
-            work,
-            services => services.GetRequiredService<IAccommodationAvailabilityService>());
-
-    private async Task<TResult> AsAsync<TService, TResult>(
-        ICurrentUser caller,
-        Func<TService, Task<TResult>> work,
-        Func<IServiceProvider, TService> resolve)
-    {
-        await using var services = fixture.BuildServices(caller);
-
-        return await work(resolve(services));
-    }
+        workspace.AsAsync(caller, work);
 }

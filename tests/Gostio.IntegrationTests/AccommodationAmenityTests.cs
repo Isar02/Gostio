@@ -6,7 +6,6 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Listings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
@@ -14,6 +13,8 @@ namespace Gostio.IntegrationTests;
 public class AccommodationAmenityTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-an-amenity-owner";
+
+    private readonly ListingWorkspace workspace = new(fixture);
 
     [Fact]
     public async Task TheSetTheCallSendsIsTheSetTheListingKeeps()
@@ -113,7 +114,7 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
         var wifi = await fixture.EnsureAmenityAsync("Wi-Fi");
 
         var stored = await AsAsync(
-            Caller(administrator, RoleNames.Administrator),
+            ListingWorkspace.Caller(administrator, RoleNames.Administrator),
             amenities => amenities.SetAsync(
                 listing, new() { AmenityIds = [wifi] }, default));
 
@@ -133,7 +134,7 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
         await WithdrawAsync(host, listing);
 
         await Assert.ThrowsAsync<NotFoundException>(() => AsAsync(
-            Caller(guest, RoleNames.Guest),
+            ListingWorkspace.Caller(guest, RoleNames.Guest),
             amenities => amenities.GetAsync(listing, default)));
     }
 
@@ -143,24 +144,22 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
     public async Task ASearchFindsOnlyTheListingsCarryingEveryAmenityItNames()
     {
         var host = await fixture.AddUserAsync(Password, RoleNames.Host);
-        var references = await ReferencesAsync();
         var marker = $"amenity search {Guid.NewGuid():N}";
 
         var wifi = await fixture.EnsureAmenityAsync("Wi-Fi");
         var parking = await fixture.EnsureAmenityAsync("Parking");
 
-        var both = await CreateAsync(host, references, $"{marker} both");
-        var onlyWifi = await CreateAsync(host, references, $"{marker} one");
+        var both = await workspace.CreateAsync(host, $"{marker} both");
+        var onlyWifi = await workspace.CreateAsync(host, $"{marker} one");
 
         await SetAsync(host, both, [wifi, parking]);
         await SetAsync(host, onlyWifi, [wifi]);
 
-        var found = await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.SearchAsync(
+        var found = await workspace.AsHostAsync(
+            host,
+            (IAccommodationService listings) => listings.SearchAsync(
                 new AccommodationSearchRequest { Title = marker, AmenityIds = [wifi, parking] },
-                default),
-            services => services.GetRequiredService<IAccommodationService>());
+                default));
 
         Assert.Equal([both], found.Items.Select(listing => listing.Id));
     }
@@ -194,9 +193,6 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
             $"The set was left as [{string.Join(", ", stored)}], which neither call asked for.");
     }
 
-    private static ICurrentUser Caller(int userId, params string[] roles) =>
-        new SignedInUser(userId, roles);
-
     private Task<IReadOnlyList<LookupResponse>> SetAsync(
         int host,
         int listing,
@@ -204,17 +200,16 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
         AsHostAsync(host, amenities => amenities.SetAsync(
             listing, new() { AmenityIds = amenityIds }, default));
 
-    private async Task ReplaceAsync(
+    private Task ReplaceAsync(
         int host,
         int listing,
         List<int> amenityIds,
-        IInterceptor barrier)
-    {
-        await using var services = fixture.BuildServices(Caller(host, RoleNames.Host), barrier);
-
-        await services.GetRequiredService<IAccommodationAmenityService>()
-            .SetAsync(listing, new() { AmenityIds = amenityIds }, CancellationToken.None);
-    }
+        IInterceptor barrier) =>
+        workspace.AsAsync(
+            ListingWorkspace.Caller(host, RoleNames.Host),
+            (IAccommodationAmenityService amenities) => amenities.SetAsync(
+                listing, new() { AmenityIds = amenityIds }, CancellationToken.None),
+            barrier);
 
     private async Task<IReadOnlyList<int>> StoredIdsAsync(int listing)
     {
@@ -227,59 +222,17 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
             .ToListAsync();
     }
 
-    private async Task<ListingReferences> ReferencesAsync() =>
-        new(
-            await fixture.EnsureCityAsync("Sarajevo"),
-            await fixture.EnsureAccommodationTypeAsync("Apartment"),
-            await fixture.EnsureAccommodationCategoryAsync("City break"));
+    private Task<(int Host, int Listing)> AListingAsync() => workspace.AListingAsync(Password);
 
-    private async Task<(int Host, int Listing)> AListingAsync()
-    {
-        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
-
-        return (host, await CreateAsync(
-            host, await ReferencesAsync(), $"A listing {Guid.NewGuid():N}"));
-    }
-
-    private async Task<int> CreateAsync(int host, ListingReferences references, string title)
-    {
-        var created = await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.CreateAsync(ListingRequests.New(references, title), default),
-            services => services.GetRequiredService<IAccommodationService>());
-
-        return created.Id;
-    }
-
-    private async Task WithdrawAsync(int host, int listing)
-    {
-        var withdrawn = ListingRequests.Edit(
-            await ReferencesAsync(), "Taken off the market", isActive: false);
-
-        await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.UpdateAsync(listing, withdrawn, default),
-            services => services.GetRequiredService<IAccommodationService>());
-    }
+    private Task WithdrawAsync(int host, int listing) => workspace.WithdrawAsync(host, listing);
 
     private Task<TResult> AsHostAsync<TResult>(
         int host,
         Func<IAccommodationAmenityService, Task<TResult>> work) =>
-        AsAsync(Caller(host, RoleNames.Host), work);
+        workspace.AsHostAsync(host, work);
 
-    private async Task<TResult> AsAsync<TResult>(
+    private Task<TResult> AsAsync<TResult>(
         ICurrentUser caller,
         Func<IAccommodationAmenityService, Task<TResult>> work) =>
-        await AsAsync(
-            caller, work, services => services.GetRequiredService<IAccommodationAmenityService>());
-
-    private async Task<TResult> AsAsync<TService, TResult>(
-        ICurrentUser caller,
-        Func<TService, Task<TResult>> work,
-        Func<IServiceProvider, TService> resolve)
-    {
-        await using var services = fixture.BuildServices(caller);
-
-        return await work(resolve(services));
-    }
+        workspace.AsAsync(caller, work);
 }

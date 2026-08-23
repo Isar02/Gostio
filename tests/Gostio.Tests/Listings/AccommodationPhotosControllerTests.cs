@@ -93,7 +93,7 @@ public sealed class AccommodationPhotosControllerTests : IAsyncLifetime
 
         Assert.Equal(StubPhotos.Bytes, photos.LastUpload!.Content);
         Assert.Equal(ImageRules.Jpeg, photos.LastUpload.ContentType);
-        Assert.Equal(7, photos.LastAccommodationId);
+        Assert.Equal(7, photos.LastListingId);
     }
 
     [Fact]
@@ -135,16 +135,16 @@ public sealed class AccommodationPhotosControllerTests : IAsyncLifetime
 
         public ImageUpload? LastUpload { get; private set; }
 
-        public int? LastAccommodationId { get; private set; }
+        public int? LastListingId { get; private set; }
 
-        public Task<PagedResult<AccommodationPhotoResponse>> SearchAsync(
-            int accommodationId,
+        public Task<PagedResult<ListingPhotoResponse>> SearchAsync(
+            int listingId,
             PagedRequest request,
             CancellationToken cancellationToken)
         {
             LastPage = request;
 
-            return Task.FromResult(new PagedResult<AccommodationPhotoResponse>
+            return Task.FromResult(new PagedResult<ListingPhotoResponse>
             {
                 Items = [Row(1)],
                 Page = request.Page,
@@ -153,42 +153,42 @@ public sealed class AccommodationPhotosControllerTests : IAsyncLifetime
             });
         }
 
-        public Task<AccommodationPhotoResponse> GetAsync(
-            int accommodationId,
+        public Task<ListingPhotoResponse> GetAsync(
+            int listingId,
             int photoId,
             CancellationToken cancellationToken) => Task.FromResult(Row(photoId));
 
         public Task<ImageContent> GetContentAsync(
-            int accommodationId,
+            int listingId,
             int photoId,
             CancellationToken cancellationToken) =>
             Task.FromResult(new ImageContent(Bytes, ImageRules.Jpeg));
 
-        public Task<AccommodationPhotoResponse> AddAsync(
-            int accommodationId,
+        public Task<ListingPhotoResponse> AddAsync(
+            int listingId,
             ImageUpload upload,
             CancellationToken cancellationToken)
         {
-            LastAccommodationId = accommodationId;
+            LastListingId = listingId;
             LastUpload = upload;
 
             return Task.FromResult(Row(9));
         }
 
-        public Task<AccommodationPhotoResponse> SetCoverAsync(
-            int accommodationId,
+        public Task<ListingPhotoResponse> SetCoverAsync(
+            int listingId,
             int photoId,
             CancellationToken cancellationToken) => Task.FromResult(Row(photoId));
 
         public Task DeleteAsync(
-            int accommodationId,
+            int listingId,
             int photoId,
             CancellationToken cancellationToken) => Task.CompletedTask;
 
-        private static AccommodationPhotoResponse Row(int id) => new()
+        private static ListingPhotoResponse Row(int id) => new()
         {
             Id = id,
-            AccommodationId = 7,
+            ListingId = 7,
             ContentType = ImageRules.Jpeg,
             IsCover = true,
             DisplayOrder = 0,

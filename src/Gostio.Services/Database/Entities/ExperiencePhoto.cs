@@ -1,6 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-public class ExperiencePhoto
+public class ExperiencePhoto : IListingPhoto
 {
     public int Id { get; set; }
 

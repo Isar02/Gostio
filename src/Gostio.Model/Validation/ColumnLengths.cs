@@ -1,7 +1,11 @@
-namespace Gostio.Services.Database.Configurations;
+namespace Gostio.Model.Validation;
 
-// One place, so the same concept never gets two different sizes.
-internal static class ColumnLengths
+// One place, so the same concept never gets two different sizes. It sits in
+// the model rather than beside the entity configuration because a request DTO
+// has to state the same bound: a value that passes validation and is then
+// refused by the column behind it is a five hundred where a four hundred
+// belongs.
+public static class ColumnLengths
 {
     public const int Name = 100;
 

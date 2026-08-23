@@ -14,9 +14,14 @@ internal sealed class AccommodationAmenityService(GostioDbContext db, Accommodat
         int accommodationId,
         CancellationToken cancellationToken)
     {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
+        var offered = await ReadAsync(Visible(accommodationId), cancellationToken);
 
-        return await ReadAsync(accommodationId, cancellationToken);
+        if (offered.Count == 0)
+        {
+            await access.RequireVisibleAsync(accommodationId, cancellationToken);
+        }
+
+        return offered;
     }
 
     public async Task<IReadOnlyList<LookupResponse>> SetAsync(
@@ -50,7 +55,7 @@ internal sealed class AccommodationAmenityService(GostioDbContext db, Accommodat
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return await ReadAsync(accommodationId, cancellationToken);
+        return await ReadAsync(ForListing(accommodationId), cancellationToken);
     }
 
     private async Task<List<int>> RequireAmenityIdsAsync(
@@ -81,12 +86,20 @@ internal sealed class AccommodationAmenityService(GostioDbContext db, Accommodat
         return wanted;
     }
 
-    private async Task<IReadOnlyList<LookupResponse>> ReadAsync(
-        int accommodationId,
-        CancellationToken cancellationToken) =>
-        await db.AccommodationAmenities
+    private IQueryable<AccommodationAmenity> ForListing(int accommodationId) =>
+        db.AccommodationAmenities
             .AsNoTracking()
-            .Where(offering => offering.AccommodationId == accommodationId)
+            .Where(offering => offering.AccommodationId == accommodationId);
+
+    private IQueryable<AccommodationAmenity> Visible(int accommodationId) =>
+        ForListing(accommodationId)
+            .Where(offering => access.VisibleListings()
+                .Any(listing => listing.Id == offering.AccommodationId));
+
+    private static async Task<IReadOnlyList<LookupResponse>> ReadAsync(
+        IQueryable<AccommodationAmenity> offerings,
+        CancellationToken cancellationToken) =>
+        await offerings
             .OrderBy(offering => offering.Amenity.Name)
             .Select(offering => new LookupResponse
             {

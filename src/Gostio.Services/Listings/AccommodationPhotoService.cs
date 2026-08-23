@@ -31,34 +31,36 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         PagedRequest request,
         CancellationToken cancellationToken)
     {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
-        return await Ordered(accommodationId)
+        var page = await Ordered(accommodationId)
             .ToPagedResultAsync(request, Projection, cancellationToken);
+
+        if (page.TotalCount == 0)
+        {
+            await access.RequireVisibleAsync(accommodationId, cancellationToken);
+        }
+
+        return page;
     }
 
     public async Task<AccommodationPhotoResponse> GetAsync(
         int accommodationId,
         int photoId,
-        CancellationToken cancellationToken)
-    {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
-        return await ReadAsync(accommodationId, photoId, cancellationToken);
-    }
+        CancellationToken cancellationToken) =>
+        await Visible(accommodationId, photoId)
+            .Select(Projection)
+            .FirstOrDefaultAsync(cancellationToken)
+        ?? await MissingPhotoOrListingAsync<AccommodationPhotoResponse>(
+            accommodationId, photoId, cancellationToken);
 
     public async Task<ImageContent> GetContentAsync(
         int accommodationId,
         int photoId,
-        CancellationToken cancellationToken)
-    {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
-        return await ForPhoto(accommodationId, photoId)
+        CancellationToken cancellationToken) =>
+        await Visible(accommodationId, photoId)
             .Select(photo => new ImageContent(photo.Image, photo.ContentType))
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw Missing(photoId);
-    }
+        ?? await MissingPhotoOrListingAsync<ImageContent>(
+            accommodationId, photoId, cancellationToken);
 
     public async Task<AccommodationPhotoResponse> AddAsync(
         int accommodationId,
@@ -223,12 +225,30 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         db.AccommodationPhotos.Where(photo =>
             photo.AccommodationId == accommodationId && photo.Id == photoId);
 
+    private IQueryable<AccommodationPhoto> Visible(int accommodationId, int photoId) =>
+        ForPhoto(accommodationId, photoId)
+            .AsNoTracking()
+            .Where(photo => access.VisibleListings()
+                .Any(listing => listing.Id == photo.AccommodationId));
+
     private IOrderedQueryable<AccommodationPhoto> Ordered(int accommodationId) =>
         db.AccommodationPhotos
             .AsNoTracking()
-            .Where(photo => photo.AccommodationId == accommodationId)
+            .Where(photo => photo.AccommodationId == accommodationId
+                && access.VisibleListings()
+                    .Any(listing => listing.Id == photo.AccommodationId))
             .OrderBy(photo => photo.DisplayOrder)
             .ThenBy(photo => photo.Id);
+
+    private async Task<T> MissingPhotoOrListingAsync<T>(
+        int accommodationId,
+        int photoId,
+        CancellationToken cancellationToken)
+    {
+        await access.RequireVisibleAsync(accommodationId, cancellationToken);
+
+        throw Missing(photoId);
+    }
 
     private async Task<AccommodationPhotoResponse> ReadAsync(
         int accommodationId,

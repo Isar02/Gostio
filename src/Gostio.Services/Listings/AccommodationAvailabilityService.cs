@@ -30,11 +30,9 @@ internal sealed class AccommodationAvailabilityService(
         AccommodationAvailabilitySearchRequest search,
         CancellationToken cancellationToken)
     {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
         RequireAWindow(search);
 
-        var query = ForListing(accommodationId).AsNoTracking();
+        var query = Visible(accommodationId);
 
         if (search.From is DateOnly from)
         {
@@ -51,10 +49,17 @@ internal sealed class AccommodationAvailabilityService(
             query = query.Where(range => range.IsAvailable == isAvailable);
         }
 
-        return await query
+        var page = await query
             .OrderBy(range => range.StartDate)
             .ThenBy(range => range.Id)
             .ToPagedResultAsync(search, Projection, cancellationToken);
+
+        if (page.TotalCount == 0)
+        {
+            await access.RequireVisibleAsync(accommodationId, cancellationToken);
+        }
+
+        return page;
     }
 
     public async Task<AccommodationAvailabilityResponse> GetAsync(
@@ -62,9 +67,19 @@ internal sealed class AccommodationAvailabilityService(
         int availabilityId,
         CancellationToken cancellationToken)
     {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
+        var range = await Visible(accommodationId)
+            .Where(candidate => candidate.Id == availabilityId)
+            .Select(Projection)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return await ReadAsync(accommodationId, availabilityId, cancellationToken);
+        if (range is null)
+        {
+            await access.RequireVisibleAsync(accommodationId, cancellationToken);
+
+            throw Missing(availabilityId);
+        }
+
+        return range;
     }
 
     public async Task<AccommodationAvailabilityResponse> AddAsync(
@@ -182,6 +197,12 @@ internal sealed class AccommodationAvailabilityService(
 
     private IQueryable<AccommodationAvailability> ForListing(int accommodationId) =>
         db.AccommodationAvailability.Where(range => range.AccommodationId == accommodationId);
+
+    private IQueryable<AccommodationAvailability> Visible(int accommodationId) =>
+        ForListing(accommodationId)
+            .AsNoTracking()
+            .Where(range => access.VisibleListings()
+                .Any(listing => listing.Id == range.AccommodationId));
 
     private IQueryable<AccommodationAvailability> ForRange(int accommodationId, int availabilityId) =>
         ForListing(accommodationId).Where(range => range.Id == availabilityId);

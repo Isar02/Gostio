@@ -24,6 +24,12 @@ internal sealed class AccommodationAccess(GostioDbContext db, ICurrentUser curre
             accommodation => accommodation.IsActive || accommodation.HostId == callerId);
     }
 
+    // Gates a child query on its listing inside the statement that reads it.
+    // Callers have to correlate it with the child row rather than close over an
+    // id: an uncorrelated subquery is one Entity Framework runs on its own,
+    // which puts the check back in a statement of its own and reopens the gap.
+    public IQueryable<Accommodation> VisibleListings() => Visible(db.Accommodations.AsNoTracking());
+
     // Answers 404 rather than 403 for a listing the caller cannot see, so an id
     // nobody may read does not become a way of learning that it exists.
     public async Task RequireVisibleAsync(int accommodationId, CancellationToken cancellationToken)

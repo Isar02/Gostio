@@ -32,6 +32,8 @@ internal sealed class AccommodationAvailabilityService(
     {
         await access.RequireVisibleAsync(accommodationId, cancellationToken);
 
+        RequireAWindow(search);
+
         var query = ForListing(accommodationId).AsNoTracking();
 
         if (search.From is DateOnly from)
@@ -105,6 +107,18 @@ internal sealed class AccommodationAvailabilityService(
         if (removed == 0)
         {
             throw Missing(availabilityId);
+        }
+    }
+
+    // The two bounds are filters of their own, so an inverted window is not an
+    // empty one: it asks for ranges ending after the later day and starting
+    // before the earlier, which a long enough range satisfies.
+    private static void RequireAWindow(AccommodationAvailabilitySearchRequest search)
+    {
+        if (search.From is DateOnly from && search.To is DateOnly to && to < from)
+        {
+            throw new ValidationException(
+                nameof(search.To), "A window ends on or after the day it starts.");
         }
     }
 

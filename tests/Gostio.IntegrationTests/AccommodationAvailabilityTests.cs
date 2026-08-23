@@ -255,6 +255,35 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
             [straddling.Id, inside.Id], found.Items.Select(range => range.Id));
     }
 
+    // Left alone, an inverted window is not an empty one: each bound filters on
+    // its own, and a range long enough to span both days answers to both.
+    [Fact]
+    public async Task AWindowThatEndsBeforeItStartsIsRefused()
+    {
+        var (host, listing) = await AListingAsync();
+
+        await AddAsync(host, listing, Blocked(1, 40));
+
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => AsHostAsync(host, ranges => ranges.SearchAsync(
+                listing, new() { From = Day(30), To = Day(10) }, default)));
+
+        Assert.Contains(nameof(AccommodationAvailabilitySearchRequest.To), refused.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task AWindowOfASingleDayIsAllowed()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var blocked = await AddAsync(host, listing, Blocked(10, 14));
+
+        var found = await AsHostAsync(host, ranges => ranges.SearchAsync(
+            listing, new() { From = Day(12), To = Day(12) }, default));
+
+        Assert.Equal([blocked.Id], found.Items.Select(range => range.Id));
+    }
+
     [Fact]
     public async Task TheSearchCanAskForOnlyTheBlockedRanges()
     {

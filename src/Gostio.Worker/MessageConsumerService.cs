@@ -2,7 +2,7 @@ using Gostio.Services.Configuration;
 
 namespace Gostio.Worker;
 
-// Scaffolding for the messaging phase: reports the resolved broker settings and idles.
+// Reports the resolved broker settings and idles: nothing consumes the queues yet.
 public sealed class MessageConsumerService(
     ILogger<MessageConsumerService> logger,
     RabbitMqSettings rabbitMqSettings) : BackgroundService

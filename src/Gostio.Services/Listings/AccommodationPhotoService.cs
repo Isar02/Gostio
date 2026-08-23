@@ -34,7 +34,10 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         var page = await Ordered(accommodationId)
             .ToPagedResultAsync(request, Projection, cancellationToken);
 
-        if (page.TotalCount == 0)
+        // The rows, not the count: a page is read with two statements, and a
+        // listing withdrawn between them leaves a count the second one no longer
+        // agrees with.
+        if (page.Items.Count == 0)
         {
             await access.RequireVisibleAsync(accommodationId, cancellationToken);
         }

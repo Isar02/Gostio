@@ -54,7 +54,7 @@ internal sealed class AccommodationAvailabilityService(
             .ThenBy(range => range.Id)
             .ToPagedResultAsync(search, Projection, cancellationToken);
 
-        if (page.TotalCount == 0)
+        if (page.Items.Count == 0)
         {
             await access.RequireVisibleAsync(accommodationId, cancellationToken);
         }

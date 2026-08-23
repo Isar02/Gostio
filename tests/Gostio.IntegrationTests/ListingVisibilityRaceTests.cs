@@ -43,7 +43,6 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
             listing));
     }
 
-    // The bytes are the ones worth being strictest about.
     [Fact]
     public async Task ThePhotoContentIsRefusedWhenTheListingIsWithdrawnMidRead()
     {
@@ -53,6 +52,55 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
             host,
             "[AccommodationPhotos]",
             (IAccommodationPhotoService photos) => photos.GetContentAsync(listing, photoId, default),
+            listing));
+    }
+
+    // A page is two statements, so it has a gap of its own between them. The
+    // count is taken while the listing is visible and the rows are fetched after
+    // it is not, which is the one case a count-based check would wave through.
+    [Fact]
+    public async Task APhotoListIsRefusedWhenTheListingGoesBetweenTheCountAndTheRows()
+    {
+        var (host, listing, _) = await AListingWithAPhotoAsync();
+
+        await Assert.ThrowsAsync<NotFoundException>(() => ReadAsync(
+            host,
+            "[AccommodationPhotos]",
+            (IAccommodationPhotoService photos) =>
+                photos.SearchAsync(listing, new PagedRequest(), default),
+            listing,
+            after: 1));
+    }
+
+    [Fact]
+    public async Task TheAvailabilityIsRefusedWhenTheListingGoesBetweenTheCountAndTheRows()
+    {
+        var (host, listing) = await AListingWithARangeAsync();
+
+        await Assert.ThrowsAsync<NotFoundException>(() => ReadAsync(
+            host,
+            "[AccommodationAvailability]",
+            (IAccommodationAvailabilityService ranges) =>
+                ranges.SearchAsync(listing, new(), default),
+            listing,
+            after: 1));
+    }
+
+    [Fact]
+    public async Task ARangeIsRefusedWhenTheListingIsWithdrawnMidRead()
+    {
+        var (host, listing) = await AListingWithARangeAsync();
+
+        var range = await workspace.AsHostAsync(
+            host,
+            (IAccommodationAvailabilityService ranges) =>
+                ranges.SearchAsync(listing, new(), default));
+
+        await Assert.ThrowsAsync<NotFoundException>(() => ReadAsync(
+            host,
+            "[AccommodationAvailability]",
+            (IAccommodationAvailabilityService ranges) =>
+                ranges.GetAsync(listing, range.Items.Single().Id, default),
             listing));
     }
 
@@ -77,19 +125,7 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
     [Fact]
     public async Task TheAvailabilityIsRefusedWhenTheListingIsWithdrawnMidRead()
     {
-        var (host, listing) = await workspace.AListingAsync(Password);
-
-        await workspace.AsHostAsync(
-            host,
-            (IAccommodationAvailabilityService ranges) => ranges.AddAsync(
-                listing,
-                new()
-                {
-                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(10),
-                    EndDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(14),
-                    IsAvailable = false,
-                },
-                default));
+        var (host, listing) = await AListingWithARangeAsync();
 
         await Assert.ThrowsAsync<NotFoundException>(() => ReadAsync(
             host,
@@ -97,6 +133,26 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
             (IAccommodationAvailabilityService ranges) =>
                 ranges.SearchAsync(listing, new(), default),
             listing));
+    }
+
+    private async Task<(int Host, int Listing)> AListingWithARangeAsync()
+    {
+        var (host, listing) = await workspace.AListingAsync(Password);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+        await workspace.AsHostAsync(
+            host,
+            (IAccommodationAvailabilityService ranges) => ranges.AddAsync(
+                listing,
+                new()
+                {
+                    StartDate = today.AddDays(10),
+                    EndDate = today.AddDays(14),
+                    IsAvailable = false,
+                },
+                default));
+
+        return (host, listing);
     }
 
     private async Task<(int Host, int Listing, int PhotoId)> AListingWithAPhotoAsync()
@@ -119,13 +175,14 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
         int host,
         string table,
         Func<TService, Task<TResult>> work,
-        int listing)
+        int listing,
+        int after = 0)
         where TService : notnull
     {
         var guest = await fixture.AddUserAsync(Password, RoleNames.Guest);
 
         var withdrawing = new RaceInterceptor(
-            table, () => workspace.WithdrawAsync(host, listing));
+            table, () => workspace.WithdrawAsync(host, listing), after);
 
         try
         {

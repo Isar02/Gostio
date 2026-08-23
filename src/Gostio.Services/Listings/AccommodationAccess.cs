@@ -10,7 +10,9 @@ namespace Gostio.Services.Listings;
 internal sealed class AccommodationAccess(GostioDbContext db, ICurrentUser currentUser)
 {
     // A withdrawn listing still belongs to its host and is still an
-    // administrator's to manage, but nobody else browses it.
+    // administrator's to manage, but nobody else browses it, and to them it
+    // answers 404 rather than 403: an id nobody may read must not become a way
+    // of learning that it exists.
     public IQueryable<Accommodation> Visible(IQueryable<Accommodation> query)
     {
         if (currentUser.IsInRole(RoleNames.Administrator))
@@ -30,8 +32,6 @@ internal sealed class AccommodationAccess(GostioDbContext db, ICurrentUser curre
     // which puts the check back in a statement of its own and reopens the gap.
     public IQueryable<Accommodation> VisibleListings() => Visible(db.Accommodations.AsNoTracking());
 
-    // Answers 404 rather than 403 for a listing the caller cannot see, so an id
-    // nobody may read does not become a way of learning that it exists.
     public async Task RequireVisibleAsync(int accommodationId, CancellationToken cancellationToken)
     {
         var visible = await Visible(db.Accommodations.AsNoTracking())

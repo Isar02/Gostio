@@ -1,6 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-public class Accommodation : IEntity
+public class Accommodation : IListing
 {
     public int Id { get; set; }
 

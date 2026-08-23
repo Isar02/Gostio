@@ -1,13 +1,10 @@
 using System.Linq.Expressions;
-using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Authentication;
-using Gostio.Services.Crud;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Listings;
 
@@ -15,12 +12,12 @@ internal sealed class AccommodationService(
     GostioDbContext db,
     ICurrentUser currentUser,
     AccommodationAccess access)
-    : CrudService<
+    : ListingService<
         Accommodation,
         AccommodationResponse,
         AccommodationSearchRequest,
         AccommodationCreateRequest,
-        AccommodationUpdateRequest>(db, "accommodation"),
+        AccommodationUpdateRequest>(db, currentUser, access, "accommodation"),
       IAccommodationService
 {
     protected override string StillReferencedMessage =>
@@ -57,48 +54,10 @@ internal sealed class AccommodationService(
             CreatedAt = accommodation.CreatedAt,
         };
 
-    protected override IOrderedQueryable<Accommodation> Order(IQueryable<Accommodation> query) =>
-        query
-            .OrderBy(accommodation => accommodation.Title)
-            .ThenBy(accommodation => accommodation.Id);
-
-    public override async Task<AccommodationResponse> GetAsync(
-        int id,
-        CancellationToken cancellationToken) =>
-        await access.Visible(Set.AsNoTracking())
-            .Where(accommodation => accommodation.Id == id)
-            .Select(Projection)
-            .FirstOrDefaultAsync(cancellationToken)
-        ?? throw Missing(id);
-
-    public override async Task<AccommodationResponse> UpdateAsync(
-        int id,
-        AccommodationUpdateRequest request,
-        CancellationToken cancellationToken)
-    {
-        await access.RequireOwnedAsync(id, cancellationToken);
-
-        return await base.UpdateAsync(id, request, cancellationToken);
-    }
-
-    public override async Task DeleteAsync(int id, CancellationToken cancellationToken)
-    {
-        await access.RequireOwnedAsync(id, cancellationToken);
-
-        await base.DeleteAsync(id, cancellationToken);
-    }
-
-    protected override IQueryable<Accommodation> Filter(
+    protected override IQueryable<Accommodation> Matching(
         IQueryable<Accommodation> query,
         AccommodationSearchRequest search)
     {
-        query = access.Visible(query);
-
-        if (Trimmed(search.Title) is string title)
-        {
-            query = query.Where(accommodation => accommodation.Title.Contains(title));
-        }
-
         if (search.CityId is int cityId)
         {
             query = query.Where(accommodation => accommodation.CityId == cityId);
@@ -113,11 +72,6 @@ internal sealed class AccommodationService(
         {
             query = query.Where(
                 accommodation => accommodation.AccommodationCategoryId == categoryId);
-        }
-
-        if (search.HostId is int hostId)
-        {
-            query = query.Where(accommodation => accommodation.HostId == hostId);
         }
 
         if (search.MinPrice is decimal minPrice)
@@ -135,11 +89,6 @@ internal sealed class AccommodationService(
             query = query.Where(accommodation => accommodation.MaxGuests >= guests);
         }
 
-        if (search.IsActive is bool isActive)
-        {
-            query = query.Where(accommodation => accommodation.IsActive == isActive);
-        }
-
         if (search.AmenityIds is { Count: > 0 })
         {
             var wanted = search.AmenityIds.Distinct().ToList();
@@ -155,14 +104,10 @@ internal sealed class AccommodationService(
         AccommodationCreateRequest request,
         CancellationToken cancellationToken)
     {
-        var hostId = request.HostId ?? currentUser.RequireUserId();
-
-        access.RequireOwnerOrAdministrator(hostId);
-        await RequireHostAsync(hostId, nameof(request.HostId), cancellationToken);
-
         var accommodation = new Accommodation
         {
-            HostId = hostId,
+            HostId = await RequireHostAsync(
+                request.HostId, nameof(request.HostId), cancellationToken),
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -220,37 +165,5 @@ internal sealed class AccommodationService(
         accommodation.Bathrooms = request.Bathrooms;
         accommodation.PricePerNight = request.PricePerNight;
         accommodation.CleaningFee = request.CleaningFee;
-    }
-
-    private async Task RequireHostAsync(
-        int hostId,
-        string field,
-        CancellationToken cancellationToken)
-    {
-        var isHost = await Db.Users
-            .AsNoTracking()
-            .Where(user => user.Id == hostId)
-            .AnyAsync(
-                user => user.UserRoles.Any(assignment => assignment.Role.Name == RoleNames.Host),
-                cancellationToken);
-
-        if (!isHost)
-        {
-            throw new ValidationException(field, "This account does not host anything.");
-        }
-    }
-
-    private static async Task RequireReferenceAsync<TEntity>(
-        DbSet<TEntity> set,
-        int id,
-        string field,
-        string noun,
-        CancellationToken cancellationToken)
-        where TEntity : class, IEntity
-    {
-        if (!await set.AsNoTracking().AnyAsync(entity => entity.Id == id, cancellationToken))
-        {
-            throw new ValidationException(field, $"No {noun} has this id.");
-        }
     }
 }

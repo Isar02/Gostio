@@ -338,7 +338,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     private static ImageUpload Upload(byte[] content, string? claimed = null) =>
         new(content, claimed);
 
-    private Task<AccommodationPhotoResponse> AddAsync(
+    private Task<ListingPhotoResponse> AddAsync(
         int host,
         int listing,
         byte[] content,

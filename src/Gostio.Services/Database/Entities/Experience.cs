@@ -1,6 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-public class Experience
+public class Experience : IListing
 {
     public int Id { get; set; }
 

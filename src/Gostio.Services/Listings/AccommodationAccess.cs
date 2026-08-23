@@ -1,5 +1,3 @@
-using Gostio.Model.Authorization;
-using Gostio.Model.Exceptions;
 using Gostio.Services.Authentication;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
@@ -8,76 +6,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Gostio.Services.Listings;
 
 internal sealed class AccommodationAccess(GostioDbContext db, ICurrentUser currentUser)
+    : ListingAccess<Accommodation>(db, currentUser)
 {
-    // A withdrawn listing still belongs to its host and is still an
-    // administrator's to manage, but nobody else browses it, and to them it
-    // answers 404 rather than 403: an id nobody may read must not become a way
-    // of learning that it exists.
-    public IQueryable<Accommodation> Visible(IQueryable<Accommodation> query)
-    {
-        if (currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return query;
-        }
+    protected override string Noun => "accommodation";
 
-        var callerId = currentUser.UserId;
-
-        return query.Where(
-            accommodation => accommodation.IsActive || accommodation.HostId == callerId);
-    }
-
-    // Gates a child query on its listing inside the statement that reads it.
-    // Callers have to correlate it with the child row rather than close over an
-    // id: an uncorrelated subquery is one Entity Framework runs on its own,
-    // which puts the check back in a statement of its own and reopens the gap.
-    public IQueryable<Accommodation> VisibleListings() => Visible(db.Accommodations.AsNoTracking());
-
-    public async Task RequireVisibleAsync(int accommodationId, CancellationToken cancellationToken)
-    {
-        var visible = await Visible(db.Accommodations.AsNoTracking())
-            .AnyAsync(accommodation => accommodation.Id == accommodationId, cancellationToken);
-
-        if (!visible)
-        {
-            throw Missing(accommodationId);
-        }
-    }
-
-    // Read as a projection rather than loaded: a tracked row is what breaks a
-    // single-statement delete that follows it.
-    public async Task RequireOwnedAsync(int accommodationId, CancellationToken cancellationToken)
-    {
-        var hostId = await db.Accommodations
-            .AsNoTracking()
-            .Where(accommodation => accommodation.Id == accommodationId)
-            .Select(accommodation => (int?)accommodation.HostId)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? throw Missing(accommodationId);
-
-        RequireOwnerOrAdministrator(hostId);
-    }
-
-    // Writers on one listing queue here: under read committed snapshot two of
-    // them otherwise read the same rows and collide on the key they both write.
-    public Task LockAsync(int accommodationId, CancellationToken cancellationToken) =>
-        db.Database.ExecuteSqlAsync(
+    public override Task LockAsync(int listingId, CancellationToken cancellationToken) =>
+        Db.Database.ExecuteSqlAsync(
             $"""
             SELECT TOP 1 1 FROM [Accommodations] WITH (UPDLOCK, HOLDLOCK)
-            WHERE [Id] = {accommodationId}
+            WHERE [Id] = {listingId}
             """,
             cancellationToken);
-
-    public void RequireOwnerOrAdministrator(int hostId)
-    {
-        if (currentUser.RequireUserId() == hostId
-            || currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return;
-        }
-
-        throw new ForbiddenException("A host may only work on their own listings.");
-    }
-
-    public static NotFoundException Missing(int accommodationId) =>
-        new($"No accommodation has the id {accommodationId}.");
 }

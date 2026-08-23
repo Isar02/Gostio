@@ -57,7 +57,9 @@ public sealed class AccommodationPhotosController(IAccommodationPhotoService pho
         await upload.File.CopyToAsync(buffer, cancellationToken);
 
         var created = await photos.AddAsync(
-            accommodationId, buffer.ToArray(), cancellationToken);
+            accommodationId,
+            new ImageUpload(buffer.ToArray(), upload.File.ContentType),
+            cancellationToken);
 
         return CreatedAtAction(
             nameof(Get),

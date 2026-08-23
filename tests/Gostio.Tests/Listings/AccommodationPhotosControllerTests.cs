@@ -91,7 +91,8 @@ public sealed class AccommodationPhotosControllerTests : IAsyncLifetime
     {
         await host.SendAsync(HttpMethod.Post, Route, RoleNames.Host, Upload());
 
-        Assert.Equal(StubPhotos.Bytes, photos.LastUpload);
+        Assert.Equal(StubPhotos.Bytes, photos.LastUpload!.Content);
+        Assert.Equal(ImageRules.Jpeg, photos.LastUpload.ContentType);
         Assert.Equal(7, photos.LastAccommodationId);
     }
 
@@ -132,7 +133,7 @@ public sealed class AccommodationPhotosControllerTests : IAsyncLifetime
 
         public PagedRequest? LastPage { get; private set; }
 
-        public byte[]? LastUpload { get; private set; }
+        public ImageUpload? LastUpload { get; private set; }
 
         public int? LastAccommodationId { get; private set; }
 
@@ -165,11 +166,11 @@ public sealed class AccommodationPhotosControllerTests : IAsyncLifetime
 
         public Task<AccommodationPhotoResponse> AddAsync(
             int accommodationId,
-            byte[] content,
+            ImageUpload upload,
             CancellationToken cancellationToken)
         {
             LastAccommodationId = accommodationId;
-            LastUpload = content;
+            LastUpload = upload;
 
             return Task.FromResult(Row(9));
         }

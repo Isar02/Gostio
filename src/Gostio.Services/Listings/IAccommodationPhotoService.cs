@@ -22,7 +22,7 @@ public interface IAccommodationPhotoService
 
     Task<AccommodationPhotoResponse> AddAsync(
         int accommodationId,
-        byte[] content,
+        ImageUpload upload,
         CancellationToken cancellationToken);
 
     Task<AccommodationPhotoResponse> SetCoverAsync(

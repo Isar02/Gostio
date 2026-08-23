@@ -54,7 +54,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
     {
         await access.RequireVisibleAsync(accommodationId, cancellationToken);
 
-        return await Of(accommodationId, photoId)
+        return await ForPhoto(accommodationId, photoId)
             .Select(photo => new ImageContent(photo.Image, photo.ContentType))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw Missing(photoId);
@@ -62,24 +62,28 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
     public async Task<AccommodationPhotoResponse> AddAsync(
         int accommodationId,
-        byte[] content,
+        ImageUpload upload,
         CancellationToken cancellationToken)
     {
         await access.RequireOwnedAsync(accommodationId, cancellationToken);
 
-        var contentType = RequireImage(content);
+        var contentType = RequireImage(upload);
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        var highest = await db.AccommodationPhotos
-            .Where(photo => photo.AccommodationId == accommodationId)
-            .MaxAsync(photo => (int?)photo.DisplayOrder, cancellationToken);
+        await LockListingAsync(accommodationId, cancellationToken);
+
+        var held = db.AccommodationPhotos.Where(photo => photo.AccommodationId == accommodationId);
+
+        var highest = await held.MaxAsync(photo => (int?)photo.DisplayOrder, cancellationToken);
+        var covered = await held.AnyAsync(photo => photo.IsCover, cancellationToken);
 
         var photo = new AccommodationPhoto
         {
             AccommodationId = accommodationId,
-            Image = content,
+            Image = upload.Content,
             ContentType = contentType,
+            IsCover = !covered,
             DisplayOrder = (highest ?? -1) + 1,
             UploadedAt = DateTime.UtcNow,
         };
@@ -87,18 +91,6 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         db.AccommodationPhotos.Add(photo);
 
         await db.SaveChangesAsync(cancellationToken);
-
-        // The first picture carries the cover, or a listing with photos has
-        // none to show beside its title. The clause is inside the statement
-        // rather than read first, so two uploads at once promote exactly one.
-        await db.AccommodationPhotos
-            .Where(candidate => candidate.Id == photo.Id
-                && !db.AccommodationPhotos.Any(other =>
-                    other.AccommodationId == accommodationId && other.IsCover))
-            .ExecuteUpdateAsync(
-                setters => setters.SetProperty(candidate => candidate.IsCover, true),
-                cancellationToken);
-
         await transaction.CommitAsync(cancellationToken);
 
         return await ReadAsync(accommodationId, photo.Id, cancellationToken);
@@ -113,6 +105,8 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
+        await LockListingAsync(accommodationId, cancellationToken);
+
         // Cleared before the new one is set: one cover per listing is a unique
         // index, and the other order collides with it.
         await db.AccommodationPhotos
@@ -121,7 +115,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
                 setters => setters.SetProperty(photo => photo.IsCover, false),
                 cancellationToken);
 
-        var promoted = await Of(accommodationId, photoId)
+        var promoted = await ForPhoto(accommodationId, photoId)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(photo => photo.IsCover, true),
                 cancellationToken);
@@ -145,13 +139,15 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        var wasCover = await Of(accommodationId, photoId)
+        await LockListingAsync(accommodationId, cancellationToken);
+
+        var wasCover = await ForPhoto(accommodationId, photoId)
             .AsNoTracking()
             .Select(photo => (bool?)photo.IsCover)
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw Missing(photoId);
 
-        await Of(accommodationId, photoId).ExecuteDeleteAsync(cancellationToken);
+        await ForPhoto(accommodationId, photoId).ExecuteDeleteAsync(cancellationToken);
 
         if (wasCover)
         {
@@ -161,8 +157,17 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         await transaction.CommitAsync(cancellationToken);
     }
 
-    // A listing keeps a cover for as long as it has any photo left, or the row
-    // stops showing a picture the moment the wrong one is removed.
+    // One cover per listing is a unique index, and the database runs read
+    // committed snapshot: two callers reading at once both find no cover, and
+    // the second loses its upload to a duplicate key. This is what queues them.
+    private Task LockListingAsync(int accommodationId, CancellationToken cancellationToken) =>
+        db.Database.ExecuteSqlAsync(
+            $"""
+            SELECT TOP 1 1 FROM [Accommodations] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [Id] = {accommodationId}
+            """,
+            cancellationToken);
+
     private async Task PromoteNextAsync(int accommodationId, CancellationToken cancellationToken)
     {
         var next = await Ordered(accommodationId)
@@ -179,27 +184,40 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         }
     }
 
-    private static string RequireImage(byte[] content)
+    private static string RequireImage(ImageUpload upload)
     {
-        if (content.Length == 0)
+        if (upload.Content.Length == 0)
         {
             throw new ValidationException(FileField, "Choose an image to upload.");
         }
 
-        if (content.Length > ImageRules.MaximumBytes)
+        if (upload.Content.Length > ImageRules.MaximumBytes)
         {
             throw new ValidationException(
                 FileField,
                 $"An image is at most {ImageRules.MaximumBytes / (1024 * 1024)} MB.");
         }
 
-        return ImageRules.Detect(content)
+        var detected = ImageRules.Detect(upload.Content)
             ?? throw new ValidationException(
                 FileField,
                 $"An image has to be one of {string.Join(", ", ImageRules.Allowed)}.");
+
+        // The claim is checked and then dropped: what reaches the column is
+        // what the bytes proved, so a stored type holds on the way back out.
+        var claimed = upload.ContentType?.Split(';')[0].Trim();
+
+        if (!string.IsNullOrEmpty(claimed)
+            && !string.Equals(claimed, detected, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ValidationException(
+                FileField, $"This file was sent as {claimed} and its bytes say {detected}.");
+        }
+
+        return detected;
     }
 
-    private IQueryable<AccommodationPhoto> Of(int accommodationId, int photoId) =>
+    private IQueryable<AccommodationPhoto> ForPhoto(int accommodationId, int photoId) =>
         db.AccommodationPhotos.Where(photo =>
             photo.AccommodationId == accommodationId && photo.Id == photoId);
 
@@ -214,7 +232,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         int accommodationId,
         int photoId,
         CancellationToken cancellationToken) =>
-        await Of(accommodationId, photoId)
+        await ForPhoto(accommodationId, photoId)
             .AsNoTracking()
             .Select(Projection)
             .FirstOrDefaultAsync(cancellationToken)

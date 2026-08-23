@@ -12,9 +12,7 @@ namespace Gostio.Services.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Added nullable, filled, then closed. A required column with a
-            // default would leave the default behind for every later insert,
-            // and every row already stored holds a JPEG.
+            // Nullable, filled, then closed: a default would outlive the backfill.
             AddContentType(migrationBuilder, "AccommodationPhotos", "ContentType");
             AddContentType(migrationBuilder, "ExperiencePhotos", "ContentType");
             AddContentType(migrationBuilder, "News", "ImageContentType");

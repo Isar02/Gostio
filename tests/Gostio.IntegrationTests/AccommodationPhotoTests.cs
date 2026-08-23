@@ -1,10 +1,12 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Gostio.Model.Responses;
 using Gostio.Model.Validation;
 using Gostio.Services.Authentication;
 using Gostio.Services.Listings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
@@ -29,8 +31,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var first = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
-        var second = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        var first = await AddAsync(host, listing, Jpeg);
+        var second = await AddAsync(host, listing, Jpeg);
 
         Assert.True(first.IsCover);
         Assert.False(second.IsCover);
@@ -60,7 +62,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
             _ => ImageRules.Jpeg,
         };
 
-        var stored = await AsHostAsync(host, photos => photos.AddAsync(listing, content, default));
+        var stored = await AddAsync(host, listing, content);
 
         Assert.Equal(expected, stored.ContentType);
 
@@ -76,8 +78,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var refused = await Assert.ThrowsAsync<ValidationException>(() => AsHostAsync(
-            host, photos => photos.AddAsync(listing, [0x25, 0x50, 0x44, 0x46, 0x2D], default)));
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => AddAsync(host, listing, [0x25, 0x50, 0x44, 0x46, 0x2D]));
 
         Assert.Contains("File", refused.Errors.Keys);
     }
@@ -87,8 +89,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var refused = await Assert.ThrowsAsync<ValidationException>(() => AsHostAsync(
-            host, photos => photos.AddAsync(listing, [], default)));
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => AddAsync(host, listing, []));
 
         Assert.Contains("File", refused.Errors.Keys);
     }
@@ -102,8 +104,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
 
         Jpeg.CopyTo(oversized, 0);
 
-        var refused = await Assert.ThrowsAsync<ValidationException>(() => AsHostAsync(
-            host, photos => photos.AddAsync(listing, oversized, default)));
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => AddAsync(host, listing, oversized));
 
         Assert.Contains("File", refused.Errors.Keys);
     }
@@ -115,8 +117,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var first = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
-        var second = await AsHostAsync(host, photos => photos.AddAsync(listing, Png, default));
+        var first = await AddAsync(host, listing, Jpeg);
+        var second = await AddAsync(host, listing, Png);
 
         var promoted = await AsHostAsync(
             host, photos => photos.SetCoverAsync(listing, second.Id, default));
@@ -135,7 +137,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var only = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        var only = await AddAsync(host, listing, Jpeg);
 
         await Assert.ThrowsAsync<NotFoundException>(() => AsHostAsync(
             host, photos => photos.SetCoverAsync(listing, int.MaxValue, default)));
@@ -148,8 +150,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var first = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
-        var second = await AsHostAsync(host, photos => photos.AddAsync(listing, Png, default));
+        var first = await AddAsync(host, listing, Jpeg);
+        var second = await AddAsync(host, listing, Png);
 
         await AsHostAsync(host, photos => photos.DeleteAsync(listing, first.Id, default));
 
@@ -161,7 +163,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var only = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        var only = await AddAsync(host, listing, Jpeg);
 
         await AsHostAsync(host, photos => photos.DeleteAsync(listing, only.Id, default));
 
@@ -182,7 +184,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        await AddAsync(host, listing, Jpeg);
 
         var page = await AsHostAsync(
             host, photos => photos.SearchAsync(listing, new PagedRequest(), default));
@@ -196,7 +198,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         var (host, listing) = await AListingAsync();
 
-        var cover = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        var cover = await AddAsync(host, listing, Jpeg);
 
         var read = await AsHostAsync(
             host,
@@ -212,10 +214,10 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         var (host, listing) = await AListingAsync();
         var stranger = await fixture.AddUserAsync(Password, RoleNames.Host);
 
-        var mine = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        var mine = await AddAsync(host, listing, Jpeg);
 
         await Assert.ThrowsAsync<ForbiddenException>(() => AsHostAsync(
-            stranger, photos => photos.AddAsync(listing, Png, default)));
+            stranger, photos => photos.AddAsync(listing, Upload(Png), default)));
 
         await Assert.ThrowsAsync<ForbiddenException>(() => AsHostAsync(
             stranger, photos => photos.SetCoverAsync(listing, mine.Id, default)));
@@ -232,7 +234,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
 
         var added = await AsAsync(
             Caller(administrator, RoleNames.Administrator),
-            photos => photos.AddAsync(listing, Jpeg, default));
+            photos => photos.AddAsync(listing, Upload(Jpeg), default));
 
         Assert.True(added.IsCover);
     }
@@ -245,7 +247,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         var (host, listing) = await AListingAsync();
         var guest = await fixture.AddUserAsync(Password, RoleNames.Guest);
 
-        var photo = await AsHostAsync(host, photos => photos.AddAsync(listing, Jpeg, default));
+        var photo = await AddAsync(host, listing, Jpeg);
 
         await WithdrawAsync(host, listing);
 
@@ -257,6 +259,82 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         await Assert.ThrowsAsync<NotFoundException>(() => AsAsync(
             browsing, photos => photos.GetContentAsync(listing, photo.Id, default)));
     }
+
+    [Fact]
+    public async Task AClaimedTypeThatTheBytesContradictIsRefused()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => AddAsync(host, listing, Png, ImageRules.Jpeg));
+
+        Assert.Contains("File", refused.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task AClaimedTypeThatAgreesWithTheBytesIsKept()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var stored = await AsHostAsync(
+            host,
+            photos => photos.AddAsync(
+                listing, Upload(Png, $"{ImageRules.Png}; charset=binary"), default));
+
+        Assert.Equal(ImageRules.Png, stored.ContentType);
+    }
+
+    // Both callers are held at the lock and let go together, so they contend on
+    // purpose rather than by luck. Without it they each read a listing that has
+    // no cover yet and the second one loses its photo to the unique index; the
+    // barrier names the statement, so removing the lock fails this outright.
+    [Fact]
+    public async Task TwoFirstUploadsAtOnceBothLandAndOnlyOneTakesTheCover()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var barrier = new CommandBarrier(callers: 2, "UPDLOCK");
+
+        await Task.WhenAll(
+            UploadAsync(host, listing, Jpeg, barrier),
+            UploadAsync(host, listing, Png, barrier));
+
+        Assert.Equal(2, barrier.Arrived);
+
+        var photos = await PhotosOfAsync(listing);
+
+        Assert.Equal(2, photos.Count);
+        Assert.Single(photos, photo => photo.IsCover);
+        Assert.Equal([0, 1], photos.Select(photo => photo.DisplayOrder).Order());
+    }
+
+    [Fact]
+    public async Task TwoPromotionsAtOnceStillLeaveExactlyOneCover()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var first = await AddAsync(host, listing, Jpeg);
+        var second = await AddAsync(host, listing, Png);
+
+        var barrier = new CommandBarrier(callers: 2, "UPDLOCK");
+
+        await Task.WhenAll(
+            PromoteAsync(host, listing, first.Id, barrier),
+            PromoteAsync(host, listing, second.Id, barrier));
+
+        Assert.Equal(2, barrier.Arrived);
+        Assert.Single(await CoversOfAsync(listing));
+    }
+
+    private static ImageUpload Upload(byte[] content, string? claimed = null) =>
+        new(content, claimed);
+
+    private Task<AccommodationPhotoResponse> AddAsync(
+        int host,
+        int listing,
+        byte[] content,
+        string? claimed = null) =>
+        AsHostAsync(host, photos => photos.AddAsync(listing, Upload(content, claimed), default));
 
     private static ICurrentUser Caller(int userId, params string[] roles) =>
         new SignedInUser(userId, roles);
@@ -293,6 +371,35 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
                 ListingRequests.Edit(references, "Taken off the market", isActive: false),
                 default),
             services => services.GetRequiredService<IAccommodationService>());
+    }
+
+    private async Task<IReadOnlyList<(int Id, bool IsCover, int DisplayOrder)>> PhotosOfAsync(
+        int listing)
+    {
+        await using var db = fixture.CreateContext();
+
+        var rows = await db.AccommodationPhotos
+            .Where(photo => photo.AccommodationId == listing)
+            .Select(photo => new { photo.Id, photo.IsCover, photo.DisplayOrder })
+            .ToListAsync();
+
+        return [.. rows.Select(row => (row.Id, row.IsCover, row.DisplayOrder))];
+    }
+
+    private async Task UploadAsync(int host, int listing, byte[] content, IInterceptor barrier)
+    {
+        await using var services = fixture.BuildServices(Caller(host, RoleNames.Host), barrier);
+
+        await services.GetRequiredService<IAccommodationPhotoService>()
+            .AddAsync(listing, Upload(content), CancellationToken.None);
+    }
+
+    private async Task PromoteAsync(int host, int listing, int photoId, IInterceptor barrier)
+    {
+        await using var services = fixture.BuildServices(Caller(host, RoleNames.Host), barrier);
+
+        await services.GetRequiredService<IAccommodationPhotoService>()
+            .SetCoverAsync(listing, photoId, CancellationToken.None);
     }
 
     private async Task<IReadOnlyList<int>> CoversOfAsync(int listing)

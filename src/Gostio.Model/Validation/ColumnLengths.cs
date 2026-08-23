@@ -7,6 +7,8 @@ public static class ColumnLengths
 
     public const int Code = 30;
 
+    public const int ContentType = 100;
+
     public const int Title = 200;
 
     public const int Description = 2000;

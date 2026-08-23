@@ -18,6 +18,8 @@ public class User : IEntity
 
     public byte[]? ProfileImage { get; set; }
 
+    public string? ProfileImageContentType { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     // Raised on logout and carried as a claim, so the server refuses tokens

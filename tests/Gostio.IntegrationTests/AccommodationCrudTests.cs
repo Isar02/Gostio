@@ -289,6 +289,7 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
             {
                 AccommodationId = created.Id,
                 Image = [1, 2, 3],
+                ContentType = "image/jpeg",
                 IsCover = true,
                 DisplayOrder = 0,
                 UploadedAt = DateTime.UtcNow,

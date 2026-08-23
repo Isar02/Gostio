@@ -39,6 +39,7 @@ internal static class UserSeed
                 PhoneNumber = $"+387 6{users.Count % 10} {310 + users.Count:000} {480 + users.Count * 3:000}",
                 PasswordHash = hash,
                 ProfileImage = photo is null ? null : SeedImages.Profile(photo.Value),
+                ProfileImageContentType = photo is null ? null : SeedImages.ContentType,
                 CreatedAt = created.AddDays(users.Count * 9),
             };
 

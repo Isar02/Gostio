@@ -10,6 +10,8 @@ public class AccommodationPhoto
 
     public byte[] Image { get; set; } = null!;
 
+    public string ContentType { get; set; } = null!;
+
     public bool IsCover { get; set; }
 
     public int DisplayOrder { get; set; }

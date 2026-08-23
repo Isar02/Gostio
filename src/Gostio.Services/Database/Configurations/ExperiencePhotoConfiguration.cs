@@ -1,3 +1,4 @@
+using Gostio.Model.Validation;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -13,6 +14,11 @@ public sealed class ExperiencePhotoConfiguration : IEntityTypeConfiguration<Expe
         builder
             .Property(photo => photo.Image)
             .IsRequired();
+
+        builder
+            .Property(photo => photo.ContentType)
+            .IsRequired()
+            .HasMaxLength(ColumnLengths.ContentType);
 
         builder
             .HasOne(photo => photo.Experience)

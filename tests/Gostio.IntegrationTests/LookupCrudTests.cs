@@ -1,3 +1,4 @@
+using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Services.Database.Entities;
@@ -188,19 +189,18 @@ public class LookupCrudTests(DatabaseFixture fixture)
         await using var services = fixture.BuildServices();
 
         var roles = services.GetRequiredService<IRoleService>();
-
-        var created = await roles.CreateAsync(Named("Administrator"), CancellationToken.None);
-
-        await Assert.ThrowsAsync<BusinessException>(
-            () => roles.UpdateAsync(created.Id, Named("Superuser"), CancellationToken.None));
+        var id = await fixture.EnsureRoleAsync(RoleNames.Administrator);
 
         await Assert.ThrowsAsync<BusinessException>(
-            () => roles.DeleteAsync(created.Id, CancellationToken.None));
+            () => roles.UpdateAsync(id, Named("Superuser"), CancellationToken.None));
+
+        await Assert.ThrowsAsync<BusinessException>(
+            () => roles.DeleteAsync(id, CancellationToken.None));
 
         await using var db = fixture.CreateContext();
 
         Assert.True(await db.Roles.AnyAsync(
-            role => role.Id == created.Id && role.Name == "Administrator"));
+            role => role.Id == id && role.Name == RoleNames.Administrator));
     }
 
     private static LookupUpsertRequest Named(string name) => new() { Name = name };

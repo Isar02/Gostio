@@ -3,6 +3,7 @@ using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Lookups;
+using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -72,12 +73,14 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // Resolved through the real registrations rather than constructed, so a
     // service the container cannot build fails here as well as at start-up.
-    public ServiceProvider BuildServices()
+    public ServiceProvider BuildServices(ICurrentUser? caller = null)
     {
         var services = new ServiceCollection();
 
         services.AddScoped(_ => CreateContext());
+        services.AddScoped(_ => caller ?? new AnonymousUser());
         services.AddGostioLookupServices();
+        services.AddGostioUserServices();
 
         return services.BuildServiceProvider();
     }
@@ -101,6 +104,26 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await db.SaveChangesAsync();
 
         return user.Id;
+    }
+
+    // The reference tables are empty in the migrated database, and more than
+    // one test needs the same role to be there without caring who put it there.
+    public async Task<int> EnsureRoleAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var role = await db.Roles.FirstOrDefaultAsync(candidate => candidate.Name == name);
+
+        if (role is null)
+        {
+            role = new Role { Name = name };
+
+            db.Roles.Add(role);
+
+            await db.SaveChangesAsync();
+        }
+
+        return role.Id;
     }
 
     private static User NewUser(string username, string email, string password) =>

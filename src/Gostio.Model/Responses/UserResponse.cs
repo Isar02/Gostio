@@ -2,7 +2,7 @@ namespace Gostio.Model.Responses;
 
 // The profile image is absent on purpose: it is a column of bytes, and it is
 // served by its own endpoint rather than dragged through every reply.
-public sealed class UserResponse
+public sealed class UserResponse : IIdentified
 {
     public required int Id { get; init; }
 

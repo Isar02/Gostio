@@ -2,9 +2,11 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Lookups;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
@@ -66,6 +68,18 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await using var db = CreateContext();
 
         await db.Database.EnsureDeletedAsync();
+    }
+
+    // Resolved through the real registrations rather than constructed, so a
+    // service the container cannot build fails here as well as at start-up.
+    public ServiceProvider BuildServices()
+    {
+        var services = new ServiceCollection();
+
+        services.AddScoped(_ => CreateContext());
+        services.AddGostioLookupServices();
+
+        return services.BuildServiceProvider();
     }
 
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>

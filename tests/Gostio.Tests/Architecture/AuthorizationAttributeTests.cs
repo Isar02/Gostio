@@ -1,7 +1,6 @@
 using System.Reflection;
 using Gostio.API.Middleware;
 using Gostio.Model.Authorization;
-using Gostio.Tests.Authentication;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Gostio.Tests.Architecture;
@@ -16,18 +15,9 @@ public class AuthorizationAttributeTests
     {
         var named = RolesNamedIn(typeof(ExceptionHandlingMiddleware).Assembly);
 
+        // Not empty, or the check below would pass on an unread assembly.
+        Assert.NotEmpty(named);
         Assert.Empty(named.Except(RoleNames.All));
-    }
-
-    // The API names no role yet, so the check above would pass on an empty list
-    // whether it read the attributes or not. This one reads an assembly that
-    // does name one.
-    [Fact]
-    public void TheAttributesAreActuallyRead()
-    {
-        var named = RolesNamedIn(typeof(SecuredProbeController).Assembly);
-
-        Assert.Contains(RoleNames.Administrator, named);
     }
 
     private static IReadOnlyList<string> RolesNamedIn(Assembly assembly) =>

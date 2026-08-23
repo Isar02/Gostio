@@ -1,8 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-public interface ILookupEntity
+public interface ILookupEntity : IEntity
 {
-    int Id { get; set; }
-
     string Name { get; set; }
 }

@@ -246,13 +246,13 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
     }
 
     private async Task<List<int>> RequireRoleIdsAsync(
-        List<string> names,
+        List<string>? names,
         string field,
         CancellationToken cancellationToken)
     {
-        var wanted = names
+        var wanted = (names ?? [])
+            .Where(name => !string.IsNullOrWhiteSpace(name))
             .Select(name => name.Trim())
-            .Where(name => name.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 

@@ -193,6 +193,25 @@ public class UserCrudTests(DatabaseFixture fixture)
         Assert.Contains(nameof(UserRolesRequest.Roles), refused.Errors.Keys);
     }
 
+    // A list of the right length can still hold nothing usable, and the element
+    // is what the count never looks at.
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ARoleListHoldingNothingUsableIsRefused(string? entry)
+    {
+        var theirs = await fixture.AddUserAsync(Password);
+
+        var refused = await Assert.ThrowsAsync<ValidationException>(() => AsAdministratorAsync(
+            users => users.SetRolesAsync(
+                theirs,
+                new UserRolesRequest { Roles = [entry!] },
+                CancellationToken.None)));
+
+        Assert.Contains(nameof(UserRolesRequest.Roles), refused.Errors.Keys);
+    }
+
     [Fact]
     public async Task DeactivatingAnAccountLeavesItInPlace()
     {

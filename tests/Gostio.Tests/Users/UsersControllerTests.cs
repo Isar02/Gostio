@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using Gostio.Model.Authorization;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
@@ -64,6 +65,25 @@ public sealed class UsersControllerTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/api/users")]
+    [InlineData("/api/users/5/roles")]
+    public async Task AnExplicitlyNullRoleListIsAFourHundred(string path)
+    {
+        var method = path.EndsWith("roles", StringComparison.Ordinal)
+            ? HttpMethod.Put
+            : HttpMethod.Post;
+
+        var response = await host.SendAsync(
+            method, path, RoleNames.Administrator, NullRolesBodyFor(path));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+
+        Assert.Contains(nameof(UserRolesRequest.Roles), body!.Errors!.Keys);
+    }
+
     [Fact]
     public async Task NoneOfItIsReachableWithoutAToken()
     {
@@ -71,6 +91,21 @@ public sealed class UsersControllerTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    private static object NullRolesBodyFor(string path) => path switch
+    {
+        "/api/users" => new
+        {
+            firstName = "Amina",
+            lastName = "Kovačević",
+            username = "amina.kovacevic",
+            email = "amina.kovacevic@example.com",
+            password = "a-long-enough-password",
+            confirmPassword = "a-long-enough-password",
+            roles = (string[]?)null,
+        },
+        _ => new { roles = (string[]?)null },
+    };
 
     private static object? BodyFor(string path) => path switch
     {

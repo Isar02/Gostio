@@ -2,9 +2,12 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Lookups;
+using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
@@ -68,6 +71,22 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await db.Database.EnsureDeletedAsync();
     }
 
+    // Resolved through the real registrations rather than constructed, so a
+    // service the container cannot build fails here as well as at start-up.
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller = null,
+        params IInterceptor[] interceptors)
+    {
+        var services = new ServiceCollection();
+
+        services.AddScoped(_ => CreateContext(interceptors));
+        services.AddScoped(_ => caller ?? new AnonymousUser());
+        services.AddGostioLookupServices();
+        services.AddGostioUserServices();
+
+        return services.BuildServiceProvider();
+    }
+
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<GostioDbContext>()
             .UseSqlServer(connectionString)
@@ -87,6 +106,26 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await db.SaveChangesAsync();
 
         return user.Id;
+    }
+
+    // The reference tables are empty in the migrated database, and more than
+    // one test needs the same role to be there without caring who put it there.
+    public async Task<int> EnsureRoleAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var role = await db.Roles.FirstOrDefaultAsync(candidate => candidate.Name == name);
+
+        if (role is null)
+        {
+            role = new Role { Name = name };
+
+            db.Roles.Add(role);
+
+            await db.SaveChangesAsync();
+        }
+
+        return role.Id;
     }
 
     private static User NewUser(string username, string email, string password) =>

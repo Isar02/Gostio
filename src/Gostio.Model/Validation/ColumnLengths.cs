@@ -1,7 +1,7 @@
-namespace Gostio.Services.Database.Configurations;
+namespace Gostio.Model.Validation;
 
 // One place, so the same concept never gets two different sizes.
-internal static class ColumnLengths
+public static class ColumnLengths
 {
     public const int Name = 100;
 

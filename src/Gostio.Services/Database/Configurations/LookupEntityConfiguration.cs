@@ -1,3 +1,4 @@
+using Gostio.Model.Validation;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

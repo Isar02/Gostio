@@ -11,4 +11,6 @@ internal sealed class AnonymousUser : ICurrentUser
 
     public int RequireUserId() =>
         throw new UnauthorizedException("This request needs a signed in user.");
+
+    public bool IsInRole(string role) => false;
 }

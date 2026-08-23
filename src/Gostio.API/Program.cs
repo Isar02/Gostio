@@ -3,6 +3,8 @@ using Gostio.API.Middleware;
 using Gostio.API.Swagger;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
+using Gostio.Services.Lookups;
+using Gostio.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,8 @@ if (string.IsNullOrWhiteSpace(builder.Configuration[WebHostDefaults.ServerUrlsKe
 builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();
+builder.Services.AddGostioLookupServices();
+builder.Services.AddGostioUserServices();
 builder.Services.AddGostioValidationErrors();
 builder.Services.AddGostioAuthentication(settings.Jwt);
 builder.Services.AddGostioSwagger();

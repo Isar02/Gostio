@@ -92,8 +92,6 @@ internal sealed class AccommodationAvailabilityService(
         return await ReadAsync(accommodationId, range.Id, cancellationToken);
     }
 
-    // A range is edited by removing it and adding the replacement: a host opens
-    // and closes dates rather than reshaping a row that is already there.
     public async Task DeleteAsync(
         int accommodationId,
         int availabilityId,
@@ -110,9 +108,8 @@ internal sealed class AccommodationAvailabilityService(
         }
     }
 
-    // The two bounds are filters of their own, so an inverted window is not an
-    // empty one: it asks for ranges ending after the later day and starting
-    // before the earlier, which a long enough range satisfies.
+    // The two bounds filter on their own, so an inverted window is not an empty
+    // one: a range spanning both days answers to each of them.
     private static void RequireAWindow(AccommodationAvailabilitySearchRequest search)
     {
         if (search.From is DateOnly from && search.To is DateOnly to && to < from)
@@ -147,9 +144,6 @@ internal sealed class AccommodationAvailabilityService(
                 nameof(request.PriceOverride), "A nightly price is above zero.");
         }
 
-        // An open range exists to carry a price, since the calendar is already
-        // open without it. A blocked one may keep the price it would charge if
-        // it reopened, and does not have to.
         if (isAvailable && request.PriceOverride is null)
         {
             throw new ValidationException(

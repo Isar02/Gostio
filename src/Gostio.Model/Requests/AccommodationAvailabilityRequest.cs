@@ -3,8 +3,6 @@ using Gostio.Model.Validation;
 
 namespace Gostio.Model.Requests;
 
-// One exception to an otherwise open calendar. Both dates are inclusive, the
-// way a host reads a calendar.
 public sealed class AccommodationAvailabilityRequest
 {
     [Required(ErrorMessage = "Choose the first day of the range.")]

@@ -39,16 +39,9 @@ internal sealed class ReservationStatusService(GostioDbContext db)
     protected override IQueryable<ReservationStatus> Filter(
         IQueryable<ReservationStatus> query,
         LookupSearchRequest search)
-    {
-        if (string.IsNullOrWhiteSpace(search.Name))
-        {
-            return query;
-        }
-
-        string term = search.Name.Trim();
-
-        return query.Where(status => status.Name.Contains(term));
-    }
+        => Trimmed(search.Name) is string term
+            ? query.Where(status => status.Name.Contains(term))
+            : query;
 
     public override async Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
@@ -80,7 +73,7 @@ internal sealed class ReservationStatusService(GostioDbContext db)
     {
         var name = request.Name.Trim();
         var code = request.Code.Trim();
-        var description = request.Description?.Trim();
+        var description = Trimmed(request.Description);
 
         if (NamedByTheStateMachine.Contains(status.Id)
             && !string.Equals(code, status.Code, StringComparison.Ordinal))
@@ -106,6 +99,6 @@ internal sealed class ReservationStatusService(GostioDbContext db)
 
         status.Name = name;
         status.Code = code;
-        status.Description = string.IsNullOrEmpty(description) ? null : description;
+        status.Description = description;
     }
 }

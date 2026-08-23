@@ -32,10 +32,8 @@ internal sealed class CityService(GostioDbContext db)
 
     protected override IQueryable<City> Filter(IQueryable<City> query, CitySearchRequest search)
     {
-        if (!string.IsNullOrWhiteSpace(search.Name))
+        if (Trimmed(search.Name) is string term)
         {
-            string term = search.Name.Trim();
-
             query = query.Where(city => city.Name.Contains(term));
         }
 

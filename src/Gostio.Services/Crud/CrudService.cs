@@ -132,6 +132,9 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
         await Set.FirstOrDefaultAsync(entity => entity.Id == id, cancellationToken)
         ?? throw Missing(id);
 
+    protected static string? Trimmed(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private static bool IsStillReferenced(Exception failure) =>
         failure is SqlException { Number: ForeignKeyViolation }
         || failure.InnerException is SqlException { Number: ForeignKeyViolation };

@@ -31,17 +31,13 @@ internal sealed class CountryService(GostioDbContext db)
         IQueryable<Country> query,
         CountrySearchRequest search)
     {
-        if (!string.IsNullOrWhiteSpace(search.Name))
+        if (Trimmed(search.Name) is string term)
         {
-            string term = search.Name.Trim();
-
             query = query.Where(country => country.Name.Contains(term));
         }
 
-        if (!string.IsNullOrWhiteSpace(search.IsoCode))
+        if (Trimmed(search.IsoCode) is string code)
         {
-            string code = search.IsoCode.Trim();
-
             query = query.Where(country => country.IsoCode == code);
         }
 

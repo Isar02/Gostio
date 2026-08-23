@@ -23,16 +23,9 @@ internal abstract class LookupService<TEntity>(GostioDbContext db, string noun)
     protected override IQueryable<TEntity> Filter(
         IQueryable<TEntity> query,
         LookupSearchRequest search)
-    {
-        if (string.IsNullOrWhiteSpace(search.Name))
-        {
-            return query;
-        }
-
-        string term = search.Name.Trim();
-
-        return query.Where(entity => entity.Name.Contains(term));
-    }
+        => Trimmed(search.Name) is string term
+            ? query.Where(entity => entity.Name.Contains(term))
+            : query;
 
     protected override async Task<TEntity> NewAsync(
         LookupUpsertRequest request,

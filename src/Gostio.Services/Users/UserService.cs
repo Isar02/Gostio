@@ -137,34 +137,26 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
 
     protected override IQueryable<User> Filter(IQueryable<User> query, UserSearchRequest search)
     {
-        if (!string.IsNullOrWhiteSpace(search.Name))
+        if (Trimmed(search.Name) is string name)
         {
-            string term = search.Name.Trim();
-
             query = query.Where(user =>
-                user.FirstName.Contains(term)
-                || user.LastName.Contains(term)
-                || (user.FirstName + " " + user.LastName).Contains(term));
+                user.FirstName.Contains(name)
+                || user.LastName.Contains(name)
+                || (user.FirstName + " " + user.LastName).Contains(name));
         }
 
-        if (!string.IsNullOrWhiteSpace(search.Username))
+        if (Trimmed(search.Username) is string username)
         {
-            string term = search.Username.Trim();
-
-            query = query.Where(user => user.Username.Contains(term));
+            query = query.Where(user => user.Username.Contains(username));
         }
 
-        if (!string.IsNullOrWhiteSpace(search.Email))
+        if (Trimmed(search.Email) is string email)
         {
-            string term = search.Email.Trim();
-
-            query = query.Where(user => user.Email.Contains(term));
+            query = query.Where(user => user.Email.Contains(email));
         }
 
-        if (!string.IsNullOrWhiteSpace(search.Role))
+        if (Trimmed(search.Role) is string role)
         {
-            string role = search.Role.Trim();
-
             query = query.Where(user =>
                 user.UserRoles.Any(assignment => assignment.Role.Name == role));
         }
@@ -209,7 +201,7 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
             LastName = request.LastName.Trim(),
             Username = username,
             Email = email,
-            PhoneNumber = Given(request.PhoneNumber),
+            PhoneNumber = Trimmed(request.PhoneNumber),
             PasswordHash = PasswordHasher.Hash(request.Password),
             CreatedAt = now,
             UserRoles =
@@ -234,12 +226,9 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         user.FirstName = request.FirstName.Trim();
         user.LastName = request.LastName.Trim();
         user.Email = email;
-        user.PhoneNumber = Given(request.PhoneNumber);
+        user.PhoneNumber = Trimmed(request.PhoneNumber);
         user.ModifiedAt = DateTime.UtcNow;
     }
-
-    private static string? Given(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private async Task<List<int>> RequireRoleIdsAsync(
         List<string> names,

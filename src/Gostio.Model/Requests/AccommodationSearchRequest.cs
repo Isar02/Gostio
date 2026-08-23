@@ -26,4 +26,8 @@ public sealed class AccommodationSearchRequest : PagedRequest
     public int? MinGuests { get; set; }
 
     public bool? IsActive { get; set; }
+
+    // Every named amenity has to be there, not any of them: a guest who asks
+    // for parking and a cot is naming two things they will not do without.
+    public List<int>? AmenityIds { get; set; }
 }

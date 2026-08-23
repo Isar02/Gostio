@@ -7,7 +7,6 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Listings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
@@ -15,6 +14,8 @@ namespace Gostio.IntegrationTests;
 public class AccommodationPhotoTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-a-photo-owner";
+
+    private readonly ListingWorkspace workspace = new(fixture);
 
     private static byte[] Jpeg => [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46];
 
@@ -169,10 +170,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
 
         Assert.Empty(await CoversOfAsync(listing));
 
-        var read = await AsHostAsync(
-            host,
-            listings => listings.GetAsync(listing, default),
-            services => services.GetRequiredService<IAccommodationService>());
+        var read = await workspace.AsHostAsync(
+            host, (IAccommodationService listings) => listings.GetAsync(listing, default));
 
         Assert.Null(read.CoverPhotoId);
     }
@@ -200,10 +199,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
 
         var cover = await AddAsync(host, listing, Jpeg);
 
-        var read = await AsHostAsync(
-            host,
-            listings => listings.GetAsync(listing, default),
-            services => services.GetRequiredService<IAccommodationService>());
+        var read = await workspace.AsHostAsync(
+            host, (IAccommodationService listings) => listings.GetAsync(listing, default));
 
         Assert.Equal(cover.Id, read.CoverPhotoId);
     }
@@ -233,7 +230,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         var administrator = await fixture.AddUserAsync(Password, RoleNames.Administrator);
 
         var added = await AsAsync(
-            Caller(administrator, RoleNames.Administrator),
+            ListingWorkspace.Caller(administrator, RoleNames.Administrator),
             photos => photos.AddAsync(listing, Upload(Jpeg), default));
 
         Assert.True(added.IsCover);
@@ -251,7 +248,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
 
         await WithdrawAsync(host, listing);
 
-        var browsing = Caller(guest, RoleNames.Guest);
+        var browsing = ListingWorkspace.Caller(guest, RoleNames.Guest);
 
         await Assert.ThrowsAsync<NotFoundException>(() => AsAsync(
             browsing, photos => photos.SearchAsync(listing, new PagedRequest(), default)));
@@ -348,42 +345,9 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         string? claimed = null) =>
         AsHostAsync(host, photos => photos.AddAsync(listing, Upload(content, claimed), default));
 
-    private static ICurrentUser Caller(int userId, params string[] roles) =>
-        new SignedInUser(userId, roles);
+    private Task<(int Host, int Listing)> AListingAsync() => workspace.AListingAsync(Password);
 
-    private async Task<(int Host, int Listing)> AListingAsync()
-    {
-        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
-
-        var references = new ListingReferences(
-            await fixture.EnsureCityAsync("Sarajevo"),
-            await fixture.EnsureAccommodationTypeAsync("Apartment"),
-            await fixture.EnsureAccommodationCategoryAsync("City break"));
-
-        var created = await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.CreateAsync(
-                ListingRequests.New(references, $"A listing {Guid.NewGuid():N}"), default),
-            services => services.GetRequiredService<IAccommodationService>());
-
-        return (host, created.Id);
-    }
-
-    private async Task WithdrawAsync(int host, int listing)
-    {
-        var references = new ListingReferences(
-            await fixture.EnsureCityAsync("Sarajevo"),
-            await fixture.EnsureAccommodationTypeAsync("Apartment"),
-            await fixture.EnsureAccommodationCategoryAsync("City break"));
-
-        await AsAsync(
-            Caller(host, RoleNames.Host),
-            listings => listings.UpdateAsync(
-                listing,
-                ListingRequests.Edit(references, "Taken off the market", isActive: false),
-                default),
-            services => services.GetRequiredService<IAccommodationService>());
-    }
+    private Task WithdrawAsync(int host, int listing) => workspace.WithdrawAsync(host, listing);
 
     private async Task<IReadOnlyList<(int Id, bool IsCover, int DisplayOrder)>> PhotosOfAsync(
         int listing)
@@ -398,21 +362,19 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         return [.. rows.Select(row => (row.Id, row.IsCover, row.DisplayOrder))];
     }
 
-    private async Task UploadAsync(int host, int listing, byte[] content, IInterceptor barrier)
-    {
-        await using var services = fixture.BuildServices(Caller(host, RoleNames.Host), barrier);
+    private Task UploadAsync(int host, int listing, byte[] content, IInterceptor barrier) =>
+        workspace.AsAsync(
+            ListingWorkspace.Caller(host, RoleNames.Host),
+            (IAccommodationPhotoService photos) =>
+                photos.AddAsync(listing, Upload(content), CancellationToken.None),
+            barrier);
 
-        await services.GetRequiredService<IAccommodationPhotoService>()
-            .AddAsync(listing, Upload(content), CancellationToken.None);
-    }
-
-    private async Task PromoteAsync(int host, int listing, int photoId, IInterceptor barrier)
-    {
-        await using var services = fixture.BuildServices(Caller(host, RoleNames.Host), barrier);
-
-        await services.GetRequiredService<IAccommodationPhotoService>()
-            .SetCoverAsync(listing, photoId, CancellationToken.None);
-    }
+    private Task PromoteAsync(int host, int listing, int photoId, IInterceptor barrier) =>
+        workspace.AsAsync(
+            ListingWorkspace.Caller(host, RoleNames.Host),
+            (IAccommodationPhotoService photos) =>
+                photos.SetCoverAsync(listing, photoId, CancellationToken.None),
+            barrier);
 
     private async Task<IReadOnlyList<int>> CoversOfAsync(int listing)
     {
@@ -425,37 +387,13 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     }
 
     private Task<T> AsHostAsync<T>(int host, Func<IAccommodationPhotoService, Task<T>> work) =>
-        AsAsync(Caller(host, RoleNames.Host), work);
+        workspace.AsHostAsync(host, work);
 
     private Task AsHostAsync(int host, Func<IAccommodationPhotoService, Task> work) =>
-        AsAsync(Caller(host, RoleNames.Host), work);
-
-    private Task<T> AsHostAsync<T, TService>(
-        int host,
-        Func<TService, Task<T>> work,
-        Func<IServiceProvider, TService> resolve) =>
-        AsAsync(Caller(host, RoleNames.Host), work, resolve);
+        workspace.AsHostAsync(host, work);
 
     private Task<T> AsAsync<T>(
         ICurrentUser caller,
         Func<IAccommodationPhotoService, Task<T>> work) =>
-        AsAsync(
-            caller, work, services => services.GetRequiredService<IAccommodationPhotoService>());
-
-    private async Task<T> AsAsync<T, TService>(
-        ICurrentUser caller,
-        Func<TService, Task<T>> work,
-        Func<IServiceProvider, TService> resolve)
-    {
-        await using var services = fixture.BuildServices(caller);
-
-        return await work(resolve(services));
-    }
-
-    private async Task AsAsync(ICurrentUser caller, Func<IAccommodationPhotoService, Task> work)
-    {
-        await using var services = fixture.BuildServices(caller);
-
-        await work(services.GetRequiredService<IAccommodationPhotoService>());
-    }
+        workspace.AsAsync(caller, work);
 }

@@ -31,34 +31,39 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         PagedRequest request,
         CancellationToken cancellationToken)
     {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
-        return await Ordered(accommodationId)
+        var page = await Ordered(accommodationId)
             .ToPagedResultAsync(request, Projection, cancellationToken);
+
+        // The rows, not the count: a page is read with two statements, and a
+        // listing withdrawn between them leaves a count the second one no longer
+        // agrees with.
+        if (page.Items.Count == 0)
+        {
+            await access.RequireVisibleAsync(accommodationId, cancellationToken);
+        }
+
+        return page;
     }
 
     public async Task<AccommodationPhotoResponse> GetAsync(
         int accommodationId,
         int photoId,
-        CancellationToken cancellationToken)
-    {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
-        return await ReadAsync(accommodationId, photoId, cancellationToken);
-    }
+        CancellationToken cancellationToken) =>
+        await Visible(accommodationId, photoId)
+            .Select(Projection)
+            .FirstOrDefaultAsync(cancellationToken)
+        ?? await MissingPhotoOrListingAsync<AccommodationPhotoResponse>(
+            accommodationId, photoId, cancellationToken);
 
     public async Task<ImageContent> GetContentAsync(
         int accommodationId,
         int photoId,
-        CancellationToken cancellationToken)
-    {
-        await access.RequireVisibleAsync(accommodationId, cancellationToken);
-
-        return await ForPhoto(accommodationId, photoId)
+        CancellationToken cancellationToken) =>
+        await Visible(accommodationId, photoId)
             .Select(photo => new ImageContent(photo.Image, photo.ContentType))
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw Missing(photoId);
-    }
+        ?? await MissingPhotoOrListingAsync<ImageContent>(
+            accommodationId, photoId, cancellationToken);
 
     public async Task<AccommodationPhotoResponse> AddAsync(
         int accommodationId,
@@ -71,7 +76,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await LockListingAsync(accommodationId, cancellationToken);
+        await access.LockAsync(accommodationId, cancellationToken);
 
         var listingPhotos = db.AccommodationPhotos
             .Where(photo => photo.AccommodationId == accommodationId);
@@ -108,7 +113,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await LockListingAsync(accommodationId, cancellationToken);
+        await access.LockAsync(accommodationId, cancellationToken);
 
         // Cleared before the new one is set: one cover per listing is a unique
         // index, and the other order collides with it.
@@ -142,7 +147,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await LockListingAsync(accommodationId, cancellationToken);
+        await access.LockAsync(accommodationId, cancellationToken);
 
         var wasCover = await ForPhoto(accommodationId, photoId)
             .AsNoTracking()
@@ -159,17 +164,6 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await transaction.CommitAsync(cancellationToken);
     }
-
-    // One cover per listing is a unique index, and the database runs read
-    // committed snapshot: two callers reading at once both find no cover, and
-    // the second loses its upload to a duplicate key. This is what queues them.
-    private Task LockListingAsync(int accommodationId, CancellationToken cancellationToken) =>
-        db.Database.ExecuteSqlAsync(
-            $"""
-            SELECT TOP 1 1 FROM [Accommodations] WITH (UPDLOCK, HOLDLOCK)
-            WHERE [Id] = {accommodationId}
-            """,
-            cancellationToken);
 
     private async Task PromoteNextAsync(int accommodationId, CancellationToken cancellationToken)
     {
@@ -234,12 +228,30 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         db.AccommodationPhotos.Where(photo =>
             photo.AccommodationId == accommodationId && photo.Id == photoId);
 
+    private IQueryable<AccommodationPhoto> Visible(int accommodationId, int photoId) =>
+        ForPhoto(accommodationId, photoId)
+            .AsNoTracking()
+            .Where(photo => access.VisibleListings()
+                .Any(listing => listing.Id == photo.AccommodationId));
+
     private IOrderedQueryable<AccommodationPhoto> Ordered(int accommodationId) =>
         db.AccommodationPhotos
             .AsNoTracking()
-            .Where(photo => photo.AccommodationId == accommodationId)
+            .Where(photo => photo.AccommodationId == accommodationId
+                && access.VisibleListings()
+                    .Any(listing => listing.Id == photo.AccommodationId))
             .OrderBy(photo => photo.DisplayOrder)
             .ThenBy(photo => photo.Id);
+
+    private async Task<T> MissingPhotoOrListingAsync<T>(
+        int accommodationId,
+        int photoId,
+        CancellationToken cancellationToken)
+    {
+        await access.RequireVisibleAsync(accommodationId, cancellationToken);
+
+        throw Missing(photoId);
+    }
 
     private async Task<AccommodationPhotoResponse> ReadAsync(
         int accommodationId,

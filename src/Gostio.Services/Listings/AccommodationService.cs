@@ -140,6 +140,14 @@ internal sealed class AccommodationService(
             query = query.Where(accommodation => accommodation.IsActive == isActive);
         }
 
+        if (search.AmenityIds is { Count: > 0 })
+        {
+            var wanted = search.AmenityIds.Distinct().ToList();
+
+            query = query.Where(accommodation => accommodation.Amenities
+                .Count(offering => wanted.Contains(offering.AmenityId)) == wanted.Count);
+        }
+
         return query;
     }
 

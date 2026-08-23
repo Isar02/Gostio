@@ -2,6 +2,7 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
 using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
@@ -82,6 +83,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => CreateContext(interceptors));
         services.AddScoped(_ => caller ?? new AnonymousUser());
         services.AddGostioLookupServices();
+        services.AddGostioListingServices();
         services.AddGostioUserServices();
 
         return services.BuildServiceProvider();
@@ -95,12 +97,23 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // A test that writes to a user gets one of its own, so the row it counts on
     // is never the row another test has already moved.
-    public async Task<int> AddUserAsync(string password)
+    public async Task<int> AddUserAsync(string password, params string[] roles)
     {
+        var now = DateTime.UtcNow;
+        var roleIds = new List<int>();
+
+        foreach (var role in roles)
+        {
+            roleIds.Add(await EnsureRoleAsync(role));
+        }
+
         await using var db = CreateContext();
 
         var name = $"user-{Guid.NewGuid():N}";
         var user = NewUser(name, $"{name}@example.com", password);
+
+        user.UserRoles =
+            [.. roleIds.Select(roleId => new UserRole { RoleId = roleId, AssignedAt = now })];
 
         db.Users.Add(user);
         await db.SaveChangesAsync();

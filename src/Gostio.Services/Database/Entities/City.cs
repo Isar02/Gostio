@@ -1,6 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-public class City
+public class City : IEntity
 {
     public int Id { get; set; }
 

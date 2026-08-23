@@ -73,18 +73,27 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
         return await ReadAsync(id, cancellationToken);
     }
 
+    // One statement rather than a load and a Remove: the change tracker severs
+    // the relationships of anything it already holds, so a row read earlier in
+    // the same request would break the delete before the database saw it.
     public virtual async Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        Set.Remove(await RequireAsync(id, cancellationToken));
+        int removed;
 
         try
         {
-            await Db.SaveChangesAsync(cancellationToken);
+            removed = await Set
+                .Where(entity => entity.Id == id)
+                .ExecuteDeleteAsync(cancellationToken);
         }
-        catch (DbUpdateException failure)
-            when (failure.InnerException is SqlException { Number: ForeignKeyViolation })
+        catch (Exception failure) when (IsStillReferenced(failure))
         {
             throw new BusinessException(StillReferencedMessage);
+        }
+
+        if (removed == 0)
+        {
+            throw Missing(id);
         }
     }
 
@@ -130,6 +139,10 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
     protected async Task<TEntity> RequireAsync(int id, CancellationToken cancellationToken) =>
         await Set.FirstOrDefaultAsync(entity => entity.Id == id, cancellationToken)
         ?? throw Missing(id);
+
+    private static bool IsStillReferenced(Exception failure) =>
+        failure is SqlException { Number: ForeignKeyViolation }
+        || failure.InnerException is SqlException { Number: ForeignKeyViolation };
 
     private NotFoundException Missing(int id) => new($"No {Noun} has the id {id}.");
 }

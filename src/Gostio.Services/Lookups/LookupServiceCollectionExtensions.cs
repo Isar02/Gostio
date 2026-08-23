@@ -11,6 +11,9 @@ public static class LookupServiceCollectionExtensions
         services.AddScoped<IExperienceCategoryService, ExperienceCategoryService>();
         services.AddScoped<IAmenityService, AmenityService>();
         services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<ICountryService, CountryService>();
+        services.AddScoped<ICityService, CityService>();
+        services.AddScoped<IReservationStatusService, ReservationStatusService>();
 
         return services;
     }

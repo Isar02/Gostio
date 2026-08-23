@@ -73,10 +73,13 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await LockListingAsync(accommodationId, cancellationToken);
 
-        var held = db.AccommodationPhotos.Where(photo => photo.AccommodationId == accommodationId);
+        var listingPhotos = db.AccommodationPhotos
+            .Where(photo => photo.AccommodationId == accommodationId);
 
-        var highest = await held.MaxAsync(photo => (int?)photo.DisplayOrder, cancellationToken);
-        var covered = await held.AnyAsync(photo => photo.IsCover, cancellationToken);
+        var highest = await listingPhotos.MaxAsync(
+            photo => (int?)photo.DisplayOrder, cancellationToken);
+
+        var covered = await listingPhotos.AnyAsync(photo => photo.IsCover, cancellationToken);
 
         var photo = new AccommodationPhoto
         {
@@ -205,9 +208,9 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         // The claim is checked and then dropped: what reaches the column is
         // what the bytes proved, so a stored type holds on the way back out.
-        var claimed = upload.ContentType?.Split(';')[0].Trim();
+        var claimed = Claimed(upload.ContentType);
 
-        if (!string.IsNullOrEmpty(claimed)
+        if (claimed is not null
             && !string.Equals(claimed, detected, StringComparison.OrdinalIgnoreCase))
         {
             throw new ValidationException(
@@ -215,6 +218,16 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
         }
 
         return detected;
+    }
+
+    private static string? Claimed(string? contentType)
+    {
+        var named = contentType?.Split(';')[0].Trim();
+
+        return string.IsNullOrEmpty(named)
+            || string.Equals(named, ImageRules.Unknown, StringComparison.OrdinalIgnoreCase)
+                ? null
+                : named;
     }
 
     private IQueryable<AccommodationPhoto> ForPhoto(int accommodationId, int photoId) =>

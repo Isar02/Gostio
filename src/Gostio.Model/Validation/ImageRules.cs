@@ -10,6 +10,10 @@ public static class ImageRules
 
     public const string Webp = "image/webp";
 
+    // What a client sends when it did not look at the file, so it is the
+    // absence of a claim rather than a wrong one.
+    public const string Unknown = "application/octet-stream";
+
     public static IReadOnlyList<string> Allowed { get; } = [Jpeg, Png, Webp];
 
     // What the bytes say rather than what the upload claimed. A content type is

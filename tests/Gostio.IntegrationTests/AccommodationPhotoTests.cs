@@ -271,6 +271,18 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
         Assert.Contains("File", refused.Errors.Keys);
     }
 
+    // The generic type is what a client sends when it did not look, which is no
+    // claim at all rather than a wrong one.
+    [Fact]
+    public async Task AFileSentUnderTheGenericTypeIsTakenAtItsBytesWord()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var stored = await AddAsync(host, listing, Png, ImageRules.Unknown);
+
+        Assert.Equal(ImageRules.Png, stored.ContentType);
+    }
+
     [Fact]
     public async Task AClaimedTypeThatAgreesWithTheBytesIsKept()
     {

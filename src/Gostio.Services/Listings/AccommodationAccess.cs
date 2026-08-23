@@ -51,6 +51,17 @@ internal sealed class AccommodationAccess(GostioDbContext db, ICurrentUser curre
         RequireOwnerOrAdministrator(hostId);
     }
 
+    // Writers on one listing queue here. The database runs read committed
+    // snapshot, so two of them otherwise read the same rows and the second
+    // loses its write to a key the first has already taken.
+    public Task LockAsync(int accommodationId, CancellationToken cancellationToken) =>
+        db.Database.ExecuteSqlAsync(
+            $"""
+            SELECT TOP 1 1 FROM [Accommodations] WITH (UPDLOCK, HOLDLOCK)
+            WHERE [Id] = {accommodationId}
+            """,
+            cancellationToken);
+
     public void RequireOwnerOrAdministrator(int hostId)
     {
         if (currentUser.RequireUserId() == hostId

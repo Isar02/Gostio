@@ -206,6 +206,23 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return category.Id;
     }
 
+    public async Task<int> EnsureAmenityAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var amenity = await db.Amenities.FirstOrDefaultAsync(row => row.Name == name);
+
+        if (amenity is null)
+        {
+            amenity = new Amenity { Name = name };
+
+            db.Amenities.Add(amenity);
+            await db.SaveChangesAsync();
+        }
+
+        return amenity.Id;
+    }
+
     private static User NewUser(string username, string email, string password) =>
         new()
         {

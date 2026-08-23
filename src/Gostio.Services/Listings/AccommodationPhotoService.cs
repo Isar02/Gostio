@@ -71,7 +71,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await LockListingAsync(accommodationId, cancellationToken);
+        await access.LockAsync(accommodationId, cancellationToken);
 
         var listingPhotos = db.AccommodationPhotos
             .Where(photo => photo.AccommodationId == accommodationId);
@@ -108,7 +108,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await LockListingAsync(accommodationId, cancellationToken);
+        await access.LockAsync(accommodationId, cancellationToken);
 
         // Cleared before the new one is set: one cover per listing is a unique
         // index, and the other order collides with it.
@@ -142,7 +142,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await LockListingAsync(accommodationId, cancellationToken);
+        await access.LockAsync(accommodationId, cancellationToken);
 
         var wasCover = await ForPhoto(accommodationId, photoId)
             .AsNoTracking()
@@ -159,17 +159,6 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
 
         await transaction.CommitAsync(cancellationToken);
     }
-
-    // One cover per listing is a unique index, and the database runs read
-    // committed snapshot: two callers reading at once both find no cover, and
-    // the second loses its upload to a duplicate key. This is what queues them.
-    private Task LockListingAsync(int accommodationId, CancellationToken cancellationToken) =>
-        db.Database.ExecuteSqlAsync(
-            $"""
-            SELECT TOP 1 1 FROM [Accommodations] WITH (UPDLOCK, HOLDLOCK)
-            WHERE [Id] = {accommodationId}
-            """,
-            cancellationToken);
 
     private async Task PromoteNextAsync(int accommodationId, CancellationToken cancellationToken)
     {

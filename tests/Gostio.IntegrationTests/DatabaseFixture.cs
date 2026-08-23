@@ -206,6 +206,23 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return category.Id;
     }
 
+    public async Task<int> EnsureExperienceCategoryAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var category = await db.ExperienceCategories.FirstOrDefaultAsync(row => row.Name == name);
+
+        if (category is null)
+        {
+            category = new ExperienceCategory { Name = name };
+
+            db.ExperienceCategories.Add(category);
+            await db.SaveChangesAsync();
+        }
+
+        return category.Id;
+    }
+
     public async Task<int> EnsureAmenityAsync(string name)
     {
         await using var db = CreateContext();

@@ -188,6 +188,7 @@ public sealed class AccommodationsControllerTests : IAsyncLifetime
             PricePerNight = 100m,
             CleaningFee = 15m,
             IsActive = true,
+            CoverPhotoId = null,
             CreatedAt = DateTime.UtcNow,
         };
     }

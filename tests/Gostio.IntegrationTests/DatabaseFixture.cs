@@ -141,6 +141,71 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return role.Id;
     }
 
+    // The reference tables are empty in the migrated database, and more than one
+    // test file needs the same city, type and category to be there.
+    public async Task<int> EnsureCityAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var country = await db.Countries.FirstOrDefaultAsync(row => row.IsoCode == "BA");
+
+        if (country is null)
+        {
+            country = new Country { Name = "Bosnia and Herzegovina", IsoCode = "BA" };
+
+            db.Countries.Add(country);
+            await db.SaveChangesAsync();
+        }
+
+        var city = await db.Cities.FirstOrDefaultAsync(
+            row => row.CountryId == country.Id && row.Name == name);
+
+        if (city is null)
+        {
+            city = new City { Name = name, CountryId = country.Id };
+
+            db.Cities.Add(city);
+            await db.SaveChangesAsync();
+        }
+
+        return city.Id;
+    }
+
+    public async Task<int> EnsureAccommodationTypeAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var type = await db.AccommodationTypes.FirstOrDefaultAsync(row => row.Name == name);
+
+        if (type is null)
+        {
+            type = new AccommodationType { Name = name };
+
+            db.AccommodationTypes.Add(type);
+            await db.SaveChangesAsync();
+        }
+
+        return type.Id;
+    }
+
+    public async Task<int> EnsureAccommodationCategoryAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var category = await db.AccommodationCategories.FirstOrDefaultAsync(
+            row => row.Name == name);
+
+        if (category is null)
+        {
+            category = new AccommodationCategory { Name = name };
+
+            db.AccommodationCategories.Add(category);
+            await db.SaveChangesAsync();
+        }
+
+        return category.Id;
+    }
+
     private static User NewUser(string username, string email, string password) =>
         new()
         {

@@ -46,5 +46,9 @@ public sealed class AccommodationResponse : IIdentified
 
     public required bool IsActive { get; init; }
 
+    // Read out of the photos rather than kept on the accommodation, so one row
+    // cannot disagree with the photo it names.
+    public required int? CoverPhotoId { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 }

@@ -16,8 +16,6 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-a-listing-owner";
 
-    private sealed record References(int CityId, int TypeId, int CategoryId);
-
     [Fact]
     public async Task AHostKeepsTheListingTheyCreate()
     {
@@ -27,7 +25,8 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var created = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "  A loft over the river  "), CancellationToken.None));
+                ListingRequests.New(references, "  A loft over the river  "),
+                CancellationToken.None));
 
         Assert.Equal(host, created.HostId);
         Assert.True(created.IsActive);
@@ -46,7 +45,8 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var created = await AsAsync(
             Caller(administrator, RoleNames.Administrator),
             listings => listings.CreateAsync(
-                NewListing(references, "A stone house", hostId: host), CancellationToken.None));
+                ListingRequests.New(references, "A stone house", hostId: host),
+                CancellationToken.None));
 
         Assert.Equal(host, created.HostId);
     }
@@ -62,7 +62,8 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var refused = await Assert.ThrowsAsync<ValidationException>(() => AsAsync(
             Caller(guest, RoleNames.Guest),
             listings => listings.CreateAsync(
-                NewListing(references, "A room a guest cannot let"), CancellationToken.None)));
+                ListingRequests.New(references, "A room a guest cannot let"),
+                CancellationToken.None)));
 
         Assert.Contains(nameof(AccommodationCreateRequest.HostId), refused.Errors.Keys);
     }
@@ -77,7 +78,7 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         await Assert.ThrowsAsync<ForbiddenException>(() => AsAsync(
             Caller(mine, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "Not mine to give", hostId: theirs),
+                ListingRequests.New(references, "Not mine to give", hostId: theirs),
                 CancellationToken.None)));
     }
 
@@ -113,13 +114,13 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var created = await AsAsync(
             Caller(mine, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "A flat by the market"), CancellationToken.None));
+                ListingRequests.New(references, "A flat by the market"), CancellationToken.None));
 
         var saved = await AsAsync(
             Caller(mine, RoleNames.Host),
             listings => listings.UpdateAsync(
                 created.Id,
-                Edit(references, "A quieter flat by the market", price: 140m),
+                ListingRequests.Edit(references, "A quieter flat by the market", price: 140m),
                 CancellationToken.None));
 
         Assert.Equal("A quieter flat by the market", saved.Title);
@@ -128,7 +129,9 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         await Assert.ThrowsAsync<ForbiddenException>(() => AsAsync(
             Caller(theirs, RoleNames.Host),
             listings => listings.UpdateAsync(
-                created.Id, Edit(references, "Taken over"), CancellationToken.None)));
+                created.Id,
+                ListingRequests.Edit(references, "Taken over"),
+                CancellationToken.None)));
 
         await Assert.ThrowsAsync<ForbiddenException>(() => AsAsync(
             Caller(theirs, RoleNames.Host),
@@ -145,13 +148,13 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var created = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "A cottage by the lake"), CancellationToken.None));
+                ListingRequests.New(references, "A cottage by the lake"), CancellationToken.None));
 
         var saved = await AsAsync(
             Caller(administrator, RoleNames.Administrator),
             listings => listings.UpdateAsync(
                 created.Id,
-                Edit(references, "A cottage by the lake", isActive: false),
+                ListingRequests.Edit(references, "A cottage by the lake", isActive: false),
                 CancellationToken.None));
 
         Assert.False(saved.IsActive);
@@ -171,18 +174,18 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var open = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "Still on the market"), CancellationToken.None));
+                ListingRequests.New(references, "Still on the market"), CancellationToken.None));
 
         var withdrawn = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "Taken off the market"), CancellationToken.None));
+                ListingRequests.New(references, "Taken off the market"), CancellationToken.None));
 
         await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.UpdateAsync(
                 withdrawn.Id,
-                Edit(references, "Taken off the market", isActive: false),
+                ListingRequests.Edit(references, "Taken off the market", isActive: false),
                 CancellationToken.None));
 
         Assert.Equal([open.Id], await BrowsedByAsync(Caller(guest, RoleNames.Guest), host));
@@ -205,30 +208,31 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
     {
         var host = await fixture.AddUserAsync(Password, RoleNames.Host);
         var here = await ReferencesAsync();
-        var elsewhere = here with { CityId = await EnsureCityAsync("Mostar") };
+        var elsewhere = here with { CityId = await fixture.EnsureCityAsync("Mostar") };
 
         var wanted = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(here, "Four beds at ninety", price: 90m, maxGuests: 4),
+                ListingRequests.New(here, "Four beds at ninety", price: 90m, maxGuests: 4),
                 CancellationToken.None));
 
         await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(here, "Four beds at three hundred", price: 300m, maxGuests: 4),
+                ListingRequests.New(here, "Four beds at three hundred", price: 300m, maxGuests: 4),
                 CancellationToken.None));
 
         await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(here, "Two beds at ninety", price: 90m, maxGuests: 2),
+                ListingRequests.New(here, "Two beds at ninety", price: 90m, maxGuests: 2),
                 CancellationToken.None));
 
         await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(elsewhere, "Four beds at ninety, elsewhere", price: 90m, maxGuests: 4),
+                ListingRequests.New(
+                    elsewhere, "Four beds at ninety, elsewhere", price: 90m, maxGuests: 4),
                 CancellationToken.None));
 
         var page = await AsAsync(
@@ -256,12 +260,14 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var wanted = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "An attic with a skylight"), CancellationToken.None));
+                ListingRequests.New(references, "An attic with a skylight"),
+                CancellationToken.None));
 
         await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "A basement with no window"), CancellationToken.None));
+                ListingRequests.New(references, "A basement with no window"),
+                CancellationToken.None));
 
         var page = await AsAsync(
             Caller(host, RoleNames.Host),
@@ -281,7 +287,7 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var created = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "A studio nobody booked"), CancellationToken.None));
+                ListingRequests.New(references, "A studio nobody booked"), CancellationToken.None));
 
         await using (var db = fixture.CreateContext())
         {
@@ -330,7 +336,7 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         var created = await AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, "A flat somebody booked"), CancellationToken.None));
+                ListingRequests.New(references, "A flat somebody booked"), CancellationToken.None));
 
         var now = DateTime.UtcNow;
 
@@ -368,59 +374,13 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
     private static ICurrentUser Caller(int userId, params string[] roles) =>
         new SignedInUser(userId, roles);
 
-    private static AccommodationCreateRequest NewListing(
-        References references,
-        string title,
-        int? hostId = null,
-        decimal price = 100m,
-        int maxGuests = 4) =>
-        new()
-        {
-            HostId = hostId,
-            Title = title,
-            Description = "A place to stay, described at the length a listing needs.",
-            AccommodationTypeId = references.TypeId,
-            AccommodationCategoryId = references.CategoryId,
-            CityId = references.CityId,
-            Address = "Ferhadija 1",
-            Latitude = 43.8563m,
-            Longitude = 18.4131m,
-            MaxGuests = maxGuests,
-            Bedrooms = 2,
-            Bathrooms = 1,
-            PricePerNight = price,
-            CleaningFee = 15m,
-        };
-
-    private static AccommodationUpdateRequest Edit(
-        References references,
-        string title,
-        bool isActive = true,
-        decimal price = 100m) =>
-        new()
-        {
-            IsActive = isActive,
-            Title = title,
-            Description = "A place to stay, described at the length a listing needs.",
-            AccommodationTypeId = references.TypeId,
-            AccommodationCategoryId = references.CategoryId,
-            CityId = references.CityId,
-            Address = "Ferhadija 1",
-            Latitude = 43.8563m,
-            Longitude = 18.4131m,
-            MaxGuests = 4,
-            Bedrooms = 2,
-            Bathrooms = 1,
-            PricePerNight = price,
-            CleaningFee = 15m,
-        };
-
-    private async Task RefusedUnderAsync(int host, References references, string field)
+    private async Task RefusedUnderAsync(int host, ListingReferences references, string field)
     {
         var refused = await Assert.ThrowsAsync<ValidationException>(() => AsAsync(
             Caller(host, RoleNames.Host),
             listings => listings.CreateAsync(
-                NewListing(references, $"Refused under {field}"), CancellationToken.None)));
+                ListingRequests.New(references, $"Refused under {field}"),
+                CancellationToken.None)));
 
         Assert.Contains(field, refused.Errors.Keys);
     }
@@ -435,74 +395,11 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         return [.. page.Items.Select(item => item.Id)];
     }
 
-    private async Task<References> ReferencesAsync() =>
+    private async Task<ListingReferences> ReferencesAsync() =>
         new(
-            await EnsureCityAsync("Sarajevo"),
-            await EnsureTypeAsync(),
-            await EnsureCategoryAsync());
-
-    private async Task<int> EnsureCityAsync(string name)
-    {
-        await using var db = fixture.CreateContext();
-
-        var country = await db.Countries.FirstOrDefaultAsync(row => row.IsoCode == "BA");
-
-        if (country is null)
-        {
-            country = new Country { Name = "Bosnia and Herzegovina", IsoCode = "BA" };
-
-            db.Countries.Add(country);
-            await db.SaveChangesAsync();
-        }
-
-        var city = await db.Cities.FirstOrDefaultAsync(
-            row => row.CountryId == country.Id && row.Name == name);
-
-        if (city is null)
-        {
-            city = new City { Name = name, CountryId = country.Id };
-
-            db.Cities.Add(city);
-            await db.SaveChangesAsync();
-        }
-
-        return city.Id;
-    }
-
-    private async Task<int> EnsureTypeAsync()
-    {
-        await using var db = fixture.CreateContext();
-
-        var type = await db.AccommodationTypes.FirstOrDefaultAsync(row => row.Name == "Apartment");
-
-        if (type is null)
-        {
-            type = new AccommodationType { Name = "Apartment" };
-
-            db.AccommodationTypes.Add(type);
-            await db.SaveChangesAsync();
-        }
-
-        return type.Id;
-    }
-
-    private async Task<int> EnsureCategoryAsync()
-    {
-        await using var db = fixture.CreateContext();
-
-        var category = await db.AccommodationCategories.FirstOrDefaultAsync(
-            row => row.Name == "City break");
-
-        if (category is null)
-        {
-            category = new AccommodationCategory { Name = "City break" };
-
-            db.AccommodationCategories.Add(category);
-            await db.SaveChangesAsync();
-        }
-
-        return category.Id;
-    }
+            await fixture.EnsureCityAsync("Sarajevo"),
+            await fixture.EnsureAccommodationTypeAsync("Apartment"),
+            await fixture.EnsureAccommodationCategoryAsync("City break"));
 
     private async Task<T> AsAsync<T>(ICurrentUser caller, Func<IAccommodationService, Task<T>> work)
     {

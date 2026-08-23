@@ -11,7 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Listings;
 
-internal sealed class AccommodationService(GostioDbContext db, ICurrentUser currentUser)
+internal sealed class AccommodationService(
+    GostioDbContext db,
+    ICurrentUser currentUser,
+    AccommodationAccess access)
     : CrudService<
         Accommodation,
         AccommodationResponse,
@@ -47,6 +50,10 @@ internal sealed class AccommodationService(GostioDbContext db, ICurrentUser curr
             PricePerNight = accommodation.PricePerNight,
             CleaningFee = accommodation.CleaningFee,
             IsActive = accommodation.IsActive,
+            CoverPhotoId = accommodation.Photos
+                .Where(photo => photo.IsCover)
+                .Select(photo => (int?)photo.Id)
+                .FirstOrDefault(),
             CreatedAt = accommodation.CreatedAt,
         };
 
@@ -55,12 +62,10 @@ internal sealed class AccommodationService(GostioDbContext db, ICurrentUser curr
             .OrderBy(accommodation => accommodation.Title)
             .ThenBy(accommodation => accommodation.Id);
 
-    // Answers 404 rather than 403 for a listing the caller cannot see, so an id
-    // nobody may read does not become a way of learning that it exists.
     public override async Task<AccommodationResponse> GetAsync(
         int id,
         CancellationToken cancellationToken) =>
-        await Visible(Set.AsNoTracking())
+        await access.Visible(Set.AsNoTracking())
             .Where(accommodation => accommodation.Id == id)
             .Select(Projection)
             .FirstOrDefaultAsync(cancellationToken)
@@ -71,14 +76,14 @@ internal sealed class AccommodationService(GostioDbContext db, ICurrentUser curr
         AccommodationUpdateRequest request,
         CancellationToken cancellationToken)
     {
-        await RequireOwnListingAsync(id, cancellationToken);
+        await access.RequireOwnedAsync(id, cancellationToken);
 
         return await base.UpdateAsync(id, request, cancellationToken);
     }
 
     public override async Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        await RequireOwnListingAsync(id, cancellationToken);
+        await access.RequireOwnedAsync(id, cancellationToken);
 
         await base.DeleteAsync(id, cancellationToken);
     }
@@ -87,7 +92,7 @@ internal sealed class AccommodationService(GostioDbContext db, ICurrentUser curr
         IQueryable<Accommodation> query,
         AccommodationSearchRequest search)
     {
-        query = Visible(query);
+        query = access.Visible(query);
 
         if (Trimmed(search.Title) is string title)
         {
@@ -144,7 +149,7 @@ internal sealed class AccommodationService(GostioDbContext db, ICurrentUser curr
     {
         var hostId = request.HostId ?? currentUser.RequireUserId();
 
-        RequireOwnerOrAdministrator(hostId);
+        access.RequireOwnerOrAdministrator(hostId);
         await RequireHostAsync(hostId, nameof(request.HostId), cancellationToken);
 
         var accommodation = new Accommodation
@@ -207,46 +212,6 @@ internal sealed class AccommodationService(GostioDbContext db, ICurrentUser curr
         accommodation.Bathrooms = request.Bathrooms;
         accommodation.PricePerNight = request.PricePerNight;
         accommodation.CleaningFee = request.CleaningFee;
-    }
-
-    // A withdrawn listing still belongs to its host and is still an
-    // administrator's to manage, but nobody else browses it.
-    private IQueryable<Accommodation> Visible(IQueryable<Accommodation> query)
-    {
-        if (currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return query;
-        }
-
-        var callerId = currentUser.UserId;
-
-        return query.Where(
-            accommodation => accommodation.IsActive || accommodation.HostId == callerId);
-    }
-
-    // Read as a projection rather than loaded: a tracked row here is what
-    // breaks the single-statement delete that follows it.
-    private async Task RequireOwnListingAsync(int id, CancellationToken cancellationToken)
-    {
-        var hostId = await Set
-            .AsNoTracking()
-            .Where(accommodation => accommodation.Id == id)
-            .Select(accommodation => (int?)accommodation.HostId)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? throw Missing(id);
-
-        RequireOwnerOrAdministrator(hostId);
-    }
-
-    private void RequireOwnerOrAdministrator(int hostId)
-    {
-        if (currentUser.RequireUserId() == hostId
-            || currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return;
-        }
-
-        throw new ForbiddenException("A host may only work on their own listings.");
     }
 
     private async Task RequireHostAsync(

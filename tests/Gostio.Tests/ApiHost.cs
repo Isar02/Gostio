@@ -80,7 +80,8 @@ internal sealed class ApiHost : IAsyncDisposable
 
         if (body is not null)
         {
-            request.Content = JsonContent.Create(body);
+            // An upload arrives as content already; everything else is JSON.
+            request.Content = body as HttpContent ?? JsonContent.Create(body);
         }
 
         return Client.SendAsync(request);

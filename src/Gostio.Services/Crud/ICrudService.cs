@@ -3,8 +3,6 @@ using Gostio.Model.Responses;
 
 namespace Gostio.Services.Crud;
 
-// Create and update are separate type arguments because they rarely carry the
-// same fields: a user is created with a password and never updated with one.
 public interface ICrudService<TResponse, TSearch, TCreate, TUpdate>
     where TSearch : PagedRequest
 {

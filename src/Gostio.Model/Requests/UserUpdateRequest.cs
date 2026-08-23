@@ -3,9 +3,8 @@ using Gostio.Model.Validation;
 
 namespace Gostio.Model.Requests;
 
-// The username is absent on purpose: the account is known by it, and the roles
-// and the activation are the administrator's alone and have endpoints of their
-// own.
+// The username is absent on purpose, and so are the roles and the activation,
+// which have endpoints of their own.
 public sealed class UserUpdateRequest
 {
     [Required(ErrorMessage = "Enter a first name.")]

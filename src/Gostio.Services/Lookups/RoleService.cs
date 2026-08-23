@@ -28,8 +28,7 @@ internal sealed class RoleService(GostioDbContext db) : LookupService<Role>(db, 
     }
 
     // The authorization attribute compares plain strings, so renaming one of
-    // these closes every endpoint naming it rather than failing anywhere a
-    // build or a request would show.
+    // these closes every endpoint naming it and nothing fails visibly.
     private async Task RequireUnnamedByTheEndpointsAsync(
         int id,
         CancellationToken cancellationToken)

@@ -7,9 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gostio.API.Controllers;
 
-// Reading a managed table is open to any signed in account, because the
-// clients fill their filters from it. Writing to one is not. A derived
-// controller adds the route and nothing else.
 [Authorize]
 public abstract class CrudControllerBase<TService, TResponse, TSearch, TCreate, TUpdate>(
     TService service) : ControllerBase

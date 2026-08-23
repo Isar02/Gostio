@@ -19,8 +19,7 @@ internal sealed class ReservationStatusService(GostioDbContext db)
       IReservationStatusService
 {
     // A restricting foreign key blocks a delete only once a row is referenced,
-    // so on a database with no reservations yet these four could be removed and
-    // the state machine would lose a branch it names by id.
+    // so until the first reservation exists these four are unprotected.
     private static readonly HashSet<int> NamedByTheStateMachine =
         [.. Enum.GetValues<ReservationStatusCode>().Select(code => (int)code)];
 
@@ -83,9 +82,6 @@ internal sealed class ReservationStatusService(GostioDbContext db)
         var code = request.Code.Trim();
         var description = request.Description?.Trim();
 
-        // The name and the description are what make this a management form
-        // rather than a read-only list. The code is what the state machine
-        // resolves, so on these four rows it stays as seeded.
         if (NamedByTheStateMachine.Contains(status.Id)
             && !string.Equals(code, status.Code, StringComparison.Ordinal))
         {

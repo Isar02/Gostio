@@ -7,10 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gostio.API.Controllers;
 
-// Not built on the shared CRUD controller, because no two of these endpoints
-// answer the same question of who may call them: the list is an
-// administrator's, the profile is the account holder's, and the roles and the
-// activation are neither.
 [ApiController]
 [Route("api/users")]
 [Authorize]
@@ -23,7 +19,8 @@ public sealed class UsersController(IUserService users) : ControllerBase
         CancellationToken cancellationToken) =>
         users.SearchAsync(search, cancellationToken);
 
-    // Self or administrator, which no attribute can say, so the service says it.
+    // No role attribute: self or administrator is a question about the row,
+    // so the service answers it.
     [HttpGet("{id:int}")]
     public Task<UserResponse> Get(int id, CancellationToken cancellationToken) =>
         users.GetAsync(id, cancellationToken);

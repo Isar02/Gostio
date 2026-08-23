@@ -9,10 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Crud;
 
-// The shape every managed table shares: a filtered page that projects, a read
-// by id, and writes that answer with the row as it now stands rather than with
-// what the request said. Subclasses supply the projection, the ordering, the
-// filters and the two methods that turn a request into columns.
 internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdate>(
     GostioDbContext db,
     string noun)
@@ -25,13 +21,10 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
 
     protected GostioDbContext Db { get; } = db;
 
-    // Named once so every message about the table reads the same way.
     protected string Noun { get; } = noun;
 
     protected DbSet<TEntity> Set => Db.Set<TEntity>();
 
-    // Refused rather than cascaded: a reference table row that something points
-    // at is removed by removing what points at it first.
     protected virtual string StillReferencedMessage =>
         $"This {Noun} is used by other records and cannot be deleted.";
 
@@ -73,9 +66,8 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
         return await ReadAsync(id, cancellationToken);
     }
 
-    // One statement rather than a load and a Remove: the change tracker severs
-    // the relationships of anything it already holds, so a row read earlier in
-    // the same request would break the delete before the database saw it.
+    // One statement, not a load and a Remove: the change tracker severs what it
+    // already holds and breaks the delete before the database sees it.
     public virtual async Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
         int removed;

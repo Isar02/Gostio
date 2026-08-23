@@ -24,8 +24,6 @@ internal sealed class CityService(GostioDbContext db)
             CountryName = city.Country.Name,
         };
 
-    // Grouped by country, because that is how the list reads: a city name is
-    // only unique inside one.
     protected override IOrderedQueryable<City> Order(IQueryable<City> query) =>
         query
             .OrderBy(city => city.Country.Name)
@@ -68,8 +66,8 @@ internal sealed class CityService(GostioDbContext db)
         var name = request.Name.Trim();
         var countryId = request.CountryId;
 
-        // Checked here rather than left to the foreign key, which answers with
-        // a provider error instead of a message under the field that caused it.
+        // Checked here rather than left to the foreign key, which cannot put a
+        // message under the field that caused it.
         if (!await Db.Countries.AnyAsync(country => country.Id == countryId, cancellationToken))
         {
             throw new ValidationException(nameof(request.CountryId), "No country has this id.");

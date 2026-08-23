@@ -20,8 +20,6 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
     protected override string StillReferencedMessage =>
         "This account owns records that have to be kept. Deactivate it instead of deleting it.";
 
-    // The profile image is left out of every list and every reply here: it is a
-    // column of bytes, and it has an endpoint of its own to come.
     protected override Expression<Func<User, UserResponse>> Projection =>
         user => new UserResponse
         {
@@ -76,9 +74,6 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
 
         var held = user.UserRoles.ToList();
 
-        // A difference rather than a clear and a refill, so a role the account
-        // keeps holds the date it was first given on, and no row is deleted and
-        // reinserted under the same key in one save.
         var dropped = held.Where(assignment => !wanted.Contains(assignment.RoleId)).ToList();
         var added = wanted
             .Where(roleId => held.All(assignment => assignment.RoleId != roleId))
@@ -127,8 +122,8 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
 
         var user = await RequireAsync(id, cancellationToken);
 
-        // No token version is raised here: the session validator reads IsActive
-        // on every request, so clearing it ends the session by itself.
+        // No token version is raised: the session validator reads IsActive on
+        // every request, so clearing it ends the session by itself.
         if (user.IsActive != isActive)
         {
             user.IsActive = isActive;
@@ -280,8 +275,6 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         return [.. found.Select(role => role.Id)];
     }
 
-    // The one condition no attribute can carry, and the reason ICurrentUser
-    // knows about roles at all.
     private void RequireSelfOrAdministrator(int userId)
     {
         if (currentUser.RequireUserId() == userId

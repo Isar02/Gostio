@@ -41,11 +41,24 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(ColumnLengths.PasswordHash);
 
         builder
+            .Property(user => user.ProfileImageContentType)
+            .HasMaxLength(ColumnLengths.ContentType);
+
+        builder
             .HasIndex(user => user.Username)
             .IsUnique();
 
         builder
             .HasIndex(user => user.Email)
             .IsUnique();
+
+        // Bytes without a type cannot be served and a type without bytes names
+        // nothing, so the pair moves together or not at all.
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_Users_ProfileImage",
+            $"([{nameof(User.ProfileImage)}] IS NULL"
+            + $" AND [{nameof(User.ProfileImageContentType)}] IS NULL)"
+            + $" OR ([{nameof(User.ProfileImage)}] IS NOT NULL"
+            + $" AND [{nameof(User.ProfileImageContentType)}] IS NOT NULL)"));
     }
 }

@@ -26,6 +26,11 @@ public sealed class NewsConfiguration : IEntityTypeConfiguration<News>
             .IsRequired();
 
         builder
+            .Property(news => news.ImageContentType)
+            .IsRequired()
+            .HasMaxLength(ColumnLengths.ContentType);
+
+        builder
             .HasOne(news => news.CreatedByUser)
             .WithMany()
             .HasForeignKey(news => news.CreatedByUserId)

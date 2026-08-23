@@ -3,6 +3,7 @@ using Gostio.API.Middleware;
 using Gostio.API.Swagger;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
+using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
 using Gostio.Services.Users;
 
@@ -21,6 +22,7 @@ builder.Services.AddGostioDatabase(settings.Database);
 
 builder.Services.AddControllers();
 builder.Services.AddGostioLookupServices();
+builder.Services.AddGostioListingServices();
 builder.Services.AddGostioUserServices();
 builder.Services.AddGostioValidationErrors();
 builder.Services.AddGostioAuthentication(settings.Jwt);

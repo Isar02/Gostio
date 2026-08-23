@@ -2,6 +2,7 @@ using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
 using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
@@ -82,6 +83,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => CreateContext(interceptors));
         services.AddScoped(_ => caller ?? new AnonymousUser());
         services.AddGostioLookupServices();
+        services.AddGostioListingServices();
         services.AddGostioUserServices();
 
         return services.BuildServiceProvider();
@@ -95,12 +97,23 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // A test that writes to a user gets one of its own, so the row it counts on
     // is never the row another test has already moved.
-    public async Task<int> AddUserAsync(string password)
+    public async Task<int> AddUserAsync(string password, params string[] roles)
     {
+        var now = DateTime.UtcNow;
+        var roleIds = new List<int>();
+
+        foreach (var role in roles)
+        {
+            roleIds.Add(await EnsureRoleAsync(role));
+        }
+
         await using var db = CreateContext();
 
         var name = $"user-{Guid.NewGuid():N}";
         var user = NewUser(name, $"{name}@example.com", password);
+
+        user.UserRoles =
+            [.. roleIds.Select(roleId => new UserRole { RoleId = roleId, AssignedAt = now })];
 
         db.Users.Add(user);
         await db.SaveChangesAsync();
@@ -126,6 +139,71 @@ public sealed class DatabaseFixture : IAsyncLifetime
         }
 
         return role.Id;
+    }
+
+    // The reference tables are empty in the migrated database, and more than one
+    // test file needs the same city, type and category to be there.
+    public async Task<int> EnsureCityAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var country = await db.Countries.FirstOrDefaultAsync(row => row.IsoCode == "BA");
+
+        if (country is null)
+        {
+            country = new Country { Name = "Bosnia and Herzegovina", IsoCode = "BA" };
+
+            db.Countries.Add(country);
+            await db.SaveChangesAsync();
+        }
+
+        var city = await db.Cities.FirstOrDefaultAsync(
+            row => row.CountryId == country.Id && row.Name == name);
+
+        if (city is null)
+        {
+            city = new City { Name = name, CountryId = country.Id };
+
+            db.Cities.Add(city);
+            await db.SaveChangesAsync();
+        }
+
+        return city.Id;
+    }
+
+    public async Task<int> EnsureAccommodationTypeAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var type = await db.AccommodationTypes.FirstOrDefaultAsync(row => row.Name == name);
+
+        if (type is null)
+        {
+            type = new AccommodationType { Name = name };
+
+            db.AccommodationTypes.Add(type);
+            await db.SaveChangesAsync();
+        }
+
+        return type.Id;
+    }
+
+    public async Task<int> EnsureAccommodationCategoryAsync(string name)
+    {
+        await using var db = CreateContext();
+
+        var category = await db.AccommodationCategories.FirstOrDefaultAsync(
+            row => row.Name == name);
+
+        if (category is null)
+        {
+            category = new AccommodationCategory { Name = name };
+
+            db.AccommodationCategories.Add(category);
+            await db.SaveChangesAsync();
+        }
+
+        return category.Id;
     }
 
     private static User NewUser(string username, string email, string password) =>

@@ -14,6 +14,8 @@ public class News
 
     public byte[] Image { get; set; } = null!;
 
+    public string ImageContentType { get; set; } = null!;
+
     public DateTime PublishedAt { get; set; }
 
     public DateTime? ModifiedAt { get; set; }

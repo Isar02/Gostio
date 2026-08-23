@@ -6,6 +6,10 @@ internal static class SeedImages
 {
     private const string Prefix = "Gostio.Services.Database.Seeding.Assets.";
 
+    // Every embedded asset is a JPEG, and this is the one place that changes if
+    // that stops being true.
+    public const string ContentType = "image/jpeg";
+
     public static byte[] Accommodation(int index) => Load($"accommodation{Wrap(index, 12):00}.jpg");
 
     public static byte[] Experience(int index) => Load($"experience{Wrap(index, 8):00}.jpg");

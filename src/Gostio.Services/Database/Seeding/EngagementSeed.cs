@@ -283,6 +283,7 @@ internal static class EngagementSeed
                 Title = title,
                 Body = body,
                 Image = SeedImages.News(index),
+                ImageContentType = SeedImages.ContentType,
                 PublishedAt = now.AddDays(-daysAgo),
             };
         }

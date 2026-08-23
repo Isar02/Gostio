@@ -11,5 +11,8 @@ public static class RoleNames
 
     public const string Guest = "Guest";
 
+    // The attribute reads one string and splits it on the comma itself.
+    public const string HostOrAdministrator = $"{Host},{Administrator}";
+
     public static readonly IReadOnlyList<string> All = [Administrator, Host, Guest];
 }

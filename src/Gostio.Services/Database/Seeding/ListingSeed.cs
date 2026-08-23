@@ -77,6 +77,7 @@ internal static class ListingSeed
                 Photos = [.. Enumerable.Range(0, 3).Select(offset => new AccommodationPhoto
                 {
                     Image = SeedImages.Accommodation(index + offset),
+                    ContentType = SeedImages.ContentType,
                     IsCover = offset == 0,
                     DisplayOrder = offset,
                     UploadedAt = created.AddHours(offset),
@@ -251,6 +252,7 @@ internal static class ListingSeed
                 Photos = [.. Enumerable.Range(0, 2).Select(offset => new ExperiencePhoto
                 {
                     Image = SeedImages.Experience(index + offset),
+                    ContentType = SeedImages.ContentType,
                     IsCover = offset == 0,
                     DisplayOrder = offset,
                     UploadedAt = created.AddHours(offset),

@@ -4,6 +4,7 @@ using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
+using Gostio.Services.Reservations;
 using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +86,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddGostioLookupServices();
         services.AddGostioListingServices();
         services.AddGostioUserServices();
+        services.AddGostioReservationServices();
 
         return services.BuildServiceProvider();
     }

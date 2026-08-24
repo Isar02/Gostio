@@ -5,6 +5,7 @@ using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
+using Gostio.Services.Reservations;
 using Gostio.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,7 @@ builder.Services.AddControllers();
 builder.Services.AddGostioLookupServices();
 builder.Services.AddGostioListingServices();
 builder.Services.AddGostioUserServices();
+builder.Services.AddGostioReservationServices();
 builder.Services.AddGostioValidationErrors();
 builder.Services.AddGostioAuthentication(settings.Jwt);
 builder.Services.AddGostioSwagger();

@@ -13,6 +13,12 @@ public sealed class ReservationsController(
     IReservationService reservations,
     IReservationMoveService moves) : ControllerBase
 {
+    [HttpGet]
+    public Task<PagedResult<ReservationResponse>> Search(
+        [FromQuery] ReservationSearchRequest search,
+        CancellationToken cancellationToken) =>
+        reservations.SearchAsync(search, cancellationToken);
+
     [HttpGet("{id:int}")]
     public Task<ReservationResponse> Get(int id, CancellationToken cancellationToken) =>
         reservations.GetAsync(id, cancellationToken);

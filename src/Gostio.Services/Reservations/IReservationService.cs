@@ -10,4 +10,8 @@ public interface IReservationService
         CancellationToken cancellationToken);
 
     Task<ReservationResponse> GetAsync(int reservationId, CancellationToken cancellationToken);
+
+    Task<PagedResult<ReservationResponse>> SearchAsync(
+        ReservationSearchRequest search,
+        CancellationToken cancellationToken);
 }

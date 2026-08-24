@@ -6,9 +6,16 @@ public sealed class ReservationResponse : IIdentified
 
     public required int UserId { get; init; }
 
+    public required string GuestName { get; init; }
+
     public int? AccommodationId { get; init; }
 
+    public int? ExperienceId { get; init; }
+
     public int? ExperienceSlotId { get; init; }
+
+    // The accommodation's or the experience's, whichever the row names.
+    public required string ListingTitle { get; init; }
 
     public DateOnly? CheckInDate { get; init; }
 

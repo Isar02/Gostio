@@ -33,6 +33,62 @@ internal sealed class ReservationService(
         CancellationToken cancellationToken) =>
         access.ReadAsync(reservationId, cancellationToken);
 
+    public Task<PagedResult<ReservationResponse>> SearchAsync(
+        ReservationSearchRequest search,
+        CancellationToken cancellationToken) =>
+        Matching(access.Reachable(), search)
+            .OrderByDescending(reservation => reservation.CreatedAt)
+            .ThenByDescending(reservation => reservation.Id)
+            .ToPagedResultAsync(search, ReservationAccess.Projection, cancellationToken);
+
+    private static IQueryable<Reservation> Matching(
+        IQueryable<Reservation> query,
+        ReservationSearchRequest search)
+    {
+        if (search.GuestId is int guestId)
+        {
+            query = query.Where(reservation => reservation.UserId == guestId);
+        }
+
+        if (search.HostId is int hostId)
+        {
+            query = query.Where(ReservationQueries.IsHostedBy(hostId));
+        }
+
+        if (search.AccommodationId is int accommodationId)
+        {
+            query = query.Where(reservation => reservation.AccommodationId == accommodationId);
+        }
+
+        if (search.ExperienceId is int experienceId)
+        {
+            query = query.Where(reservation =>
+                reservation.ExperienceSlot != null
+                && reservation.ExperienceSlot.ExperienceId == experienceId);
+        }
+
+        if (search.ExperienceSlotId is int slotId)
+        {
+            query = query.Where(reservation => reservation.ExperienceSlotId == slotId);
+        }
+
+        if (search.ReservationStatusId is int statusId)
+        {
+            query = query.Where(reservation => reservation.ReservationStatusId == statusId);
+        }
+
+        if (search.IsActive is bool isActive)
+        {
+            var now = DateTime.UtcNow;
+
+            query = query.Where(isActive
+                ? ReservationQueries.IsActive(now)
+                : ReservationQueries.IsNotActive(now));
+        }
+
+        return query;
+    }
+
     private async Task<ReservationResponse> CreateStayAsync(
         int accommodationId,
         ReservationCreateRequest request,

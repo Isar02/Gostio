@@ -11,13 +11,20 @@ namespace Gostio.Services.Reservations;
 
 internal sealed class ReservationAccess(GostioDbContext db, ICurrentUser currentUser)
 {
-    private static Expression<Func<Reservation, ReservationResponse>> Projection =>
+    public static Expression<Func<Reservation, ReservationResponse>> Projection =>
         reservation => new ReservationResponse
         {
             Id = reservation.Id,
             UserId = reservation.UserId,
+            GuestName = reservation.User.FirstName + " " + reservation.User.LastName,
             AccommodationId = reservation.AccommodationId,
+            ExperienceId = reservation.ExperienceSlot != null
+                ? (int?)reservation.ExperienceSlot.ExperienceId
+                : null,
             ExperienceSlotId = reservation.ExperienceSlotId,
+            ListingTitle = reservation.Accommodation != null
+                ? reservation.Accommodation.Title
+                : reservation.ExperienceSlot!.Experience.Title,
             CheckInDate = reservation.CheckInDate,
             CheckOutDate = reservation.CheckOutDate,
             GuestCount = reservation.GuestCount,
@@ -36,22 +43,13 @@ internal sealed class ReservationAccess(GostioDbContext db, ICurrentUser current
     // than 403: an id nobody may read must not become a way of learning that it
     // exists. This composes into the statement that reads the row, so nothing
     // can authorise from one read and then decide from another.
-    private IQueryable<Reservation> Reachable()
+    public IQueryable<Reservation> Reachable()
     {
         var query = db.Reservations.AsNoTracking();
 
-        if (currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return query;
-        }
-
-        var callerId = currentUser.RequireUserId();
-
-        return query.Where(reservation =>
-            reservation.UserId == callerId
-            || (reservation.Accommodation != null && reservation.Accommodation.HostId == callerId)
-            || (reservation.ExperienceSlot != null
-                && reservation.ExperienceSlot.Experience.HostId == callerId));
+        return currentUser.IsInRole(RoleNames.Administrator)
+            ? query
+            : query.Where(ReservationQueries.IsReachableBy(currentUser.RequireUserId()));
     }
 
     public async Task<ReservationResponse> ReadAsync(

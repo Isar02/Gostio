@@ -95,6 +95,25 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
         return (host, slot.Id);
     }
 
+    public async Task<int> AnotherTermAsync(
+        int host,
+        int slot,
+        DateTime startsAt,
+        int capacity = 10)
+    {
+        var experienceId = await ExperienceOfAsync(slot);
+
+        var added = await AsAsync(
+            host,
+            RoleNames.Host,
+            (IExperienceSlotService service) => service.AddAsync(
+                experienceId,
+                new ExperienceSlotCreateRequest { StartTime = startsAt, Capacity = capacity },
+                default));
+
+        return added.Id;
+    }
+
     public Task<int> AGuestAsync() => fixture.AddUserAsync(Password, RoleNames.Guest);
 
     public Task CloseAsync(int host, int listing, DateOnly from, DateOnly to) =>
@@ -194,6 +213,26 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             actor,
             role,
             (IReservationService service) => service.GetAsync(reservationId, default));
+
+    public Task<PagedResult<ReservationResponse>> ListAsync(
+        int actor,
+        string role,
+        ReservationSearchRequest search) =>
+        AsAsync(
+            actor,
+            role,
+            (IReservationService service) => service.SearchAsync(search, default));
+
+    public async Task<string> TitleOfAsync(int accommodationId)
+    {
+        await using var db = fixture.CreateContext();
+
+        return await db.Accommodations
+            .AsNoTracking()
+            .Where(listing => listing.Id == accommodationId)
+            .Select(listing => listing.Title)
+            .SingleAsync();
+    }
 
     // A hold whose deadline has passed and which no sweep has reached: still
     // pending, and holding nothing. The booking moves back with the deadline,

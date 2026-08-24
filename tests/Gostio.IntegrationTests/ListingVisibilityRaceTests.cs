@@ -16,7 +16,7 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-a-listing-withdrawn-mid-read";
 
-    private readonly ListingWorkspace workspace = new(fixture);
+    private readonly AccommodationWorkspace workspace = new(fixture);
 
     [Fact]
     public async Task APhotoListIsRefusedWhenTheListingIsWithdrawnMidRead()

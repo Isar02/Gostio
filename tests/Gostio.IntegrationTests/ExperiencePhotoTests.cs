@@ -4,10 +4,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Gostio.IntegrationTests;
 
 [Collection(DatabaseCollection.Name)]
-public class AccommodationPhotoTests(DatabaseFixture fixture)
-    : ListingPhotoTests<IAccommodationPhotoService>(fixture)
+public class ExperiencePhotoTests(DatabaseFixture fixture)
+    : ListingPhotoTests<IExperiencePhotoService>(fixture)
 {
-    private readonly AccommodationWorkspace workspace = new(fixture);
+    private readonly ExperienceWorkspace workspace = new(fixture);
 
     protected override ListingWorkspace Workspace => workspace;
 
@@ -16,8 +16,8 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     {
         await using var db = Fixture.CreateContext();
 
-        var rows = await db.AccommodationPhotos
-            .Where(photo => photo.AccommodationId == listing)
+        var rows = await db.ExperiencePhotos
+            .Where(photo => photo.ExperienceId == listing)
             .Select(photo => new { photo.Id, photo.IsCover, photo.DisplayOrder })
             .ToListAsync();
 
@@ -27,7 +27,7 @@ public class AccommodationPhotoTests(DatabaseFixture fixture)
     protected override async Task<int?> CoverOfListingAsync(int host, int listing)
     {
         var read = await Workspace.AsHostAsync(
-            host, (IAccommodationService listings) => listings.GetAsync(listing, default));
+            host, (IExperienceService experiences) => experiences.GetAsync(listing, default));
 
         return read.CoverPhotoId;
     }

@@ -13,6 +13,7 @@ public static class ListingServiceCollectionExtensions
         services.AddScoped<IAccommodationAmenityService, AccommodationAmenityService>();
         services.AddScoped<IAccommodationAvailabilityService, AccommodationAvailabilityService>();
         services.AddScoped<IExperienceService, ExperienceService>();
+        services.AddScoped<IExperiencePhotoService, ExperiencePhotoService>();
 
         return services;
     }

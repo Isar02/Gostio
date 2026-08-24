@@ -14,7 +14,7 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-an-amenity-owner";
 
-    private readonly ListingWorkspace workspace = new(fixture);
+    private readonly AccommodationWorkspace workspace = new(fixture);
 
     [Fact]
     public async Task TheSetTheCallSendsIsTheSetTheListingKeeps()

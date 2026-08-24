@@ -17,4 +17,12 @@ public sealed class ExperienceSearchRequest : ListingSearchRequest
 
     [Range(1, int.MaxValue)]
     public int? MaxDurationMinutes { get; set; }
+
+    public DateTime? AvailableFrom { get; set; }
+
+    public DateTime? AvailableTo { get; set; }
+
+    // How many places a term has to have left; a window without it asks for one.
+    [Range(1, int.MaxValue)]
+    public int? Places { get; set; }
 }

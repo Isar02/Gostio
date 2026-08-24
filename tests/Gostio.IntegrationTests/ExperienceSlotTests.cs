@@ -316,7 +316,7 @@ public class ExperienceSlotTests(DatabaseFixture fixture)
         var refused = await Assert.ThrowsAsync<BusinessException>(() => AsHostAsync(
             host, slots => slots.DeleteAsync(experience, slot.Id, default)));
 
-        Assert.Contains("Close it", refused.Message);
+        Assert.Contains("cannot be deleted", refused.Message);
 
         await using var check = fixture.CreateContext();
 

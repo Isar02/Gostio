@@ -146,8 +146,8 @@ internal sealed class ExperienceSlotService(GostioDbContext db, ExperienceAccess
         if (!isActive && taken > 0)
         {
             throw new BusinessException(
-                "This slot has bookings. Closing it cancels them, and a cancellation is made "
-                    + "through the reservation.");
+                "This slot has reservations. Closing it cancels them, and a cancellation is "
+                    + "made through the reservation.");
         }
 
         slot.Capacity = capacity;
@@ -175,7 +175,8 @@ internal sealed class ExperienceSlotService(GostioDbContext db, ExperienceAccess
         catch (Exception failure) when (DatabaseFailures.IsStillReferenced(failure))
         {
             throw new BusinessException(
-                "This slot has bookings that have to be kept. Close it instead of deleting it.");
+                "This slot has reservations that have to be kept, so it cannot be "
+                    + "deleted.");
         }
 
         if (removed == 0)

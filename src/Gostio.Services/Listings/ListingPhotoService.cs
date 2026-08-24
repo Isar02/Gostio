@@ -24,7 +24,7 @@ internal abstract class ListingPhotoService<TListing, TPhoto>(
 
     protected abstract Expression<Func<TPhoto, ListingPhotoResponse>> Projection { get; }
 
-    protected abstract Expression<Func<TPhoto, bool>> Owned(int listingId);
+    protected abstract Expression<Func<TPhoto, bool>> BelongsToListing(int listingId);
 
     // Written where the foreign key has a name: the gate has to correlate with
     // the photo row, and no member of IListingPhoto carries the listing it
@@ -84,7 +84,7 @@ internal abstract class ListingPhotoService<TListing, TPhoto>(
 
         await Access.LockAsync(listingId, cancellationToken);
 
-        var listingPhotos = Photos.Where(Owned(listingId));
+        var listingPhotos = Photos.Where(BelongsToListing(listingId));
 
         var highest = await listingPhotos.MaxAsync(
             photo => (int?)photo.DisplayOrder, cancellationToken);
@@ -121,7 +121,7 @@ internal abstract class ListingPhotoService<TListing, TPhoto>(
         // Cleared before the new one is set: one cover per listing is a unique
         // index, and the other order collides with it.
         await Photos
-            .Where(Owned(listingId))
+            .Where(BelongsToListing(listingId))
             .Where(photo => photo.IsCover)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(photo => photo.IsCover, false),
@@ -226,13 +226,13 @@ internal abstract class ListingPhotoService<TListing, TPhoto>(
     }
 
     private IQueryable<TPhoto> ForPhoto(int listingId, int photoId) =>
-        Photos.Where(Owned(listingId)).Where(photo => photo.Id == photoId);
+        Photos.Where(BelongsToListing(listingId)).Where(photo => photo.Id == photoId);
 
     private IQueryable<TPhoto> VisiblePhoto(int listingId, int photoId) =>
         Visible(ForPhoto(listingId, photoId).AsNoTracking());
 
     private IOrderedQueryable<TPhoto> VisiblePhotos(int listingId) =>
-        Visible(Photos.AsNoTracking().Where(Owned(listingId)))
+        Visible(Photos.AsNoTracking().Where(BelongsToListing(listingId)))
             .OrderBy(photo => photo.DisplayOrder)
             .ThenBy(photo => photo.Id);
 

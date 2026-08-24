@@ -21,7 +21,7 @@ internal sealed class AccommodationPhotoService(GostioDbContext db, Accommodatio
             UploadedAt = photo.UploadedAt,
         };
 
-    protected override Expression<Func<AccommodationPhoto, bool>> Owned(int listingId) =>
+    protected override Expression<Func<AccommodationPhoto, bool>> BelongsToListing(int listingId) =>
         photo => photo.AccommodationId == listingId;
 
     protected override IQueryable<AccommodationPhoto> Visible(

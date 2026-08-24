@@ -14,7 +14,7 @@ public class AccommodationAvailabilityTests(DatabaseFixture fixture)
 {
     private const string Password = "a-password-for-a-calendar-owner";
 
-    private readonly ListingWorkspace workspace = new(fixture);
+    private readonly AccommodationWorkspace workspace = new(fixture);
 
     private static DateOnly Day(int offset) =>
         DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(offset);

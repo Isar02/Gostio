@@ -1,0 +1,139 @@
+using System.Linq.Expressions;
+using Gostio.Model.Exceptions;
+using Gostio.Model.Requests;
+using Gostio.Model.Responses;
+using Gostio.Services.Authentication;
+using Gostio.Services.Database;
+using Gostio.Services.Database.Entities;
+
+namespace Gostio.Services.Listings;
+
+internal sealed class ExperienceService(
+    GostioDbContext db,
+    ICurrentUser currentUser,
+    ExperienceAccess access)
+    : ListingService<
+        Experience,
+        ExperienceResponse,
+        ExperienceSearchRequest,
+        ExperienceCreateRequest,
+        ExperienceUpdateRequest>(db, currentUser, access, "experience"),
+      IExperienceService
+{
+    protected override string StillReferencedMessage =>
+        "This experience has records that have to be kept. Withdraw it instead of deleting it.";
+
+    protected override Expression<Func<Experience, ExperienceResponse>> Projection =>
+        experience => new ExperienceResponse
+        {
+            Id = experience.Id,
+            HostId = experience.HostId,
+            HostName = experience.Host.FirstName + " " + experience.Host.LastName,
+            Title = experience.Title,
+            Description = experience.Description,
+            ExperienceCategoryId = experience.ExperienceCategoryId,
+            ExperienceCategoryName = experience.ExperienceCategory.Name,
+            CityId = experience.CityId,
+            CityName = experience.City.Name,
+            CountryName = experience.City.Country.Name,
+            MeetingPoint = experience.MeetingPoint,
+            Latitude = experience.Latitude,
+            Longitude = experience.Longitude,
+            DurationMinutes = experience.DurationMinutes,
+            PricePerPerson = experience.PricePerPerson,
+            IsActive = experience.IsActive,
+            CoverPhotoId = experience.Photos
+                .Where(photo => photo.IsCover)
+                .Select(photo => (int?)photo.Id)
+                .FirstOrDefault(),
+            CreatedAt = experience.CreatedAt,
+        };
+
+    protected override IQueryable<Experience> Matching(
+        IQueryable<Experience> query,
+        ExperienceSearchRequest search)
+    {
+        if (search.CityId is int cityId)
+        {
+            query = query.Where(experience => experience.CityId == cityId);
+        }
+
+        if (search.ExperienceCategoryId is int categoryId)
+        {
+            query = query.Where(experience => experience.ExperienceCategoryId == categoryId);
+        }
+
+        if (search.MinPrice is decimal minPrice)
+        {
+            query = query.Where(experience => experience.PricePerPerson >= minPrice);
+        }
+
+        if (search.MaxPrice is decimal maxPrice)
+        {
+            query = query.Where(experience => experience.PricePerPerson <= maxPrice);
+        }
+
+        if (search.MaxDurationMinutes is int minutes)
+        {
+            query = query.Where(experience => experience.DurationMinutes <= minutes);
+        }
+
+        return query;
+    }
+
+    protected override async Task<Experience> NewAsync(
+        ExperienceCreateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var experience = new Experience
+        {
+            HostId = await RequireHostAsync(
+                request.HostId, nameof(request.HostId), cancellationToken),
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        await ApplyUpsertAsync(request, experience, cancellationToken);
+
+        return experience;
+    }
+
+    protected override async Task ApplyAsync(
+        ExperienceUpdateRequest request,
+        Experience experience,
+        CancellationToken cancellationToken)
+    {
+        var isActive = request.IsActive ?? throw new ValidationException(
+            nameof(request.IsActive), "Say whether the listing is published.");
+
+        await ApplyUpsertAsync(request, experience, cancellationToken);
+
+        experience.IsActive = isActive;
+        experience.ModifiedAt = DateTime.UtcNow;
+    }
+
+    private async Task ApplyUpsertAsync(
+        ExperienceUpsertRequest request,
+        Experience experience,
+        CancellationToken cancellationToken)
+    {
+        await RequireReferenceAsync(
+            Db.Cities, request.CityId, nameof(request.CityId), "city", cancellationToken);
+
+        await RequireReferenceAsync(
+            Db.ExperienceCategories,
+            request.ExperienceCategoryId,
+            nameof(request.ExperienceCategoryId),
+            "experience category",
+            cancellationToken);
+
+        experience.Title = request.Title.Trim();
+        experience.Description = request.Description.Trim();
+        experience.ExperienceCategoryId = request.ExperienceCategoryId;
+        experience.CityId = request.CityId;
+        experience.MeetingPoint = request.MeetingPoint.Trim();
+        experience.Latitude = request.Latitude;
+        experience.Longitude = request.Longitude;
+        experience.DurationMinutes = request.DurationMinutes;
+        experience.PricePerPerson = request.PricePerPerson;
+    }
+}

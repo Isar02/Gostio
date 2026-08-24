@@ -114,6 +114,23 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
         return added.Id;
     }
 
+    public Task<int> AnExperienceWithoutTermsAsync(int host) =>
+        experiences.CreateAsync(host, $"An experience {Guid.NewGuid():N}");
+
+    public async Task CloseTermAsync(int host, int slot, int capacity)
+    {
+        var experienceId = await ExperienceOfAsync(slot);
+
+        await AsAsync(
+            host,
+            RoleNames.Host,
+            (IExperienceSlotService service) => service.UpdateAsync(
+                experienceId,
+                slot,
+                new ExperienceSlotUpdateRequest { Capacity = capacity, IsActive = false },
+                default));
+    }
+
     public Task<int> AGuestAsync() => fixture.AddUserAsync(Password, RoleNames.Guest);
 
     public Task CloseAsync(int host, int listing, DateOnly from, DateOnly to) =>
@@ -213,6 +230,15 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             actor,
             role,
             (IReservationService service) => service.GetAsync(reservationId, default));
+
+    public Task<PagedResult<ExperienceResponse>> SearchExperiencesAsync(
+        int actor,
+        string role,
+        ExperienceSearchRequest search) =>
+        AsAsync(
+            actor,
+            role,
+            (IExperienceService service) => service.SearchAsync(search, default));
 
     public Task<PagedResult<ReservationResponse>> ListAsync(
         int actor,

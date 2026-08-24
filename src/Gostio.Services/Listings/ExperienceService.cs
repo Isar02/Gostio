@@ -78,7 +78,49 @@ internal sealed class ExperienceService(
             query = query.Where(experience => experience.DurationMinutes <= minutes);
         }
 
+        if (search.AvailableFrom is not null
+            || search.AvailableTo is not null
+            || search.Places is not null)
+        {
+            query = WithAnOpenTerm(query, search);
+        }
+
         return query;
+    }
+
+    // The places left are counted here exactly as ExperienceSlotService reports
+    // them, or a search calls open a term the slot says is full.
+    private IQueryable<Experience> WithAnOpenTerm(
+        IQueryable<Experience> query,
+        ExperienceSearchRequest search)
+    {
+        RequireAWindow(search);
+
+        var now = DateTime.UtcNow;
+        var from = search.AvailableFrom ?? now;
+        var to = search.AvailableTo;
+        var places = search.Places ?? 1;
+
+        return query.Where(experience => experience.Slots.Any(slot =>
+            slot.IsActive
+            && slot.StartTime > now
+            && slot.StartTime >= from
+            && (to == null || slot.StartTime <= to)
+            && slot.Capacity - Db.Reservations
+                .Where(reservation => reservation.ExperienceSlotId == slot.Id)
+                .Where(ReservationQueries.IsActive(now))
+                .Sum(reservation => reservation.GuestCount) >= places));
+    }
+
+    private static void RequireAWindow(ExperienceSearchRequest search)
+    {
+        if (search.AvailableFrom is DateTime from
+            && search.AvailableTo is DateTime to
+            && to < from)
+        {
+            throw new ValidationException(
+                nameof(search.AvailableTo), "A window ends at or after the moment it starts.");
+        }
     }
 
     protected override async Task<Experience> NewAsync(

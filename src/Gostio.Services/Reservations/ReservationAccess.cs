@@ -82,6 +82,10 @@ internal sealed class ReservationAccess(GostioDbContext db, ICurrentUser current
                 CheckInDate = reservation.CheckInDate,
                 CheckOutDate = reservation.CheckOutDate,
                 GuestCount = reservation.GuestCount,
+                SlotStartTime = reservation.ExperienceSlot != null
+                    ? (DateTime?)reservation.ExperienceSlot.StartTime
+                    : null,
+                CreatedAt = reservation.CreatedAt,
                 ExpiresAt = reservation.ExpiresAt,
                 TotalPrice = reservation.TotalPrice,
             })

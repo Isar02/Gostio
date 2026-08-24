@@ -49,6 +49,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
     {
         ReservationSweepSeconds = 60,
         ReservationSweepBatch = 200,
+        RefundSweepSeconds = 120,
+        RefundSweepBatch = 50,
     };
 
     public JwtSettings Jwt { get; } = new()
@@ -132,10 +134,26 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
+    public ServiceProvider BuildRefundSweep(IPaymentGateway gateway, int batch = 50)
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        services.AddScoped(_ => CreateContext());
+        services.AddSingleton(Stripe);
+        services.AddSingleton(BatchOf(batch));
+        services.AddGostioRefundSweep();
+        services.AddScoped(_ => gateway);
+
+        return services.BuildServiceProvider();
+    }
+
     private WorkerSettings BatchOf(int batch) => new()
     {
         ReservationSweepSeconds = Worker.ReservationSweepSeconds,
         ReservationSweepBatch = batch,
+        RefundSweepSeconds = Worker.RefundSweepSeconds,
+        RefundSweepBatch = batch,
     };
 
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>

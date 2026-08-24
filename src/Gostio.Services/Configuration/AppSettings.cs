@@ -84,5 +84,11 @@ public sealed class WorkerSettings
 
     public required int ReservationSweepBatch { get; init; }
 
+    public required int RefundSweepSeconds { get; init; }
+
+    public required int RefundSweepBatch { get; init; }
+
     public TimeSpan ReservationSweepInterval => TimeSpan.FromSeconds(ReservationSweepSeconds);
+
+    public TimeSpan RefundSweepInterval => TimeSpan.FromSeconds(RefundSweepSeconds);
 }

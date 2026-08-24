@@ -13,7 +13,8 @@ internal sealed class ReservationMoveService(
     ICurrentUser currentUser,
     ReservationAccess access,
     ReservationPlaces places,
-    IReservationTransitionService transitions) : IReservationMoveService
+    IReservationTransitionService transitions,
+    ICancellationRefunds refunds) : IReservationMoveService
 {
     public async Task<ReservationResponse> ConfirmAsync(
         int reservationId,
@@ -54,17 +55,34 @@ internal sealed class ReservationMoveService(
         CancellationToken cancellationToken)
     {
         var actorId = currentUser.RequireUserId();
-        var booking = await access.RequireReachableAsync(reservationId, cancellationToken);
 
-        // A cancellation gives a place back rather than taking one, so there is
-        // nothing to hold while it runs: the conditional update is the guard.
-        await transitions.MoveAsync(
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        // The lock comes before the read, not after it. A cancellation gives a
+        // place back rather than taking one, so the listing needs no lock of its
+        // own, but the status this moves from has to be the one that is true
+        // once the queue has cleared: a settlement landing at the same instant
+        // confirms the booking, and a caller holding a status read beforehand
+        // would be told to read it again for no reason. What the booking owes
+        // back is decided in the same transaction, so one that was paid for
+        // cannot end without the row that says how much of it goes back.
+        await ReservationLock.TakeAsync(db, reservationId, cancellationToken);
+
+        var booking = await access.RequireReachableAsync(reservationId, cancellationToken);
+        var cancelledAt = await transitions.MoveAsync(
             reservationId,
             booking.StatusId,
             ReservationStatusCode.Cancelled,
             actorId,
             request.Reason,
             cancellationToken);
+
+        await refunds.RecordAsync(
+            new CancelledBooking(
+                reservationId, booking.CreatedAt, booking.StartsAt, cancelledAt),
+            cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return await access.ReadAsync(reservationId, cancellationToken);
     }

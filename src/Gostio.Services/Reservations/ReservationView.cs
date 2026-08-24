@@ -22,7 +22,15 @@ internal sealed class ReservationView
 
     public required int GuestCount { get; init; }
 
+    public DateTime? SlotStartTime { get; init; }
+
+    public required DateTime CreatedAt { get; init; }
+
     public required DateTime ExpiresAt { get; init; }
 
     public required decimal TotalPrice { get; init; }
+
+    // A stay begins on the first night it covers, a term at the hour it names.
+    public DateTime StartsAt =>
+        CheckInDate?.ToDateTime(TimeOnly.MinValue) ?? SlotStartTime!.Value;
 }

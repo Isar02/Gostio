@@ -104,23 +104,65 @@ public class PaymentSettlementTests(DatabaseFixture fixture)
     }
 
     // The charge was in flight when the booking ended. The money moved, so the
-    // payment says so, and the booking stays where it ended holding money it
-    // owes back — which is the refunds' half of this and not the webhook's.
+    // payment says so, the booking stays where it ended, and the same row a
+    // cancellation writes says how much of it goes back.
     [Fact]
-    public async Task AChargeThatLandedOnAnEndedBookingStillStands()
+    public async Task AChargeThatLandedOnAnEndedBookingIsOwedBack()
     {
         var (_, booked, payment) = await APendingChargeAsync();
 
         await workspace.Reservations.CancelAsync(booked);
         await workspace.SucceedAsync(payment);
 
-        Assert.Equal(
-            PaymentStatus.Succeeded,
-            Assert.Single(await workspace.PaymentsOfAsync(booked)).Status);
+        var charge = Assert.Single(await workspace.PaymentsOfAsync(booked));
 
+        Assert.Equal(PaymentStatus.Succeeded, charge.Status);
         Assert.Equal(
             ReservationStatusCode.Cancelled,
             await workspace.Reservations.StatusOfAsync(booked));
+
+        var owed = Assert.Single(await workspace.RefundsOfAsync(booked));
+
+        Assert.Equal(RefundStatus.Pending, owed.Status);
+        Assert.Equal(charge.Amount, owed.Amount);
+    }
+
+    // The booking was cancelled outside its grace period and close enough to the
+    // stay to owe only half, and the late charge is held to that rather than to
+    // the thresholds as they read now.
+    [Fact]
+    public async Task ALateChargeIsOwedBackByThePolicyAtTheTimeItWasCalledOff()
+    {
+        var (_, listing) = await workspace.Reservations.AListingAsync();
+        var guest = await workspace.Reservations.AGuestAsync();
+
+        var booked = await workspace.Reservations.BookStayAsync(
+            guest, listing, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3)), nights: 2);
+
+        var payment = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
+
+        await workspace.Reservations.AgeAsync(booked.Id, TimeSpan.FromDays(5));
+        await workspace.Reservations.CancelAsync(booked.Id);
+        await workspace.SucceedAsync(payment.Id);
+
+        var owed = Assert.Single(await workspace.RefundsOfAsync(booked.Id));
+
+        Assert.Equal(
+            CancellationPolicy.AmountOf(payment.Amount, CancellationPolicy.Half), owed.Amount);
+    }
+
+    [Fact]
+    public async Task AChargeOnAConfirmedBookingIsOwedNothing()
+    {
+        var (host, listing) = await workspace.Reservations.AListingAsync();
+        var guest = await workspace.Reservations.AGuestAsync();
+        var booked = await workspace.Reservations.BookStayAsync(guest, listing, Soon, nights: 2);
+        var payment = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
+
+        await workspace.Reservations.ConfirmAsync(host, RoleNames.Host, booked.Id);
+        await workspace.SucceedAsync(payment.Id);
+
+        Assert.Empty(await workspace.RefundsOfAsync(booked.Id));
     }
 
     [Fact]

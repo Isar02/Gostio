@@ -274,6 +274,46 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
                 .SetProperty(reservation => reservation.ExpiresAt, lapsed));
     }
 
+    // Moves when the booking was made without moving what it books, so a test
+    // can leave the grace period behind. `ExpiresAt` follows it, because
+    // CK_Reservations_Expiry keeps the one after the other.
+    public async Task AgeAsync(int reservationId, TimeSpan by)
+    {
+        await using var db = fixture.CreateContext();
+
+        var clocks = await db.Reservations
+            .AsNoTracking()
+            .Where(reservation => reservation.Id == reservationId)
+            .Select(reservation => new { reservation.CreatedAt, reservation.ExpiresAt })
+            .SingleAsync();
+
+        await db.Reservations
+            .Where(reservation => reservation.Id == reservationId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(reservation => reservation.CreatedAt, clocks.CreatedAt - by)
+                .SetProperty(reservation => reservation.ExpiresAt, clocks.ExpiresAt - by));
+    }
+
+    // Moves when the booking was called off without moving anything else, so a
+    // test can put real time between the cancellation and the clock.
+    public async Task BackdateTheCancellationAsync(int reservationId, TimeSpan by)
+    {
+        await using var db = fixture.CreateContext();
+
+        var cancellation = await db.ReservationStatusHistory
+            .AsNoTracking()
+            .Where(history => history.ReservationId == reservationId
+                && history.NewStatusId == (int)ReservationStatusCode.Cancelled)
+            .OrderByDescending(history => history.Id)
+            .Select(history => new { history.Id, history.ChangedAt })
+            .FirstAsync();
+
+        await db.ReservationStatusHistory
+            .Where(history => history.Id == cancellation.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(history => history.ChangedAt, cancellation.ChangedAt - by));
+    }
+
     public async Task MoveTheStayAsync(int reservationId, DateOnly checkOut)
     {
         await using var db = fixture.CreateContext();

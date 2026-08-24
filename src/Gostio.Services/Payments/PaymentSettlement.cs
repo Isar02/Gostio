@@ -14,6 +14,7 @@ namespace Gostio.Services.Payments;
 internal sealed class PaymentSettlement(
     GostioDbContext db,
     IReservationTransitionService transitions,
+    ICancellationRefunds refunds,
     ILogger<PaymentSettlement> logger) : IPaymentSettlement
 {
     public async Task SettleAsync(
@@ -108,8 +109,11 @@ internal sealed class PaymentSettlement(
     // Money arriving is what confirms a booking, and Stripe is not a person, so
     // the trail names nobody. A booking that was not pending is left where it
     // stands: a host may have confirmed it first, or it may have been cancelled
-    // while the charge was in flight, and that second case now holds money it
-    // owes back.
+    // while the charge was in flight. That second case ends holding money with
+    // nothing to hold it against, so the same row a cancellation writes is
+    // written here — priced against the moment the booking ended and never
+    // against now, because an event the processor delivered late must not cost a
+    // guest a threshold they were inside of when they called it off.
     private async Task ConfirmTheBookingAsync(
         int reservationId,
         int paymentId,
@@ -132,6 +136,44 @@ internal sealed class PaymentSettlement(
                     + "was no longer pending. The charge stands and the booking was left as it is.",
                 paymentId,
                 reservationId);
+
+            await OweTheChargeBackAsync(reservationId, cancellationToken);
         }
+    }
+
+    private async Task OweTheChargeBackAsync(
+        int reservationId,
+        CancellationToken cancellationToken)
+    {
+        var ended = await db.Reservations
+            .AsNoTracking()
+            .Where(reservation => reservation.Id == reservationId
+                && reservation.ReservationStatusId == (int)ReservationStatusCode.Cancelled)
+            .Select(reservation => new
+            {
+                reservation.CreatedAt,
+                reservation.CheckInDate,
+                SlotStartTime = reservation.ExperienceSlot != null
+                    ? (DateTime?)reservation.ExperienceSlot.StartTime
+                    : null,
+                CancelledAt = reservation.StatusHistory
+                    .Where(history =>
+                        history.NewStatusId == (int)ReservationStatusCode.Cancelled)
+                    .Max(history => (DateTime?)history.ChangedAt),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (ended is null)
+        {
+            return;
+        }
+
+        await refunds.RecordAsync(
+            new CancelledBooking(
+                reservationId,
+                ended.CreatedAt,
+                ended.CheckInDate?.ToDateTime(TimeOnly.MinValue) ?? ended.SlotStartTime!.Value,
+                ended.CancelledAt ?? DateTime.UtcNow),
+            cancellationToken);
     }
 }

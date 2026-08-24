@@ -16,6 +16,8 @@ public static class AppSettingsLoader
     private const int MaximumSweepSeconds = 60 * 60;
     private const int DefaultReservationSweepBatch = 200;
     private const int MaximumSweepBatch = 1000;
+    private const int DefaultRefundSweepSeconds = 120;
+    private const int DefaultRefundSweepBatch = 50;
     private const string DefaultCurrency = "eur";
 
     public static AppSettings Load()
@@ -88,6 +90,16 @@ public static class AppSettingsLoader
                     "WORKER_RESERVATION_SWEEP_BATCH",
                     OptionalInteger(
                         "WORKER_RESERVATION_SWEEP_BATCH", DefaultReservationSweepBatch),
+                    1,
+                    MaximumSweepBatch),
+                RefundSweepSeconds = RequireRange(
+                    "WORKER_REFUND_SWEEP_SECONDS",
+                    OptionalInteger("WORKER_REFUND_SWEEP_SECONDS", DefaultRefundSweepSeconds),
+                    MinimumSweepSeconds,
+                    MaximumSweepSeconds),
+                RefundSweepBatch = RequireRange(
+                    "WORKER_REFUND_SWEEP_BATCH",
+                    OptionalInteger("WORKER_REFUND_SWEEP_BATCH", DefaultRefundSweepBatch),
                     1,
                     MaximumSweepBatch)
             },

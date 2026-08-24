@@ -10,6 +10,11 @@ public static class AppSettingsLoader
     private const int MinimumJwtKeyLengthInBytes = 32;
     private const int MaximumPort = 65535;
     private const int MaximumJwtLifetimeInMinutes = 60 * 24 * 30;
+    private const int DefaultReservationSweepSeconds = 60;
+    private const int MinimumReservationSweepSeconds = 5;
+    private const int MaximumReservationSweepSeconds = 60 * 60;
+    private const int DefaultReservationSweepBatch = 200;
+    private const int MaximumReservationSweepBatch = 1000;
 
     public static AppSettings Load()
     {
@@ -68,6 +73,21 @@ public static class AppSettingsLoader
             Seed = new SeedSettings
             {
                 DefaultPassword = RequireValue("SEED_DEFAULT_PASSWORD")
+            },
+            Worker = new WorkerSettings
+            {
+                ReservationSweepSeconds = RequireRange(
+                    "WORKER_RESERVATION_SWEEP_SECONDS",
+                    OptionalInteger(
+                        "WORKER_RESERVATION_SWEEP_SECONDS", DefaultReservationSweepSeconds),
+                    MinimumReservationSweepSeconds,
+                    MaximumReservationSweepSeconds),
+                ReservationSweepBatch = RequireRange(
+                    "WORKER_RESERVATION_SWEEP_BATCH",
+                    OptionalInteger(
+                        "WORKER_RESERVATION_SWEEP_BATCH", DefaultReservationSweepBatch),
+                    1,
+                    MaximumReservationSweepBatch)
             },
             CorsAllowedOrigins = ReadCorsAllowedOrigins()
         };

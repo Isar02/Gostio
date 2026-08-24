@@ -16,6 +16,7 @@ public static class ConfigurationServiceCollectionExtensions
         services.AddSingleton(settings.Smtp);
         services.AddSingleton(settings.Stripe);
         services.AddSingleton(settings.Seed);
+        services.AddSingleton(settings.Worker);
 
         return settings;
     }

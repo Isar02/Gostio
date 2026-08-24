@@ -9,8 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.Tests.Listings;
 
-// The shared base is what the accommodation suite exercises. What is only true
-// here is the route these actions hang off and the service behind it.
 public sealed class ExperiencePhotosControllerTests : IAsyncLifetime
 {
     private const string Route = "/api/experiences/7/photos";

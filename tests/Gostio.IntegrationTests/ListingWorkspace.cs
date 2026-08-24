@@ -6,8 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Gostio.IntegrationTests;
 
 // A host with a listing, and the service calls that reach it as somebody. The
-// photo, amenity and availability suites all stand on that same ground, and
-// what an accommodation and an experience answer differently is below it.
+// photo, amenity and availability suites all stand on that same ground.
 public abstract class ListingWorkspace(DatabaseFixture fixture)
 {
     protected DatabaseFixture Fixture { get; } = fixture;

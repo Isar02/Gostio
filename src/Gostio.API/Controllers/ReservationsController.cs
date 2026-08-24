@@ -9,8 +9,14 @@ namespace Gostio.API.Controllers;
 [ApiController]
 [Route("api/reservations")]
 [Authorize]
-public sealed class ReservationsController(IReservationService reservations) : ControllerBase
+public sealed class ReservationsController(
+    IReservationService reservations,
+    IReservationMoveService moves) : ControllerBase
 {
+    [HttpGet("{id:int}")]
+    public Task<ReservationResponse> Get(int id, CancellationToken cancellationToken) =>
+        reservations.GetAsync(id, cancellationToken);
+
     [HttpPost]
     public async Task<ActionResult<ReservationResponse>> Create(
         ReservationCreateRequest request,
@@ -18,6 +24,17 @@ public sealed class ReservationsController(IReservationService reservations) : C
     {
         var created = await reservations.CreateAsync(request, cancellationToken);
 
-        return Created($"/api/reservations/{created.Id}", created);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
+
+    [HttpPost("{id:int}/confirm")]
+    public Task<ReservationResponse> Confirm(int id, CancellationToken cancellationToken) =>
+        moves.ConfirmAsync(id, cancellationToken);
+
+    [HttpPost("{id:int}/cancel")]
+    public Task<ReservationResponse> Cancel(
+        int id,
+        ReservationCancelRequest request,
+        CancellationToken cancellationToken) =>
+        moves.CancelAsync(id, request, cancellationToken);
 }

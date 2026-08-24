@@ -1,0 +1,22 @@
+namespace Gostio.Services.Reservations;
+
+// A reservation as the gate hands it over: the status the caller is about to
+// move, and every fact the move rests on, out of one statement.
+internal sealed class ReservationView
+{
+    public required int StatusId { get; init; }
+
+    public required int HostId { get; init; }
+
+    public int? AccommodationId { get; init; }
+
+    public int? ExperienceId { get; init; }
+
+    public int? ExperienceSlotId { get; init; }
+
+    public DateOnly? CheckInDate { get; init; }
+
+    public DateOnly? CheckOutDate { get; init; }
+
+    public required int GuestCount { get; init; }
+}

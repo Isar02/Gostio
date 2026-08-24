@@ -3,14 +3,16 @@ using Gostio.Model.Exceptions;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Gostio.Services.Reservations;
 
 internal sealed class ReservationTransitionService(GostioDbContext db)
     : IReservationTransitionService
 {
-    public async Task ChangeAsync(
+    public async Task MoveAsync(
         int reservationId,
+        int fromStatusId,
         ReservationStatusCode to,
         int? changedByUserId,
         string? reason,
@@ -18,27 +20,28 @@ internal sealed class ReservationTransitionService(GostioDbContext db)
     {
         var changedAt = DateTime.UtcNow;
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        var current = await db.Reservations
-            .AsNoTracking()
-            .Where(reservation => reservation.Id == reservationId)
-            .Select(reservation => (int?)reservation.ReservationStatusId)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException($"Reservation {reservationId} does not exist.");
-
-        var from = ReservationStateMachine.RequireKnown(current);
+        var from = ReservationStateMachine.RequireKnown(fromStatusId);
 
         ReservationStateMachine.RequireAllowed(from, to);
 
         var normalizedReason = ReservationStateMachine.RequireReason(to, reason);
 
-        var fromId = (int)from;
+        // A confirmation has taken the listing lock in a transaction of its own
+        // and the move belongs inside it. A caller that brought none is given
+        // one, because the update and the history row are two statements.
+        await using var owned = db.Database.CurrentTransaction is null
+            ? await db.Database.BeginTransactionAsync(cancellationToken)
+            : (IDbContextTransaction?)null;
+
         var toId = (int)to;
 
+        // The update names the status the caller read, so a caller that lost a
+        // race matches no row. That failure is not the refusal above: the move
+        // was allowed and somebody else made it first, and a retry can succeed.
         var affectedRows = await db.Reservations
             .Where(reservation =>
-                reservation.Id == reservationId && reservation.ReservationStatusId == fromId)
+                reservation.Id == reservationId
+                && reservation.ReservationStatusId == fromStatusId)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(
                     reservation => reservation.ReservationStatusId, toId),
@@ -53,7 +56,7 @@ internal sealed class ReservationTransitionService(GostioDbContext db)
         db.ReservationStatusHistory.Add(new ReservationStatusHistory
         {
             ReservationId = reservationId,
-            PreviousStatusId = fromId,
+            PreviousStatusId = fromStatusId,
             NewStatusId = toId,
             ChangedByUserId = changedByUserId,
             ChangedAt = changedAt,
@@ -61,6 +64,10 @@ internal sealed class ReservationTransitionService(GostioDbContext db)
         });
 
         await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+
+        if (owned is not null)
+        {
+            await owned.CommitAsync(cancellationToken);
+        }
     }
 }

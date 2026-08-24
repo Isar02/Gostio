@@ -4,8 +4,9 @@ namespace Gostio.Services.Reservations;
 
 public interface IReservationTransitionService
 {
-    Task ChangeAsync(
+    Task MoveAsync(
         int reservationId,
+        int fromStatusId,
         ReservationStatusCode to,
         int? changedByUserId,
         string? reason,

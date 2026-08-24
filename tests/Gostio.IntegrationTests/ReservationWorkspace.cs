@@ -153,14 +153,66 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             new ReservationCreateRequest { ExperienceSlotId = slot, GuestCount = guestCount },
             interceptors);
 
+    // Cancels with nobody named as the actor, which is all the tests that only
+    // need a reservation to hand its dates back are asking for.
     public async Task CancelAsync(int reservationId)
     {
+        var from = (int)await StatusOfAsync(reservationId);
+
         await using var services = fixture.BuildServices(new AnonymousUser());
 
         await services
             .GetRequiredService<IReservationTransitionService>()
-            .ChangeAsync(reservationId, ReservationStatusCode.Cancelled, null, "Called off", default);
+            .MoveAsync(
+                reservationId, from, ReservationStatusCode.Cancelled, null, "Called off", default);
     }
+
+    public Task<ReservationResponse> ConfirmAsync(
+        int actor,
+        string role,
+        int reservationId,
+        params IInterceptor[] interceptors) =>
+        AsAsync(
+            actor,
+            role,
+            (IReservationMoveService service) => service.ConfirmAsync(reservationId, default),
+            interceptors);
+
+    public Task<ReservationResponse> CancelAsync(
+        int actor,
+        string role,
+        int reservationId,
+        string? reason) =>
+        AsAsync(
+            actor,
+            role,
+            (IReservationMoveService service) => service.CancelAsync(
+                reservationId, new ReservationCancelRequest { Reason = reason }, default));
+
+    public Task<ReservationResponse> ReadAsync(int actor, string role, int reservationId) =>
+        AsAsync(
+            actor,
+            role,
+            (IReservationService service) => service.GetAsync(reservationId, default));
+
+    // A hold whose deadline has passed and which no sweep has reached: still
+    // pending, and holding nothing. The booking moves back with the deadline,
+    // because CK_Reservations_Expiry keeps the one after the other.
+    public async Task LapseAsync(int reservationId)
+    {
+        var lapsed = DateTime.UtcNow.AddMinutes(-1);
+
+        await using var db = fixture.CreateContext();
+
+        await db.Reservations
+            .Where(reservation => reservation.Id == reservationId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(reservation => reservation.CreatedAt, lapsed.AddHours(-24))
+                .SetProperty(reservation => reservation.ExpiresAt, lapsed));
+    }
+
+    public Task<int> AnAdministratorAsync() =>
+        fixture.AddUserAsync(Password, RoleNames.Administrator);
 
     public async Task<ReservationStatusCode> StatusOfAsync(int reservationId)
     {

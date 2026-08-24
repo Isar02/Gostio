@@ -8,4 +8,6 @@ public interface IReservationService
     Task<ReservationResponse> CreateAsync(
         ReservationCreateRequest request,
         CancellationToken cancellationToken);
+
+    Task<ReservationResponse> GetAsync(int reservationId, CancellationToken cancellationToken);
 }

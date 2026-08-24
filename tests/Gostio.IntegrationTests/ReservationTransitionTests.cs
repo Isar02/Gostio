@@ -21,7 +21,7 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
         var reservation = await workspace.APendingStayAsync(Password);
         var actor = await fixture.AddUserAsync(Password, RoleNames.Host);
 
-        await ChangeAsync(reservation, ReservationStatusCode.Confirmed, actor);
+        await MoveAsync(reservation, ReservationStatusCode.Confirmed, actor);
 
         Assert.Equal(ReservationStatusCode.Confirmed, await workspace.StatusOfAsync(reservation));
 
@@ -38,7 +38,7 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
     {
         var reservation = await workspace.APendingStayAsync(Password);
 
-        await ChangeAsync(
+        await MoveAsync(
             reservation, ReservationStatusCode.Cancelled, null, "  The hold ran out  ");
 
         var written = Assert.Single(await workspace.HistoryOfAsync(reservation));
@@ -53,7 +53,7 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
         var reservation = await workspace.APendingStayAsync(Password);
 
         await Assert.ThrowsAsync<ValidationException>(
-            () => ChangeAsync(reservation, ReservationStatusCode.Cancelled, null));
+            () => MoveAsync(reservation, ReservationStatusCode.Cancelled, null));
 
         Assert.Equal(ReservationStatusCode.Pending, await workspace.StatusOfAsync(reservation));
         Assert.Empty(await workspace.HistoryOfAsync(reservation));
@@ -64,10 +64,10 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
     {
         var reservation = await workspace.APendingStayAsync(Password);
 
-        await ChangeAsync(reservation, ReservationStatusCode.Cancelled, null, "Called off");
+        await MoveAsync(reservation, ReservationStatusCode.Cancelled, null, "Called off");
 
         var refused = await Assert.ThrowsAsync<BusinessException>(
-            () => ChangeAsync(reservation, ReservationStatusCode.Cancelled, null));
+            () => MoveAsync(reservation, ReservationStatusCode.Cancelled, null));
 
         Assert.Contains("cannot become", refused.Message);
         Assert.Equal(ReservationStatusCode.Cancelled, await workspace.StatusOfAsync(reservation));
@@ -80,16 +80,11 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
         var reservation = await workspace.APendingStayAsync(Password);
 
         await Assert.ThrowsAsync<BusinessException>(
-            () => ChangeAsync(reservation, ReservationStatusCode.Completed, null));
+            () => MoveAsync(reservation, ReservationStatusCode.Completed, null));
 
         Assert.Equal(ReservationStatusCode.Pending, await workspace.StatusOfAsync(reservation));
         Assert.Empty(await workspace.HistoryOfAsync(reservation));
     }
-
-    [Fact]
-    public async Task AReservationThatDoesNotExistIsNotFound() =>
-        await Assert.ThrowsAsync<NotFoundException>(
-            () => ChangeAsync(int.MaxValue, ReservationStatusCode.Cancelled, null));
 
     [Fact]
     public async Task TwoCallersMovingTheSameHoldLeaveOneMoveAndOneHistoryRow()
@@ -116,7 +111,7 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
     {
         try
         {
-            await ChangeAsync(reservation, to, null, interceptors: interceptors);
+            await MoveAsync(reservation, to, null, interceptors: interceptors);
 
             return null;
         }
@@ -126,16 +121,20 @@ public class ReservationTransitionTests(DatabaseFixture fixture)
         }
     }
 
-    private Task ChangeAsync(
+    private async Task MoveAsync(
         int reservation,
         ReservationStatusCode to,
         int? actor,
         string? reason = null,
-        params IInterceptor[] interceptors) =>
-        AsAsync(
+        params IInterceptor[] interceptors)
+    {
+        var from = (int)await workspace.StatusOfAsync(reservation);
+
+        await AsAsync(
             (IReservationTransitionService transitions) =>
-                transitions.ChangeAsync(reservation, to, actor, reason, default),
+                transitions.MoveAsync(reservation, from, to, actor, reason, default),
             interceptors);
+    }
 
     private async Task AsAsync<TService>(Func<TService, Task> work, IInterceptor[] interceptors)
         where TService : notnull

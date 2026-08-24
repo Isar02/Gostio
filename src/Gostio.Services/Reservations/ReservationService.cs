@@ -13,8 +13,9 @@ namespace Gostio.Services.Reservations;
 internal sealed class ReservationService(
     GostioDbContext db,
     ICurrentUser currentUser,
-    AccommodationAccess accommodations,
-    ExperienceAccess experiences) : IReservationService
+    ReservationAccess access,
+    ReservationPlaces places,
+    AccommodationAccess accommodations) : IReservationService
 {
     public async Task<ReservationResponse> CreateAsync(
         ReservationCreateRequest request,
@@ -26,6 +27,11 @@ internal sealed class ReservationService(
             ? await CreateStayAsync(accommodationId, request, guestId, cancellationToken)
             : await CreateTermAsync(RequiredSlot(request), request, guestId, cancellationToken);
     }
+
+    public Task<ReservationResponse> GetAsync(
+        int reservationId,
+        CancellationToken cancellationToken) =>
+        access.ReadAsync(reservationId, cancellationToken);
 
     private async Task<ReservationResponse> CreateStayAsync(
         int accommodationId,
@@ -45,7 +51,7 @@ internal sealed class ReservationService(
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await accommodations.LockAsync(accommodationId, cancellationToken);
+        await places.LockAccommodationAsync(accommodationId, cancellationToken);
 
         // Everything below is decided on this instant, read after the wait for
         // the lock. A call that queued behind another booking would otherwise
@@ -75,32 +81,16 @@ internal sealed class ReservationService(
                 $"This place sleeps {listing.MaxGuests} and the booking is for {guestCount}.");
         }
 
-        var exceptions = await db.AccommodationAvailability
-            .AsNoTracking()
-            .Where(range => range.AccommodationId == accommodationId
-                && range.StartDate < checkOut
-                && range.EndDate >= checkIn)
-            .Select(range => new
-            {
-                range.StartDate,
-                range.EndDate,
-                range.IsAvailable,
-                range.PriceOverride,
-            })
-            .ToListAsync(cancellationToken);
+        var ranges = await places.RangesOverAsync(
+            accommodationId, checkIn, checkOut, cancellationToken);
 
-        if (exceptions.Exists(range => !range.IsAvailable))
+        if (ranges.Any(range => !range.IsAvailable))
         {
             throw new BusinessException("The host has closed part of these dates.");
         }
 
-        var taken = await db.Reservations
-            .AsNoTracking()
-            .Where(other => other.AccommodationId == accommodationId
-                && other.CheckInDate < checkOut
-                && checkIn < other.CheckOutDate)
-            .Where(ReservationQueries.IsActive(now))
-            .AnyAsync(cancellationToken);
+        var taken = await places.AreTheNightsTakenAsync(
+            accommodationId, checkIn, checkOut, now, null, cancellationToken);
 
         if (taken)
         {
@@ -111,7 +101,7 @@ internal sealed class ReservationService(
             checkIn,
             checkOut,
             listing.PricePerNight,
-            [.. exceptions
+            [.. ranges
                 .Where(range => range.PriceOverride is not null)
                 .Select(range => new PricedRange(
                     range.StartDate, range.EndDate, range.PriceOverride!.Value))]);
@@ -157,11 +147,9 @@ internal sealed class ReservationService(
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        // Lowering a slot's capacity takes this same lock, so the seats are
-        // counted and the booking written on one side of that change or the
-        // other. The term and the clock are both read inside it: the id above
-        // was read outside and says only which lock to take.
-        await experiences.LockAsync(experienceId, cancellationToken);
+        // The term and the clock are both read inside the lock: the id above was
+        // read outside and says only which lock to take.
+        await places.LockExperienceAsync(experienceId, cancellationToken);
 
         var now = DateTime.UtcNow;
 
@@ -185,12 +173,7 @@ internal sealed class ReservationService(
             throw new BusinessException("This term has already started.");
         }
 
-        var seatsTaken = await db.Reservations
-            .AsNoTracking()
-            .Where(other => other.ExperienceSlotId == slotId)
-            .Where(ReservationQueries.IsActive(now))
-            .SumAsync(other => other.GuestCount, cancellationToken);
-
+        var seatsTaken = await places.SeatsTakenAsync(slotId, now, null, cancellationToken);
         var placesLeft = term.Capacity - seatsTaken;
 
         if (guestCount > placesLeft)
@@ -238,34 +221,8 @@ internal sealed class ReservationService(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return await ReadAsync(reservation.Id, cancellationToken);
+        return await access.ReadAsync(reservation.Id, cancellationToken);
     }
-
-    private Task<ReservationResponse> ReadAsync(
-        int reservationId,
-        CancellationToken cancellationToken) =>
-        db.Reservations
-            .AsNoTracking()
-            .Where(reservation => reservation.Id == reservationId)
-            .Select(reservation => new ReservationResponse
-            {
-                Id = reservation.Id,
-                UserId = reservation.UserId,
-                AccommodationId = reservation.AccommodationId,
-                ExperienceSlotId = reservation.ExperienceSlotId,
-                CheckInDate = reservation.CheckInDate,
-                CheckOutDate = reservation.CheckOutDate,
-                GuestCount = reservation.GuestCount,
-                ReservationStatusId = reservation.ReservationStatusId,
-                Status = reservation.ReservationStatus.Code,
-                ExpiresAt = reservation.ExpiresAt,
-                AccommodationTotal = reservation.AccommodationTotal,
-                CleaningFee = reservation.CleaningFee,
-                PricePerPerson = reservation.PricePerPerson,
-                TotalPrice = reservation.TotalPrice,
-                CreatedAt = reservation.CreatedAt,
-            })
-            .SingleAsync(cancellationToken);
 
     private static void RequireSomebodyElsesListing(int hostId, int guestId)
     {

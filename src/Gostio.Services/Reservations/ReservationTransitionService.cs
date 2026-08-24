@@ -10,7 +10,7 @@ namespace Gostio.Services.Reservations;
 internal sealed class ReservationTransitionService(GostioDbContext db)
     : IReservationTransitionService
 {
-    public async Task MoveAsync(
+    public async Task<DateTime> MoveAsync(
         int reservationId,
         int fromStatusId,
         ReservationStatusCode to,
@@ -69,5 +69,7 @@ internal sealed class ReservationTransitionService(GostioDbContext db)
         {
             await owned.CommitAsync(cancellationToken);
         }
+
+        return changedAt;
     }
 }

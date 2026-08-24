@@ -39,4 +39,6 @@ public class Reservation
     public DateTime CreatedAt { get; set; }
 
     public ICollection<ReservationStatusHistory> StatusHistory { get; set; } = [];
+
+    public ICollection<Payment> Payments { get; set; } = [];
 }

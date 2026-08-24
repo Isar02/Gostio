@@ -149,3 +149,6 @@ $RECYCLE.BIN/
 *.iml
 *.swp
 *~
+
+# Per-machine tool settings, not project settings.
+.claude/settings.local.json

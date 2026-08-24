@@ -65,8 +65,12 @@ public sealed class StripeSettings
     public required string WebhookSecret { get; init; }
     public required string Currency { get; init; }
 
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(SecretKey) && !string.IsNullOrWhiteSpace(WebhookSecret);
+    public bool CanReachTheProcessor => !string.IsNullOrWhiteSpace(SecretKey);
+
+    public bool CanTakeAPayment =>
+        CanReachTheProcessor && !string.IsNullOrWhiteSpace(PublishableKey);
+
+    public bool CanVerifyAWebhook => !string.IsNullOrWhiteSpace(WebhookSecret);
 }
 
 public sealed class SeedSettings
@@ -80,5 +84,11 @@ public sealed class WorkerSettings
 
     public required int ReservationSweepBatch { get; init; }
 
+    public required int RefundSweepSeconds { get; init; }
+
+    public required int RefundSweepBatch { get; init; }
+
     public TimeSpan ReservationSweepInterval => TimeSpan.FromSeconds(ReservationSweepSeconds);
+
+    public TimeSpan RefundSweepInterval => TimeSpan.FromSeconds(RefundSweepSeconds);
 }

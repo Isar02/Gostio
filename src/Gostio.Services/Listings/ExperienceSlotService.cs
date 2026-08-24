@@ -166,6 +166,10 @@ internal sealed class ExperienceSlotService(GostioDbContext db, ExperienceAccess
     {
         await access.RequireOwnedAsync(experienceId, cancellationToken);
 
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        await access.LockAsync(experienceId, cancellationToken);
+
         int removed;
 
         try
@@ -183,6 +187,8 @@ internal sealed class ExperienceSlotService(GostioDbContext db, ExperienceAccess
         {
             throw Missing(slotId);
         }
+
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private static void RequireAWindow(ExperienceSlotSearchRequest search)

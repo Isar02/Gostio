@@ -6,6 +6,7 @@ public static class ReservationServiceCollectionExtensions
 {
     public static IServiceCollection AddGostioReservationServices(this IServiceCollection services)
     {
+        services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<IReservationTransitionService, ReservationTransitionService>();
 
         return services;

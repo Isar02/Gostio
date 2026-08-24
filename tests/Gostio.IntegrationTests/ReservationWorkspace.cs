@@ -1,13 +1,23 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
+using Gostio.Model.Requests;
+using Gostio.Model.Responses;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Listings;
+using Gostio.Services.Reservations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
 internal sealed class ReservationWorkspace(DatabaseFixture fixture)
 {
+    public const string Password = "a-password-for-somebody-booking";
+
     private readonly AccommodationWorkspace listings = new(fixture);
+
+    private readonly ExperienceWorkspace experiences = new(fixture);
 
     public async Task<int> APendingStayAsync(string password)
     {
@@ -39,6 +49,119 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
         return reservation.Id;
     }
 
+    public async Task<(int Host, int Listing)> AListingAsync(
+        decimal price = 100m,
+        int maxGuests = 4)
+    {
+        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
+        var request = ListingRequests.New(
+            await listings.ReferencesAsync(),
+            $"A listing {Guid.NewGuid():N}",
+            price: price,
+            maxGuests: maxGuests);
+
+        var created = await AsAsync(
+            host,
+            RoleNames.Host,
+            (IAccommodationService service) => service.CreateAsync(request, default));
+
+        return (host, created.Id);
+    }
+
+    public async Task<(int Host, int Slot)> ATermAsync(
+        int capacity,
+        DateTime startsAt,
+        decimal price = 40m)
+    {
+        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
+        var request = ExperienceRequests.New(
+            await experiences.ReferencesAsync(),
+            $"An experience {Guid.NewGuid():N}",
+            price: price);
+
+        var experience = await AsAsync(
+            host,
+            RoleNames.Host,
+            (IExperienceService service) => service.CreateAsync(request, default));
+
+        var slot = await AsAsync(
+            host,
+            RoleNames.Host,
+            (IExperienceSlotService service) => service.AddAsync(
+                experience.Id,
+                new ExperienceSlotCreateRequest { StartTime = startsAt, Capacity = capacity },
+                default));
+
+        return (host, slot.Id);
+    }
+
+    public Task<int> AGuestAsync() => fixture.AddUserAsync(Password, RoleNames.Guest);
+
+    public Task CloseAsync(int host, int listing, DateOnly from, DateOnly to) =>
+        AddExceptionAsync(host, listing, from, to, isAvailable: false, priceOverride: null);
+
+    public Task RepriceAsync(int host, int listing, DateOnly from, DateOnly to, decimal price) =>
+        AddExceptionAsync(host, listing, from, to, isAvailable: true, priceOverride: price);
+
+    public async Task DeleteTermAsync(int host, int slot, params IInterceptor[] interceptors)
+    {
+        var experienceId = await ExperienceOfAsync(slot);
+
+        await AsAsync(
+            host,
+            RoleNames.Host,
+            async (IExperienceSlotService service) =>
+            {
+                await service.DeleteAsync(experienceId, slot, default);
+
+                return true;
+            },
+            interceptors);
+    }
+
+    public Task<ReservationResponse> BookAsync(
+        int guest,
+        ReservationCreateRequest request,
+        params IInterceptor[] interceptors) =>
+        AsAsync(
+            guest,
+            RoleNames.Guest,
+            (IReservationService service) => service.CreateAsync(request, default),
+            interceptors);
+
+    public Task<ReservationResponse> BookStayAsync(
+        int guest,
+        int listing,
+        DateOnly checkIn,
+        int nights,
+        int guestCount = 2) =>
+        BookAsync(guest, new ReservationCreateRequest
+        {
+            AccommodationId = listing,
+            CheckInDate = checkIn,
+            CheckOutDate = checkIn.AddDays(nights),
+            GuestCount = guestCount,
+        });
+
+    public Task<ReservationResponse> BookTermAsync(
+        int guest,
+        int slot,
+        int guestCount,
+        params IInterceptor[] interceptors) =>
+        BookAsync(
+            guest,
+            new ReservationCreateRequest { ExperienceSlotId = slot, GuestCount = guestCount },
+            interceptors);
+
+    public async Task CancelAsync(int reservationId)
+    {
+        await using var services = fixture.BuildServices(new AnonymousUser());
+
+        await services
+            .GetRequiredService<IReservationTransitionService>()
+            .ChangeAsync(reservationId, ReservationStatusCode.Cancelled, null, "Called off", default);
+    }
+
     public async Task<ReservationStatusCode> StatusOfAsync(int reservationId)
     {
         await using var db = fixture.CreateContext();
@@ -59,5 +182,50 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             .OrderBy(history => history.ChangedAt)
             .ThenBy(history => history.Id)
             .ToListAsync();
+    }
+
+    private Task AddExceptionAsync(
+        int host,
+        int listing,
+        DateOnly from,
+        DateOnly to,
+        bool isAvailable,
+        decimal? priceOverride) =>
+        AsAsync(
+            host,
+            RoleNames.Host,
+            (IAccommodationAvailabilityService service) => service.AddAsync(
+                listing,
+                new AccommodationAvailabilityRequest
+                {
+                    StartDate = from,
+                    EndDate = to,
+                    IsAvailable = isAvailable,
+                    PriceOverride = priceOverride,
+                },
+                default));
+
+    public async Task<int> ExperienceOfAsync(int slotId)
+    {
+        await using var db = fixture.CreateContext();
+
+        return await db.ExperienceSlots
+            .AsNoTracking()
+            .Where(slot => slot.Id == slotId)
+            .Select(slot => slot.ExperienceId)
+            .SingleAsync();
+    }
+
+    private async Task<TResult> AsAsync<TService, TResult>(
+        int userId,
+        string role,
+        Func<TService, Task<TResult>> work,
+        params IInterceptor[] interceptors)
+        where TService : notnull
+    {
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(userId, role), interceptors);
+
+        return await work(services.GetRequiredService<TService>());
     }
 }

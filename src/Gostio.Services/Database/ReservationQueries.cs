@@ -14,4 +14,11 @@ public static class ReservationQueries
             reservation.ReservationStatusId == (int)ReservationStatusCode.Confirmed
             || (reservation.ReservationStatusId == (int)ReservationStatusCode.Pending
                 && reservation.ExpiresAt > now);
+
+    // The other side of the boundary above, kept beside it so that a change to
+    // ExpiresAt cannot move one without the other.
+    public static Expression<Func<Reservation, bool>> IsALapsedHold(DateTime now) =>
+        reservation =>
+            reservation.ReservationStatusId == (int)ReservationStatusCode.Pending
+            && reservation.ExpiresAt <= now;
 }

@@ -91,6 +91,23 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
+    // The worker's composition rather than the API's: no caller, and a batch
+    // the test picks.
+    public ServiceProvider BuildSweep(int batch, params IInterceptor[] interceptors)
+    {
+        var services = new ServiceCollection();
+
+        services.AddScoped(_ => CreateContext(interceptors));
+        services.AddSingleton(new WorkerSettings
+        {
+            ReservationSweepSeconds = 60,
+            ReservationSweepBatch = batch,
+        });
+        services.AddGostioReservationSweep();
+
+        return services.BuildServiceProvider();
+    }
+
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<GostioDbContext>()
             .UseSqlServer(connectionString)

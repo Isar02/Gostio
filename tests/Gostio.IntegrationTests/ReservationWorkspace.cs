@@ -211,6 +211,38 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
                 .SetProperty(reservation => reservation.ExpiresAt, lapsed));
     }
 
+    public async Task MoveTheStayAsync(int reservationId, DateOnly checkOut)
+    {
+        await using var db = fixture.CreateContext();
+
+        await db.Reservations
+            .Where(reservation => reservation.Id == reservationId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(reservation => reservation.CheckInDate, checkOut.AddDays(-2))
+                .SetProperty(reservation => reservation.CheckOutDate, checkOut));
+    }
+
+    public async Task StartTheTermAsync(int slotId, TimeSpan ago)
+    {
+        var startTime = DateTime.UtcNow - ago;
+
+        await using var db = fixture.CreateContext();
+
+        await db.ExperienceSlots
+            .Where(slot => slot.Id == slotId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(slot => slot.StartTime, startTime));
+    }
+
+    public async Task<ReservationSweepReport> SweepAsync(
+        int batch = 200,
+        params IInterceptor[] interceptors)
+    {
+        await using var services = fixture.BuildSweep(batch, interceptors);
+
+        return await services.GetRequiredService<IReservationSweep>().RunAsync(default);
+    }
+
     public Task<int> AnAdministratorAsync() =>
         fixture.AddUserAsync(Password, RoleNames.Administrator);
 

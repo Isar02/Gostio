@@ -9,6 +9,7 @@ public sealed class AppSettings
     public required SmtpSettings Smtp { get; init; }
     public required StripeSettings Stripe { get; init; }
     public required SeedSettings Seed { get; init; }
+    public required WorkerSettings Worker { get; init; }
     public required IReadOnlyList<string> CorsAllowedOrigins { get; init; }
 }
 
@@ -71,4 +72,13 @@ public sealed class StripeSettings
 public sealed class SeedSettings
 {
     public required string DefaultPassword { get; init; }
+}
+
+public sealed class WorkerSettings
+{
+    public required int ReservationSweepSeconds { get; init; }
+
+    public required int ReservationSweepBatch { get; init; }
+
+    public TimeSpan ReservationSweepInterval => TimeSpan.FromSeconds(ReservationSweepSeconds);
 }

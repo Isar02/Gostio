@@ -4,7 +4,6 @@ using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Crud;
@@ -17,8 +16,6 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
     where TResponse : class
     where TSearch : PagedRequest
 {
-    private const int ForeignKeyViolation = 547;
-
     protected GostioDbContext Db { get; } = db;
 
     protected string Noun { get; } = noun;
@@ -78,7 +75,7 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
                 .Where(entity => entity.Id == id)
                 .ExecuteDeleteAsync(cancellationToken);
         }
-        catch (Exception failure) when (IsStillReferenced(failure))
+        catch (Exception failure) when (DatabaseFailures.IsStillReferenced(failure))
         {
             throw new BusinessException(StillReferencedMessage);
         }
@@ -134,10 +131,6 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
 
     protected static string? Trimmed(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private static bool IsStillReferenced(Exception failure) =>
-        failure is SqlException { Number: ForeignKeyViolation }
-        || failure.InnerException is SqlException { Number: ForeignKeyViolation };
 
     protected NotFoundException Missing(int id) => new($"No {Noun} has the id {id}.");
 }

@@ -14,6 +14,7 @@ public static class ListingServiceCollectionExtensions
         services.AddScoped<IAccommodationAvailabilityService, AccommodationAvailabilityService>();
         services.AddScoped<IExperienceService, ExperienceService>();
         services.AddScoped<IExperiencePhotoService, ExperiencePhotoService>();
+        services.AddScoped<IExperienceSlotService, ExperienceSlotService>();
 
         return services;
     }

@@ -4,6 +4,7 @@ using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
+using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
 using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
@@ -35,6 +36,20 @@ public sealed class DatabaseFixture : IAsyncLifetime
             InitialCatalog = databaseName,
         }.ConnectionString;
     }
+
+    public StripeSettings Stripe { get; } = new()
+    {
+        PublishableKey = "pk_test_integration",
+        SecretKey = "sk_test_integration",
+        WebhookSecret = "whsec_integration",
+        Currency = "eur",
+    };
+
+    public WorkerSettings Worker { get; } = new()
+    {
+        ReservationSweepSeconds = 60,
+        ReservationSweepBatch = 200,
+    };
 
     public JwtSettings Jwt { get; } = new()
     {
@@ -77,16 +92,28 @@ public sealed class DatabaseFixture : IAsyncLifetime
     // service the container cannot build fails here as well as at start-up.
     public ServiceProvider BuildServices(
         ICurrentUser? caller = null,
+        params IInterceptor[] interceptors) =>
+        BuildServices(caller, gateway: null, interceptors);
+
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller,
+        IPaymentGateway? gateway,
         params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
 
+        services.AddLogging();
         services.AddScoped(_ => CreateContext(interceptors));
         services.AddScoped(_ => caller ?? new AnonymousUser());
+        services.AddSingleton(Stripe);
+        services.AddSingleton(Worker);
         services.AddGostioLookupServices();
         services.AddGostioListingServices();
         services.AddGostioUserServices();
         services.AddGostioReservationServices();
+        services.AddGostioPaymentServices();
+
+        services.AddScoped(_ => gateway ?? new FakePaymentGateway());
 
         return services.BuildServiceProvider();
     }
@@ -97,16 +124,19 @@ public sealed class DatabaseFixture : IAsyncLifetime
     {
         var services = new ServiceCollection();
 
+        services.AddLogging();
         services.AddScoped(_ => CreateContext(interceptors));
-        services.AddSingleton(new WorkerSettings
-        {
-            ReservationSweepSeconds = 60,
-            ReservationSweepBatch = batch,
-        });
+        services.AddSingleton(BatchOf(batch));
         services.AddGostioReservationSweep();
 
         return services.BuildServiceProvider();
     }
+
+    private WorkerSettings BatchOf(int batch) => new()
+    {
+        ReservationSweepSeconds = Worker.ReservationSweepSeconds,
+        ReservationSweepBatch = batch,
+    };
 
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<GostioDbContext>()
@@ -140,8 +170,6 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return user.Id;
     }
 
-    // The reference tables are empty in the migrated database, and more than
-    // one test needs the same role to be there without caring who put it there.
     public async Task<int> EnsureRoleAsync(string name)
     {
         await using var db = CreateContext();
@@ -160,8 +188,6 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return role.Id;
     }
 
-    // The reference tables are empty in the migrated database, and more than one
-    // test file needs the same city, type and category to be there.
     public async Task<int> EnsureCityAsync(string name)
     {
         await using var db = CreateContext();

@@ -65,8 +65,12 @@ public sealed class StripeSettings
     public required string WebhookSecret { get; init; }
     public required string Currency { get; init; }
 
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(SecretKey) && !string.IsNullOrWhiteSpace(WebhookSecret);
+    public bool CanReachTheProcessor => !string.IsNullOrWhiteSpace(SecretKey);
+
+    public bool CanTakeAPayment =>
+        CanReachTheProcessor && !string.IsNullOrWhiteSpace(PublishableKey);
+
+    public bool CanVerifyAWebhook => !string.IsNullOrWhiteSpace(WebhookSecret);
 }
 
 public sealed class SeedSettings

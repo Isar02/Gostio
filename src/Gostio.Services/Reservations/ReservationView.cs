@@ -6,6 +6,8 @@ internal sealed class ReservationView
 {
     public required int StatusId { get; init; }
 
+    public required int GuestId { get; init; }
+
     public required int HostId { get; init; }
 
     public int? AccommodationId { get; init; }
@@ -19,4 +21,8 @@ internal sealed class ReservationView
     public DateOnly? CheckOutDate { get; init; }
 
     public required int GuestCount { get; init; }
+
+    public required DateTime ExpiresAt { get; init; }
+
+    public required decimal TotalPrice { get; init; }
 }

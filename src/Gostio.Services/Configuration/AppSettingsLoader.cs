@@ -1,4 +1,5 @@
 using DotNetEnv;
+using Gostio.Model.Validation;
 using Microsoft.Data.SqlClient;
 
 namespace Gostio.Services.Configuration;
@@ -11,10 +12,11 @@ public static class AppSettingsLoader
     private const int MaximumPort = 65535;
     private const int MaximumJwtLifetimeInMinutes = 60 * 24 * 30;
     private const int DefaultReservationSweepSeconds = 60;
-    private const int MinimumReservationSweepSeconds = 5;
-    private const int MaximumReservationSweepSeconds = 60 * 60;
+    private const int MinimumSweepSeconds = 5;
+    private const int MaximumSweepSeconds = 60 * 60;
     private const int DefaultReservationSweepBatch = 200;
-    private const int MaximumReservationSweepBatch = 1000;
+    private const int MaximumSweepBatch = 1000;
+    private const string DefaultCurrency = "eur";
 
     public static AppSettings Load()
     {
@@ -68,7 +70,7 @@ public static class AppSettingsLoader
                 PublishableKey = OptionalValue("STRIPE_PUBLISHABLE_KEY"),
                 SecretKey = OptionalValue("STRIPE_SECRET_KEY"),
                 WebhookSecret = OptionalValue("STRIPE_WEBHOOK_SECRET"),
-                Currency = OptionalValue("STRIPE_CURRENCY", "eur")
+                Currency = RequireSupportedCurrency("STRIPE_CURRENCY")
             },
             Seed = new SeedSettings
             {
@@ -80,14 +82,14 @@ public static class AppSettingsLoader
                     "WORKER_RESERVATION_SWEEP_SECONDS",
                     OptionalInteger(
                         "WORKER_RESERVATION_SWEEP_SECONDS", DefaultReservationSweepSeconds),
-                    MinimumReservationSweepSeconds,
-                    MaximumReservationSweepSeconds),
+                    MinimumSweepSeconds,
+                    MaximumSweepSeconds),
                 ReservationSweepBatch = RequireRange(
                     "WORKER_RESERVATION_SWEEP_BATCH",
                     OptionalInteger(
                         "WORKER_RESERVATION_SWEEP_BATCH", DefaultReservationSweepBatch),
                     1,
-                    MaximumReservationSweepBatch)
+                    MaximumSweepBatch)
             },
             CorsAllowedOrigins = ReadCorsAllowedOrigins()
         };
@@ -157,6 +159,25 @@ public static class AppSettingsLoader
                 $"JWT_KEY must be at least {MinimumJwtKeyLengthInBytes} bytes long, " +
                 $"but the configured value is {keyLengthInBytes} bytes. " +
                 "Generate a cryptographically random key and store it in the .env file.");
+        }
+    }
+
+    // The conversion to minor units assumes two decimal places, so a currency
+    // whose exponent is not two would be charged a hundred times wrong without a
+    // single failure anywhere. It is refused here, where the value is read.
+    private static string RequireSupportedCurrency(string variableName)
+    {
+        var code = OptionalValue(variableName, DefaultCurrency);
+
+        try
+        {
+            return Currencies.Normalize(code);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new InvalidOperationException(
+                $"Configuration value '{variableName}' is '{code}', which this application does "
+                    + $"not charge in. It handles {string.Join(", ", Currencies.Supported)}.");
         }
     }
 

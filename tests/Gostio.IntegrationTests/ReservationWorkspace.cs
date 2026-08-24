@@ -189,8 +189,6 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             new ReservationCreateRequest { ExperienceSlotId = slot, GuestCount = guestCount },
             interceptors);
 
-    // Cancels with nobody named as the actor, which is all the tests that only
-    // need a reservation to hand its dates back are asking for.
     public async Task CancelAsync(int reservationId)
     {
         var from = (int)await StatusOfAsync(reservationId);

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Gostio.Model.Authorization;
+using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Responses;
 using Gostio.Services.Authentication;
@@ -35,6 +36,8 @@ internal sealed class ReservationAccess(GostioDbContext db, ICurrentUser current
             CleaningFee = reservation.CleaningFee,
             PricePerPerson = reservation.PricePerPerson,
             TotalPrice = reservation.TotalPrice,
+            IsPaid = reservation.Payments.Any(
+                payment => payment.Status == PaymentStatus.Succeeded),
             CreatedAt = reservation.CreatedAt,
         };
 
@@ -67,6 +70,7 @@ internal sealed class ReservationAccess(GostioDbContext db, ICurrentUser current
             .Select(reservation => new ReservationView
             {
                 StatusId = reservation.ReservationStatusId,
+                GuestId = reservation.UserId,
                 HostId = reservation.AccommodationId != null
                     ? reservation.Accommodation!.HostId
                     : reservation.ExperienceSlot!.Experience.HostId,
@@ -78,6 +82,8 @@ internal sealed class ReservationAccess(GostioDbContext db, ICurrentUser current
                 CheckInDate = reservation.CheckInDate,
                 CheckOutDate = reservation.CheckOutDate,
                 GuestCount = reservation.GuestCount,
+                ExpiresAt = reservation.ExpiresAt,
+                TotalPrice = reservation.TotalPrice,
             })
             .FirstOrDefaultAsync(cancellationToken)
         ?? throw Missing(reservationId);

@@ -149,6 +149,7 @@ public sealed class ReservationsControllerTests : IAsyncLifetime
         AccommodationTotal = 200m,
         CleaningFee = 15m,
         TotalPrice = 215m,
+        IsPaid = false,
         CreatedAt = new DateTime(2026, 8, 24, 12, 0, 0, DateTimeKind.Utc),
     };
 

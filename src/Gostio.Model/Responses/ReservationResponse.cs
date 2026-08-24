@@ -37,5 +37,9 @@ public sealed class ReservationResponse : IIdentified
 
     public required decimal TotalPrice { get; init; }
 
+    // A settled charge, never a client's word for one, so a screen hides its pay
+    // button on the answer it already has.
+    public required bool IsPaid { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 }

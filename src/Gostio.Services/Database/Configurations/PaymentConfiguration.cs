@@ -27,7 +27,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder
             .HasOne(payment => payment.Reservation)
-            .WithMany()
+            .WithMany(reservation => reservation.Payments)
             .HasForeignKey(payment => payment.ReservationId)
             .OnDelete(DeleteBehavior.Restrict);
 

@@ -8,6 +8,7 @@ public static class MessagingServiceCollectionExtensions
     {
         services.AddSingleton<RabbitMqConnection>();
         services.AddSingleton<IMessagePublisher, RabbitMqPublisher>();
+        services.AddScoped<INotices, Notices>();
 
         return services;
     }

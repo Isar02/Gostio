@@ -51,7 +51,11 @@ public class PasswordChangeTests(DatabaseFixture fixture)
         await using var db = fixture.CreateContext(interceptors);
 
         var auth = new AuthService(
-            db, new JwtTokenService(fixture.Jwt), new SignedInUser(userId));
+            db,
+            new JwtTokenService(fixture.Jwt),
+            new SignedInUser(userId),
+            new CapturedNotices(),
+            fixture.Api);
 
         return await auth.ChangePasswordAsync(
             new ChangePasswordRequest

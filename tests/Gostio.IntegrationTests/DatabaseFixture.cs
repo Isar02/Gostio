@@ -54,6 +54,12 @@ public sealed class DatabaseFixture : IAsyncLifetime
         RefundSweepBatch = 50,
     };
 
+    public ApiSettings Api { get; } = new()
+    {
+        BaseUrl = "http://localhost:5000",
+        HttpPort = 5000,
+    };
+
     public RabbitMqSettings Broker { get; } = new()
     {
         Host = "localhost",

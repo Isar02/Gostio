@@ -67,10 +67,69 @@ public sealed class HostVerificationRequestsControllerTests : IAsyncLifetime
         Assert.Equal(9, requests.LastRead);
     }
 
+    [Fact]
+    public async Task ApprovingOneCarriesTheReasonThrough()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Post,
+            $"{Route}/9/approve",
+            RoleNames.Administrator,
+            new HostVerificationDecisionRequest { Reason = "Documents checked out." });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(9, requests.LastApproved);
+        Assert.Equal("Documents checked out.", requests.LastReason);
+    }
+
+    [Fact]
+    public async Task ApprovingOneNeedsNoBodyAtAll()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Post, $"{Route}/9/approve", RoleNames.Administrator);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(9, requests.LastApproved);
+        Assert.Null(requests.LastReason);
+    }
+
+    [Fact]
+    public async Task RejectingOneCarriesTheReasonThrough()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Post,
+            $"{Route}/9/reject",
+            RoleNames.Administrator,
+            new HostVerificationDecisionRequest { Reason = "The document was unreadable." });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(9, requests.LastRejected);
+        Assert.Equal("The document was unreadable.", requests.LastReason);
+    }
+
+    [Theory]
+    [InlineData(RoleNames.Guest, "approve")]
+    [InlineData(RoleNames.Guest, "reject")]
+    [InlineData(RoleNames.Host, "approve")]
+    [InlineData(RoleNames.Host, "reject")]
+    public async Task NobodyBelowAnAdministratorAnswersOne(string role, string decision)
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Post,
+            $"{Route}/9/{decision}",
+            role,
+            new HostVerificationDecisionRequest { Reason = "Because." });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Null(requests.LastApproved);
+        Assert.Null(requests.LastRejected);
+    }
+
     [Theory]
     [InlineData("GET", Route)]
     [InlineData("POST", Route)]
     [InlineData("GET", $"{Route}/9")]
+    [InlineData("POST", $"{Route}/9/approve")]
+    [InlineData("POST", $"{Route}/9/reject")]
     public async Task NoneOfItIsReachableWithoutAToken(string method, string path)
     {
         var response = await host.SendAsync(new HttpMethod(method), path);
@@ -87,6 +146,12 @@ public sealed class HostVerificationRequestsControllerTests : IAsyncLifetime
         public int? LastRead { get; private set; }
 
         public bool HasApplied { get; private set; }
+
+        public int? LastApproved { get; private set; }
+
+        public int? LastRejected { get; private set; }
+
+        public string? LastReason { get; private set; }
 
         public Task<PagedResult<HostVerificationRequestResponse>> SearchAsync(
             HostVerificationSearchRequest search,
@@ -118,6 +183,28 @@ public sealed class HostVerificationRequestsControllerTests : IAsyncLifetime
             HasApplied = true;
 
             return Task.FromResult(Row(Applied));
+        }
+
+        public Task<HostVerificationRequestResponse> ApproveAsync(
+            int id,
+            HostVerificationDecisionRequest request,
+            CancellationToken cancellationToken)
+        {
+            LastApproved = id;
+            LastReason = request.Reason;
+
+            return Task.FromResult(Row(id));
+        }
+
+        public Task<HostVerificationRequestResponse> RejectAsync(
+            int id,
+            HostVerificationDecisionRequest request,
+            CancellationToken cancellationToken)
+        {
+            LastRejected = id;
+            LastReason = request.Reason;
+
+            return Task.FromResult(Row(id));
         }
 
         private static HostVerificationRequestResponse Row(int id) => new()

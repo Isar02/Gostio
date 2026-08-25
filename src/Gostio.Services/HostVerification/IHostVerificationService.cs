@@ -12,4 +12,14 @@ public interface IHostVerificationService
     Task<HostVerificationRequestResponse> GetAsync(int id, CancellationToken cancellationToken);
 
     Task<HostVerificationRequestResponse> ApplyAsync(CancellationToken cancellationToken);
+
+    Task<HostVerificationRequestResponse> ApproveAsync(
+        int id,
+        HostVerificationDecisionRequest request,
+        CancellationToken cancellationToken);
+
+    Task<HostVerificationRequestResponse> RejectAsync(
+        int id,
+        HostVerificationDecisionRequest request,
+        CancellationToken cancellationToken);
 }

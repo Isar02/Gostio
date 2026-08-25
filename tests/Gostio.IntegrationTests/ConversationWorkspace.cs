@@ -5,6 +5,7 @@ using Gostio.Model.Responses;
 using Gostio.Services.Chat;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
@@ -79,6 +80,54 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
         await db.SaveChangesAsync();
     }
 
+    public Task<ConversationResponse> OpenWithAsync(int actor, string role, int otherUserId) =>
+        OpenAsync(actor, role, new ConversationOpenRequest { WithUserId = otherUserId });
+
+    public Task<ConversationResponse> OpenAboutAsync(int actor, string role, int reservationId) =>
+        OpenAsync(actor, role, new ConversationOpenRequest { ReservationId = reservationId });
+
+    public Task<ConversationResponse> OpenAsync(
+        int actor,
+        string role,
+        ConversationOpenRequest request) =>
+        AsAsync(actor, role, service => service.OpenAsync(request, default));
+
+    public Task<ConversationResponse> OpenSupportAsync(int actor, string role) =>
+        AsAsync(actor, role, service => service.OpenSupportAsync(default));
+
+    // Two taps of the same enquiry, held together until both are about to take
+    // the accounts the thread would be between.
+    public async Task<IReadOnlyList<int>> OpenedAtOnceAsync(int caller, int hostId)
+    {
+        var barrier = new CommandBarrier(2, "[Users] WITH (UPDLOCK");
+
+        var first = OpenEnquiryUnderAsync(caller, hostId, barrier);
+        var second = OpenEnquiryUnderAsync(caller, hostId, barrier);
+
+        return [await first, await second];
+    }
+
+    public async Task<int> ThreadsBetweenAsync(int first, int second)
+    {
+        await using var db = fixture.CreateContext();
+
+        return await db.Conversations.CountAsync(conversation =>
+            conversation.ReservationId == null
+            && conversation.Participants.Any(participant => participant.UserId == first)
+            && conversation.Participants.Any(participant => participant.UserId == second));
+    }
+
+    public async Task<IReadOnlyList<int>> ParticipantsOfAsync(int conversationId)
+    {
+        await using var db = fixture.CreateContext();
+
+        return await db.ConversationParticipants
+            .Where(participant => participant.ConversationId == conversationId)
+            .Select(participant => participant.UserId)
+            .OrderBy(userId => userId)
+            .ToListAsync();
+    }
+
     public Task<ConversationResponse> ReadAsync(int actor, string role, int conversationId) =>
         AsAsync(actor, role, service => service.GetAsync(conversationId, default));
 
@@ -119,6 +168,17 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
         await db.SaveChangesAsync();
 
         return conversation.Id;
+    }
+
+    private async Task<int> OpenEnquiryUnderAsync(int caller, int hostId, IInterceptor interceptor)
+    {
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(caller, RoleNames.Guest), interceptor);
+
+        var opened = await services.GetRequiredService<IConversationService>()
+            .OpenAsync(new ConversationOpenRequest { WithUserId = hostId }, default);
+
+        return opened.Id;
     }
 
     private async Task<TResult> AsAsync<TResult>(

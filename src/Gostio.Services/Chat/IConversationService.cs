@@ -10,4 +10,10 @@ public interface IConversationService
         CancellationToken cancellationToken);
 
     Task<ConversationResponse> GetAsync(int conversationId, CancellationToken cancellationToken);
+
+    Task<ConversationResponse> OpenAsync(
+        ConversationOpenRequest request,
+        CancellationToken cancellationToken);
+
+    Task<ConversationResponse> OpenSupportAsync(CancellationToken cancellationToken);
 }

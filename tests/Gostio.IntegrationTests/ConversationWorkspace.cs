@@ -128,6 +128,29 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
             .ToListAsync();
     }
 
+    public Task<MessageResponse> SendAsync(int actor, string role, int conversationId, string body) =>
+        AsMessagesAsync(
+            actor,
+            role,
+            service => service.SendAsync(
+                conversationId, new MessageSendRequest { Body = body }, default));
+
+    public Task<PagedResult<MessageResponse>> MessagesAsync(
+        int actor,
+        string role,
+        int conversationId,
+        PagedRequest? paging = null) =>
+        AsMessagesAsync(
+            actor,
+            role,
+            service => service.SearchAsync(conversationId, paging ?? new PagedRequest(), default));
+
+    public Task<UnreadCountResponse> MarkReadAsync(int actor, string role, int conversationId) =>
+        AsMessagesAsync(actor, role, service => service.MarkReadAsync(conversationId, default));
+
+    public Task<UnreadCountResponse> UnreadAsync(int actor, string role) =>
+        AsMessagesAsync(actor, role, service => service.UnreadAsync(default));
+
     public Task<ConversationResponse> ReadAsync(int actor, string role, int conversationId) =>
         AsAsync(actor, role, service => service.GetAsync(conversationId, default));
 
@@ -179,6 +202,16 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
             .OpenAsync(new ConversationOpenRequest { WithUserId = hostId }, default);
 
         return opened.Id;
+    }
+
+    private async Task<TResult> AsMessagesAsync<TResult>(
+        int actor,
+        string role,
+        Func<IMessageService, Task<TResult>> work)
+    {
+        await using var services = fixture.BuildServices(ListingWorkspace.Caller(actor, role));
+
+        return await work(services.GetRequiredService<IMessageService>());
     }
 
     private async Task<TResult> AsAsync<TResult>(

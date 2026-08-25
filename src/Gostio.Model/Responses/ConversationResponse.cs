@@ -12,6 +12,12 @@ public sealed class ConversationResponse : IIdentified
 
     public required IReadOnlyList<ConversationParticipantResponse> Participants { get; init; }
 
+    public MessageResponse? LastMessage { get; init; }
+
+    // What the caller has not read yet, counted the way the badge over every
+    // thread counts it.
+    public required int UnreadCount { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 
     // What an inbox is ordered by, worked out from the messages rather than

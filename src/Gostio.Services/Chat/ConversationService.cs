@@ -19,7 +19,7 @@ internal sealed class ConversationService(
     ICurrentUser currentUser,
     ConversationAccess access) : IConversationService
 {
-    private static Expression<Func<Conversation, ConversationResponse>> Projection =>
+    private static Expression<Func<Conversation, ConversationResponse>> Projection(int callerId) =>
         conversation => new ConversationResponse
         {
             Id = conversation.Id,
@@ -42,6 +42,25 @@ internal sealed class ConversationService(
                     LastReadAt = participant.LastReadAt,
                 })
                 .ToList(),
+            LastMessage = conversation.Messages
+                .OrderByDescending(message => message.SentAt)
+                .ThenByDescending(message => message.Id)
+                .Select(message => new MessageResponse
+                {
+                    Id = message.Id,
+                    ConversationId = message.ConversationId,
+                    SenderUserId = message.SenderUserId,
+                    SenderName =
+                        message.SenderUser.FirstName + " " + message.SenderUser.LastName,
+                    Body = message.Body,
+                    SentAt = message.SentAt,
+                })
+                .FirstOrDefault(),
+            UnreadCount = conversation.Messages.Count(message =>
+                message.SenderUserId != callerId
+                && message.SentAt >= (conversation.Participants
+                    .Where(participant => participant.UserId == callerId)
+                    .Max(participant => participant.LastReadAt) ?? ChatQueries.Never)),
             CreatedAt = conversation.CreatedAt,
             LastActivityAt =
                 conversation.Messages.Max(message => (DateTime?)message.SentAt)
@@ -56,7 +75,7 @@ internal sealed class ConversationService(
                 conversation.Messages.Max(message => (DateTime?)message.SentAt)
                 ?? conversation.CreatedAt)
             .ThenByDescending(conversation => conversation.Id)
-            .ToPagedResultAsync(search, Projection, cancellationToken);
+            .ToPagedResultAsync(search, Projection(access.CallerId), cancellationToken);
 
     public Task<ConversationResponse> GetAsync(
         int conversationId,
@@ -290,7 +309,7 @@ internal sealed class ConversationService(
         CancellationToken cancellationToken) =>
         await access.Reachable()
             .Where(conversation => conversation.Id == conversationId)
-            .Select(Projection)
+            .Select(Projection(access.CallerId))
             .FirstOrDefaultAsync(cancellationToken)
         ?? throw ConversationAccess.Missing(conversationId);
 }

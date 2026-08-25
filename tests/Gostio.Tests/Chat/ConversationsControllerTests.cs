@@ -119,6 +119,8 @@ public sealed class ConversationsControllerTests : IAsyncLifetime
         ReservationId = null,
         ListingTitle = null,
         Participants = [],
+        LastMessage = null,
+        UnreadCount = 0,
         CreatedAt = new DateTime(2026, 8, 25, 9, 0, 0, DateTimeKind.Utc),
         LastActivityAt = new DateTime(2026, 8, 25, 9, 0, 0, DateTimeKind.Utc),
     };

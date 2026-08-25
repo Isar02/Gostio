@@ -10,6 +10,8 @@ namespace Gostio.Services.Chat;
 
 internal sealed class ConversationAccess(GostioDbContext db, ICurrentUser currentUser)
 {
+    public int CallerId => currentUser.RequireUserId();
+
     // Membership is the whole rule, and it composes into the statement that
     // reads the rows, so nothing a search names widens what a caller sees and a
     // thread that is not theirs answers 404 rather than 403. A support thread is
@@ -18,7 +20,7 @@ internal sealed class ConversationAccess(GostioDbContext db, ICurrentUser curren
     // puts them in it.
     public IQueryable<Conversation> Reachable()
     {
-        var callerId = currentUser.RequireUserId();
+        var callerId = CallerId;
         var query = db.Conversations.AsNoTracking();
 
         return currentUser.IsInRole(RoleNames.Administrator)

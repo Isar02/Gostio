@@ -51,6 +51,11 @@ internal sealed class AccommodationService(
                 .Where(photo => photo.IsCover)
                 .Select(photo => (int?)photo.Id)
                 .FirstOrDefault(),
+            AverageRating = Db.Reviews
+                .Where(review => review.Reservation.AccommodationId == accommodation.Id)
+                .Average(review => (decimal?)review.Rating),
+            ReviewCount = Db.Reviews
+                .Count(review => review.Reservation.AccommodationId == accommodation.Id),
             CreatedAt = accommodation.CreatedAt,
         };
 

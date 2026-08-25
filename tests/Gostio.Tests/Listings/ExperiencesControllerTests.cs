@@ -176,6 +176,8 @@ public sealed class ExperiencesControllerTests : IAsyncLifetime
             PricePerPerson = 40m,
             IsActive = true,
             CoverPhotoId = null,
+            AverageRating = 4.5m,
+            ReviewCount = 2,
             CreatedAt = DateTime.UtcNow,
         };
     }

@@ -189,6 +189,8 @@ public sealed class AccommodationsControllerTests : IAsyncLifetime
             CleaningFee = 15m,
             IsActive = true,
             CoverPhotoId = null,
+            AverageRating = 4.5m,
+            ReviewCount = 2,
             CreatedAt = DateTime.UtcNow,
         };
     }

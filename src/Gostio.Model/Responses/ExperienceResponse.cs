@@ -38,5 +38,9 @@ public sealed class ExperienceResponse : IIdentified
 
     public required int? CoverPhotoId { get; init; }
 
+    public required decimal? AverageRating { get; init; }
+
+    public required int ReviewCount { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 }

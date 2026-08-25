@@ -5,6 +5,7 @@ using Gostio.Services.Database.Entities;
 using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
 using Gostio.Services.Messaging;
+using Gostio.Services.Notifications;
 using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
 using Gostio.Services.Users;
@@ -153,6 +154,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddGostioUserServices();
         services.AddGostioReservationServices();
         services.AddGostioPaymentServices();
+        services.AddGostioNotificationServices();
 
         services.AddScoped(_ => gateway ?? new FakePaymentGateway());
 

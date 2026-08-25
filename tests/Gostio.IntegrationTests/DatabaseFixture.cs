@@ -4,6 +4,7 @@ using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
+using Gostio.Services.Messaging;
 using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
 using Gostio.Services.Users;
@@ -51,6 +52,28 @@ public sealed class DatabaseFixture : IAsyncLifetime
         ReservationSweepBatch = 200,
         RefundSweepSeconds = 120,
         RefundSweepBatch = 50,
+    };
+
+    public RabbitMqSettings Broker { get; } = new()
+    {
+        Host = "localhost",
+        Port = 5672,
+        Username = "integration",
+        Password = "integration",
+        VirtualHost = "/",
+        EmailQueue = "gostio.email.tests",
+        NotificationQueue = "gostio.notifications.tests",
+    };
+
+    public SmtpSettings Smtp { get; } = new()
+    {
+        Host = "localhost",
+        Port = 587,
+        Username = "",
+        Password = "",
+        UseSsl = false,
+        FromEmail = "integration@example.com",
+        FromName = "Gostio",
     };
 
     public JwtSettings Jwt { get; } = new()
@@ -155,6 +178,21 @@ public sealed class DatabaseFixture : IAsyncLifetime
         RefundSweepSeconds = Worker.RefundSweepSeconds,
         RefundSweepBatch = batch,
     };
+
+    // The worker's composition for the queues: what a message asks for once it
+    // has been read, with nothing here reaching a broker.
+    public ServiceProvider BuildConsumers()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        services.AddScoped(_ => CreateContext());
+        services.AddSingleton(Broker);
+        services.AddSingleton(Smtp);
+        services.AddGostioMessageConsumers();
+
+        return services.BuildServiceProvider();
+    }
 
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<GostioDbContext>()

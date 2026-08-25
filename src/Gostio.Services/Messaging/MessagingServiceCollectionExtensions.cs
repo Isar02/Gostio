@@ -11,4 +11,14 @@ public static class MessagingServiceCollectionExtensions
 
         return services;
     }
+
+    public static IServiceCollection AddGostioMessageConsumers(this IServiceCollection services)
+    {
+        services.AddGostioMessaging();
+
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<INotificationWriter, NotificationWriter>();
+
+        return services;
+    }
 }

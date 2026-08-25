@@ -13,6 +13,12 @@ internal static class DatabaseFailures
     public static bool IsStillReferenced(Exception failure) =>
         HasSqlErrorNumber(failure, ForeignKeyViolation);
 
+    // The same number as above, raised from the other side: deleting a row
+    // something points at and inserting a row pointing at nothing are one
+    // constraint failing, and only the caller knows which way it was going.
+    public static bool IsMissingReference(Exception failure) =>
+        HasSqlErrorNumber(failure, ForeignKeyViolation);
+
     public static bool IsDuplicate(Exception failure) =>
         HasSqlErrorNumber(failure, UniqueIndexViolation, UniqueConstraintViolation);
 

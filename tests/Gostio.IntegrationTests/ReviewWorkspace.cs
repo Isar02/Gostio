@@ -20,9 +20,11 @@ internal sealed class ReviewWorkspace(DatabaseFixture fixture)
 
     public ReservationWorkspace Reservations => reservations;
 
-    public async Task<CompletedStay> ACompletedStayAsync()
+    public async Task<CompletedStay> ACompletedStayAsync(CompletedStay? sameListingAs = null)
     {
-        var (host, listing) = await reservations.AListingAsync();
+        var (host, listing) = sameListingAs is CompletedStay earlier
+            ? (earlier.Host, earlier.Accommodation)
+            : await reservations.AListingAsync();
         var guest = await reservations.AGuestAsync();
         var booked = await reservations.BookStayAsync(guest, listing, Today.AddDays(20), nights: 2);
 

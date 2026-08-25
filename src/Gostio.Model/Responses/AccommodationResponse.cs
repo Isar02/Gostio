@@ -50,5 +50,11 @@ public sealed class AccommodationResponse : IIdentified
     // cannot disagree with the photo it names.
     public required int? CoverPhotoId { get; init; }
 
+    public required decimal? AverageRating { get; init; }
+
+    public required int ReviewCount { get; init; }
+
+    public required bool IsFavorite { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 }

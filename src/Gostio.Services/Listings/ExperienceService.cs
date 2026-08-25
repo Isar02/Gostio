@@ -46,6 +46,13 @@ internal sealed class ExperienceService(
                 .Where(photo => photo.IsCover)
                 .Select(photo => (int?)photo.Id)
                 .FirstOrDefault(),
+            AverageRating = Db.Reviews
+                .Where(review => review.Reservation.ExperienceSlot!.ExperienceId == experience.Id)
+                .Average(review => (decimal?)review.Rating),
+            ReviewCount = Db.Reviews
+                .Count(review => review.Reservation.ExperienceSlot!.ExperienceId == experience.Id),
+            IsFavorite = Db.Favorites.Any(favorite =>
+                favorite.UserId == CallerId && favorite.ExperienceId == experience.Id),
             CreatedAt = experience.CreatedAt,
         };
 

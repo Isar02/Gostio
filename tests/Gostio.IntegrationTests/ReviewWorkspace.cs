@@ -8,9 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.IntegrationTests;
 
-internal sealed record ReviewedStay(int Host, int Guest, int Booking, int Accommodation);
+internal sealed record CompletedStay(int Host, int Guest, int Booking, int Accommodation);
 
-internal sealed record ReviewedTerm(int Host, int Guest, int Booking, int Experience);
+internal sealed record CompletedTerm(int Host, int Guest, int Booking, int Experience);
 
 internal sealed class ReviewWorkspace(DatabaseFixture fixture)
 {
@@ -20,7 +20,7 @@ internal sealed class ReviewWorkspace(DatabaseFixture fixture)
 
     public ReservationWorkspace Reservations => reservations;
 
-    public async Task<ReviewedStay> ACompletedStayAsync()
+    public async Task<CompletedStay> ACompletedStayAsync()
     {
         var (host, listing) = await reservations.AListingAsync();
         var guest = await reservations.AGuestAsync();
@@ -30,10 +30,10 @@ internal sealed class ReviewWorkspace(DatabaseFixture fixture)
         await reservations.MoveTheStayAsync(booked.Id, Today);
         await reservations.SweepAsync();
 
-        return new ReviewedStay(host, guest, booked.Id, listing);
+        return new CompletedStay(host, guest, booked.Id, listing);
     }
 
-    public async Task<ReviewedTerm> ACompletedTermAsync(int? existingHost = null)
+    public async Task<CompletedTerm> ACompletedTermAsync(int? existingHost = null)
     {
         var startsAt = DateTime.UtcNow.AddDays(20);
 
@@ -48,7 +48,7 @@ internal sealed class ReviewWorkspace(DatabaseFixture fixture)
         await reservations.StartTheTermAsync(slot, TimeSpan.FromHours(3));
         await reservations.SweepAsync();
 
-        return new ReviewedTerm(
+        return new CompletedTerm(
             host, guest, booked.Id, await reservations.ExperienceOfAsync(slot));
     }
 

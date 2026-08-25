@@ -55,6 +55,25 @@ public class ConversationMessageTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task MessagesStayBehindMembershipWhenItMovesBeforeTheRead()
+    {
+        var guest = await workspace.AGuestAsync();
+        var host = await workspace.AHostAsync();
+        var thread = await workspace.ADirectThreadAsync(guest, host);
+
+        await workspace.SendAsync(host, RoleNames.Host, thread, "This stays in the thread.");
+
+        var moved = new RaceInterceptor(
+            "[Messages] AS [m]",
+            () => workspace.RemoveParticipantAsync(thread, guest));
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => workspace.MessagesAsync(guest, RoleNames.Guest, thread, paging: null, moved));
+
+        Assert.True(moved.Fired);
+    }
+
+    [Fact]
     public async Task AThreadIsPagedFromItsEndBackwards()
     {
         var guest = await workspace.AGuestAsync();

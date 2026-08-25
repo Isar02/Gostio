@@ -24,19 +24,30 @@ internal sealed class MessageService(
             SentAt = message.SentAt,
         };
 
+    // The membership rides in the statement that reads the rows, so a thread a
+    // caller leaves mid-read cannot hand them a page out of it. The second
+    // statement survives only on an empty answer, where it decides whether that
+    // is a thread with nothing in it or one that is not theirs.
     public async Task<PagedResult<MessageResponse>> SearchAsync(
         int conversationId,
         PagedRequest paging,
         CancellationToken cancellationToken)
     {
-        await access.RequireReachableAsync(conversationId, cancellationToken);
+        var visible = access.Reachable()
+            .Where(conversation => conversation.Id == conversationId)
+            .SelectMany(conversation => conversation.Messages);
 
-        return await db.Messages
-            .AsNoTracking()
-            .Where(message => message.ConversationId == conversationId)
+        var found = await visible
             .OrderByDescending(message => message.SentAt)
             .ThenByDescending(message => message.Id)
             .ToPagedResultAsync(paging, Projection, cancellationToken);
+
+        if (found.TotalCount == 0)
+        {
+            await access.RequireReachableAsync(conversationId, cancellationToken);
+        }
+
+        return found;
     }
 
     public async Task<MessageResponse> SendAsync(

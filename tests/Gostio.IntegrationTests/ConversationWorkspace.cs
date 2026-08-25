@@ -140,11 +140,13 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
         int actor,
         string role,
         int conversationId,
-        PagedRequest? paging = null) =>
+        PagedRequest? paging = null,
+        params IInterceptor[] interceptors) =>
         AsMessagesAsync(
             actor,
             role,
-            service => service.SearchAsync(conversationId, paging ?? new PagedRequest(), default));
+            service => service.SearchAsync(conversationId, paging ?? new PagedRequest(), default),
+            interceptors);
 
     public Task<UnreadCountResponse> MarkReadAsync(int actor, string role, int conversationId) =>
         AsMessagesAsync(actor, role, service => service.MarkReadAsync(conversationId, default));
@@ -190,6 +192,16 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
 
     public Task<ConversationResponse> ReadAsync(int actor, string role, int conversationId) =>
         AsAsync(actor, role, service => service.GetAsync(conversationId, default));
+
+    public async Task RemoveParticipantAsync(int conversationId, int userId)
+    {
+        await using var db = fixture.CreateContext();
+
+        await db.ConversationParticipants
+            .Where(participant =>
+                participant.ConversationId == conversationId && participant.UserId == userId)
+            .ExecuteDeleteAsync();
+    }
 
     public async Task ReplaceRoleAsync(int userId, string role)
     {
@@ -265,9 +277,11 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
     private async Task<TResult> AsMessagesAsync<TResult>(
         int actor,
         string role,
-        Func<IMessageService, Task<TResult>> work)
+        Func<IMessageService, Task<TResult>> work,
+        params IInterceptor[] interceptors)
     {
-        await using var services = fixture.BuildServices(ListingWorkspace.Caller(actor, role));
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(actor, role), interceptors);
 
         return await work(services.GetRequiredService<IMessageService>());
     }

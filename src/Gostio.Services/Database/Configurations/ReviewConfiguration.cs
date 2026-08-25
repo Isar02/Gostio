@@ -29,7 +29,8 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<Review>
         {
             table.HasCheckConstraint(
                 "CK_Reviews_Rating",
-                $"[{nameof(Review.Rating)}] BETWEEN 1 AND 5");
+                $"[{nameof(Review.Rating)}]"
+                    + $" BETWEEN {ReviewRatings.Lowest} AND {ReviewRatings.Highest}");
         });
     }
 }

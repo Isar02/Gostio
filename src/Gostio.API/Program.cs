@@ -9,6 +9,7 @@ using Gostio.Services.Messaging;
 using Gostio.Services.Notifications;
 using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
+using Gostio.Services.Reviews;
 using Gostio.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,7 @@ builder.Services.AddGostioListingServices();
 builder.Services.AddGostioUserServices();
 builder.Services.AddGostioReservationServices();
 builder.Services.AddGostioPaymentServices();
+builder.Services.AddGostioReviewServices();
 builder.Services.AddGostioMessaging();
 builder.Services.AddGostioNotificationServices();
 builder.Services.AddGostioValidationErrors();

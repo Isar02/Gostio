@@ -1,4 +1,5 @@
 using System.Text;
+using Gostio.API.Hubs;
 using Gostio.Model.Authorization;
 using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
@@ -42,6 +43,7 @@ public static class AuthenticationExtensions
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = ReadTheHubTokenFromTheQuery,
                     OnTokenValidated = RejectEndedSessionsAsync,
                 };
             });
@@ -52,6 +54,22 @@ public static class AuthenticationExtensions
                 .Build());
 
         return services;
+    }
+
+    // A WebSocket handshake carries no headers a client may set, so the SignalR
+    // clients send the token as access_token instead. Only this path reads it,
+    // so no ordinary endpoint gains a second way of being authenticated.
+    private static Task ReadTheHubTokenFromTheQuery(MessageReceivedContext context)
+    {
+        var token = context.Request.Query["access_token"];
+
+        if (!string.IsNullOrEmpty(token)
+            && context.HttpContext.Request.Path.StartsWithSegments(ChatHubRoute.Path))
+        {
+            context.Token = token;
+        }
+
+        return Task.CompletedTask;
     }
 
     private static async Task RejectEndedSessionsAsync(TokenValidatedContext context)

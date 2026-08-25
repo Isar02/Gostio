@@ -8,8 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Chat;
 
-internal sealed class MessageService(GostioDbContext db, ConversationAccess access)
-    : IMessageService
+internal sealed class MessageService(
+    GostioDbContext db,
+    ConversationAccess access,
+    IChatBroadcast broadcast) : IMessageService
 {
     private static Expression<Func<Message, MessageResponse>> Projection =>
         message => new MessageResponse
@@ -75,7 +77,11 @@ internal sealed class MessageService(GostioDbContext db, ConversationAccess acce
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return await ReadAsync(message.Id, cancellationToken);
+        var written = await ReadAsync(message.Id, cancellationToken);
+
+        await broadcast.MessageSentAsync(written, cancellationToken);
+
+        return written;
     }
 
     public async Task<UnreadCountResponse> MarkReadAsync(

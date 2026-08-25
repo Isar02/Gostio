@@ -1,5 +1,4 @@
 using Gostio.Model.Authorization;
-using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Services.Authentication;
 using Gostio.Services.Database;
@@ -18,19 +17,11 @@ internal sealed class ConversationAccess(GostioDbContext db, ICurrentUser curren
     // the one exception: it is addressed to whoever is on duty rather than to a
     // named person, so every administrator reaches it and answering one is what
     // puts them in it.
-    public IQueryable<Conversation> Reachable()
-    {
-        var callerId = CallerId;
-        var query = db.Conversations.AsNoTracking();
-
-        return currentUser.IsInRole(RoleNames.Administrator)
-            ? query.Where(conversation =>
-                conversation.Type == ConversationType.Support
-                || conversation.Participants.Any(
-                    participant => participant.UserId == callerId))
-            : query.Where(conversation =>
-                conversation.Participants.Any(participant => participant.UserId == callerId));
-    }
+    public IQueryable<Conversation> Reachable() =>
+        db.Conversations
+            .AsNoTracking()
+            .Where(ChatQueries.IsReachableBy(
+                CallerId, currentUser.IsInRole(RoleNames.Administrator)));
 
     public async Task RequireReachableAsync(int conversationId, CancellationToken cancellationToken)
     {

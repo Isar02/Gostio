@@ -1,5 +1,6 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
+using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Chat;
@@ -150,6 +151,43 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
 
     public Task<UnreadCountResponse> UnreadAsync(int actor, string role) =>
         AsMessagesAsync(actor, role, service => service.UnreadAsync(default));
+
+    // What the hub asks before it joins a connection to anything.
+    public async Task<bool> ReachesAsync(int userId, bool isAdministrator, int conversationId)
+    {
+        await using var services = fixture.BuildServices(ListingWorkspace.Caller(userId));
+
+        return await services.GetRequiredService<IChatMembership>()
+            .ReachesAsync(userId, isAdministrator, conversationId, default);
+    }
+
+    public async Task<IReadOnlyList<MessageResponse>> DeliveredBySendingAsync(
+        int actor,
+        string role,
+        int conversationId,
+        string body)
+    {
+        var broadcast = new CapturedBroadcast();
+
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(actor, role),
+            gateway: null,
+            new CapturedNotices(),
+            broadcast);
+
+        try
+        {
+            await services.GetRequiredService<IMessageService>().SendAsync(
+                conversationId, new MessageSendRequest { Body = body }, default);
+        }
+        catch (GostioException)
+        {
+            // A refused send is still a send, and what it delivered is the
+            // question.
+        }
+
+        return broadcast.Delivered;
+    }
 
     public Task<ConversationResponse> ReadAsync(int actor, string role, int conversationId) =>
         AsAsync(actor, role, service => service.GetAsync(conversationId, default));

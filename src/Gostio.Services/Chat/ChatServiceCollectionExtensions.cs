@@ -9,6 +9,7 @@ public static class ChatServiceCollectionExtensions
         services.AddScoped<ConversationAccess>();
         services.AddScoped<IConversationService, ConversationService>();
         services.AddScoped<IMessageService, MessageService>();
+        services.AddScoped<IChatMembership, ChatMembership>();
 
         return services;
     }

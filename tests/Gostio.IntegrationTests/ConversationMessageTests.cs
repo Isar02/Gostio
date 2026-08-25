@@ -1,6 +1,7 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.IntegrationTests;
 
@@ -180,5 +181,28 @@ public class ConversationMessageTests(DatabaseFixture fixture)
 
         Assert.Equal(1, read.UnreadCount);
         Assert.Equal(administrator, read.LastMessage?.SenderUserId);
+    }
+
+    [Fact]
+    public async Task AFailedSupportAnswerAddsNeitherTheMessageNorItsAdministrator()
+    {
+        var guest = await workspace.AGuestAsync();
+        var administrator = await workspace.AnAdministratorAsync();
+        var thread = await workspace.ASupportThreadAsync(guest);
+        var failure = new RaceInterceptor(
+            "INSERT INTO [Messages]",
+            () => throw new InvalidOperationException("The message write failed."));
+
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => workspace.SendAsync(
+                administrator,
+                RoleNames.Administrator,
+                thread,
+                "This must roll back with the membership.",
+                failure));
+
+        Assert.True(failure.Fired);
+        Assert.Equal([guest], await workspace.ParticipantsOfAsync(thread));
+        Assert.Empty((await workspace.MessagesAsync(guest, RoleNames.Guest, thread)).Items);
     }
 }

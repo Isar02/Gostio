@@ -71,11 +71,6 @@ internal sealed class MessageService(
 
         var now = DateTime.UtcNow;
 
-        if (!isParticipant)
-        {
-            await JoinAsync(conversationId, callerId, now, cancellationToken);
-        }
-
         var message = new Message
         {
             ConversationId = conversationId,
@@ -84,9 +79,15 @@ internal sealed class MessageService(
             SentAt = now,
         };
 
-        db.Messages.Add(message);
-
-        await db.SaveChangesAsync(cancellationToken);
+        if (isParticipant)
+        {
+            db.Messages.Add(message);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            await WriteWithMembershipAsync(message, cancellationToken);
+        }
 
         var written = await ReadAsync(message.Id, cancellationToken);
 
@@ -123,32 +124,39 @@ internal sealed class MessageService(
                 .SumAsync(ChatQueries.UnreadBy(access.CallerId), cancellationToken),
         };
 
-    // Two administrators answering the same thread at once both find themselves
-    // outside it and both write the row. The second is the key saying so, and
-    // it changes nothing the first has not already done — but the row it failed
-    // on is still added as far as the tracker knows, and the message written
-    // next would carry it back into the same failure.
-    private async Task JoinAsync(
-        int conversationId,
-        int callerId,
-        DateTime joinedAt,
+    // The row that puts an administrator in the thread and the answer that put
+    // them there are one write: a message that lands without it is a message in
+    // a thread its sender is not in. The account is taken first because the two
+    // taps that would each insert that row are the same account twice, and the
+    // key it collides on is theirs alone.
+    private async Task WriteWithMembershipAsync(
+        Message message,
         CancellationToken cancellationToken)
     {
-        var joined = db.ConversationParticipants.Add(new ConversationParticipant
-        {
-            ConversationId = conversationId,
-            UserId = callerId,
-            JoinedAt = joinedAt,
-        });
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        try
+        await ChatLock.TakeAsync(db, message.SenderUserId, cancellationToken);
+
+        var joined = await db.ConversationParticipants.AnyAsync(
+            participant =>
+                participant.ConversationId == message.ConversationId
+                && participant.UserId == message.SenderUserId,
+            cancellationToken);
+
+        if (!joined)
         {
-            await db.SaveChangesAsync(cancellationToken);
+            db.ConversationParticipants.Add(new ConversationParticipant
+            {
+                ConversationId = message.ConversationId,
+                UserId = message.SenderUserId,
+                JoinedAt = message.SentAt,
+            });
         }
-        catch (Exception failure) when (DatabaseFailures.IsDuplicate(failure))
-        {
-            joined.State = EntityState.Detached;
-        }
+
+        db.Messages.Add(message);
+
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task<MessageResponse> ReadAsync(

@@ -129,12 +129,18 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
             .ToListAsync();
     }
 
-    public Task<MessageResponse> SendAsync(int actor, string role, int conversationId, string body) =>
+    public Task<MessageResponse> SendAsync(
+        int actor,
+        string role,
+        int conversationId,
+        string body,
+        params IInterceptor[] interceptors) =>
         AsMessagesAsync(
             actor,
             role,
             service => service.SendAsync(
-                conversationId, new MessageSendRequest { Body = body }, default));
+                conversationId, new MessageSendRequest { Body = body }, default),
+            interceptors);
 
     public Task<PagedResult<MessageResponse>> MessagesAsync(
         int actor,

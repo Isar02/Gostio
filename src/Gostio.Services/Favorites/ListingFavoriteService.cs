@@ -50,6 +50,18 @@ internal abstract class ListingFavoriteService<TListing>(
         {
             db.Entry(favorite).State = EntityState.Detached;
         }
+        catch (Exception failure) when (DatabaseFailures.IsMissingReference(failure))
+        {
+            db.Entry(favorite).State = EntityState.Detached;
+
+            // The listing was deleted between the check above and this insert,
+            // which is the ordinary reading of a foreign key failing here. It is
+            // re-read rather than assumed, because the caller's own row carries
+            // the other key on this insert.
+            await access.RequireVisibleAsync(listingId, cancellationToken);
+
+            throw;
+        }
 
         return await Kept(userId, listingId)
             .Select(FavoriteProjection.Of)

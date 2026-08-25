@@ -132,6 +132,23 @@ public class FavoriteTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task AListingDeletedUnderTheWriteAnswersNotFound()
+    {
+        var (host, listing) = await workspace.AnAccommodationAsync();
+        var guest = await workspace.AGuestAsync();
+
+        var race = new RaceInterceptor(
+            "INSERT",
+            () => workspace.DeleteAccommodationAsync(host, listing));
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => workspace.KeepAccommodationAsync(guest, listing, race));
+
+        Assert.True(race.Fired);
+        Assert.Equal(0, (await workspace.ListAsync(guest)).TotalCount);
+    }
+
+    [Fact]
     public async Task AWithdrawnListingStaysOnTheListAndSaysSo()
     {
         var (host, listing) = await workspace.AnAccommodationAsync();

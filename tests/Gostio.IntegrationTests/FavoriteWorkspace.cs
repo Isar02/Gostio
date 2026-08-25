@@ -33,6 +33,17 @@ internal sealed class FavoriteWorkspace(DatabaseFixture fixture)
     public Task WithdrawExperienceAsync(int host, int listing) =>
         experiences.WithdrawAsync(host, listing);
 
+    public Task DeleteAccommodationAsync(int host, int listing) =>
+        AsAsync(
+            host,
+            RoleNames.Host,
+            async (IAccommodationService service) =>
+            {
+                await service.DeleteAsync(listing, default);
+
+                return true;
+            });
+
     public async Task<int> ACoverPhotoAsync(int host, int listing)
     {
         var photo = await AsAsync(

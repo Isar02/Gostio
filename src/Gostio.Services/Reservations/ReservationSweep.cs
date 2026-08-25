@@ -10,6 +10,7 @@ namespace Gostio.Services.Reservations;
 internal sealed class ReservationSweep(
     GostioDbContext db,
     IReservationTransitionService transitions,
+    IReservationNotices notices,
     WorkerSettings settings) : IReservationSweep
 {
     private const string TheHoldRanOut = "The hold on this booking ran out.";
@@ -81,6 +82,8 @@ internal sealed class ReservationSweep(
             {
                 await transitions.MoveAsync(
                     reservationId, (int)from, to, changedByUserId: null, reason, cancellationToken);
+
+                await notices.MovedAsync(reservationId, to, cancellationToken);
 
                 moved++;
             }

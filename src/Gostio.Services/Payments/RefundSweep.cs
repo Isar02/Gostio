@@ -2,6 +2,7 @@ using Gostio.Model.Enums;
 using Gostio.Model.Validation;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
+using Gostio.Services.Reservations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -26,6 +27,7 @@ internal sealed record RefundAnswer(GatewayRefund Refund, bool Sent);
 internal sealed class RefundSweep(
     GostioDbContext db,
     IPaymentGateway gateway,
+    IReservationNotices notices,
     WorkerSettings settings,
     ILogger<RefundSweep> logger) : IRefundSweep
 {
@@ -157,7 +159,7 @@ internal sealed class RefundSweep(
 
         var processedAt = status == RefundStatus.Pending ? null : (DateTime?)DateTime.UtcNow;
 
-        await db.Refunds
+        var affectedRows = await db.Refunds
             .Where(refund => refund.Id == owed.Id && refund.Status == RefundStatus.Pending)
             .ExecuteUpdateAsync(
                 setters => setters
@@ -167,6 +169,13 @@ internal sealed class RefundSweep(
                     .SetProperty(
                         refund => refund.FailureReason, Reasons.Fit(answer.FailureReason)),
                 cancellationToken);
+
+        // Only the pass that settled the row tells the guest.
+        if (affectedRows == 1 && status == RefundStatus.Succeeded)
+        {
+            await notices.RefundedAsync(
+                owed.ReservationId, owed.Amount, owed.Currency, cancellationToken);
+        }
 
         if (status == RefundStatus.Failed)
         {

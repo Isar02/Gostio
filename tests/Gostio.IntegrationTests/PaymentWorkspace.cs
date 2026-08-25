@@ -171,6 +171,30 @@ internal sealed class PaymentWorkspace(DatabaseFixture fixture)
         SettleAsync(new PaymentOutcomeReport(
             FakePaymentGateway.IntentOf(paymentId), PaymentOutcome.Succeeded, null));
 
+    public async Task<CapturedNotices> SucceedWatchedAsync(int paymentId)
+    {
+        var notices = new CapturedNotices();
+
+        await using var services = fixture.BuildServices(caller: null, Gateway, notices);
+
+        await services.GetRequiredService<IPaymentSettlement>().SettleAsync(
+            new PaymentOutcomeReport(
+                FakePaymentGateway.IntentOf(paymentId), PaymentOutcome.Succeeded, null),
+            default);
+
+        return notices;
+    }
+
+    public async Task<(RefundSweepReport Swept, CapturedNotices Notices)>
+        SweepRefundsWatchedAsync(int batch = 50)
+    {
+        var notices = new CapturedNotices();
+
+        await using var services = fixture.BuildRefundSweep(Gateway, batch, notices);
+
+        return (await services.GetRequiredService<IRefundSweep>().RunAsync(default), notices);
+    }
+
     private async Task CancelUnderAsync(
         int actor,
         string role,

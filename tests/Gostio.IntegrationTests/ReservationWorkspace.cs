@@ -4,6 +4,7 @@ using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Listings;
+using Gostio.Services.Messaging;
 using Gostio.Services.Reservations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -400,6 +401,56 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             .AsNoTracking()
             .Where(slot => slot.Id == slotId)
             .Select(slot => slot.ExperienceId)
+            .SingleAsync();
+    }
+
+    // The same call every helper above makes, with the list the notices went
+    // into handed back beside the answer.
+    public async Task<(TResult Answer, CapturedNotices Notices)> WatchedAsync<TService, TResult>(
+        int userId,
+        string role,
+        Func<TService, Task<TResult>> work)
+        where TService : notnull
+    {
+        var notices = new CapturedNotices();
+
+        return (await ThroughAsync(userId, role, notices, work), notices);
+    }
+
+    public async Task<TResult> ThroughAsync<TService, TResult>(
+        int userId,
+        string role,
+        INotices notices,
+        Func<TService, Task<TResult>> work)
+        where TService : notnull
+    {
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(userId, role), gateway: null, notices);
+
+        return await work(services.GetRequiredService<TService>());
+    }
+
+    public Task<(ReservationSweepReport Swept, CapturedNotices Notices)> SweepWatchedAsync(
+        int batch = 200) =>
+        SweepThroughAsync(new CapturedNotices(), batch);
+
+    public async Task<(ReservationSweepReport Swept, TNotices Notices)>
+        SweepThroughAsync<TNotices>(TNotices notices, int batch = 200)
+        where TNotices : INotices
+    {
+        await using var services = fixture.BuildSweep(batch, notices);
+
+        return (await services.GetRequiredService<IReservationSweep>().RunAsync(default), notices);
+    }
+
+    public async Task<string> EmailOfAsync(int userId)
+    {
+        await using var db = fixture.CreateContext();
+
+        return await db.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId)
+            .Select(user => user.Email)
             .SingleAsync();
     }
 

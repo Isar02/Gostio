@@ -19,6 +19,7 @@ public static class ReservationServiceCollectionExtensions
     public static IServiceCollection AddGostioReservationSweep(this IServiceCollection services)
     {
         services.AddScoped<IReservationTransitionService, ReservationTransitionService>();
+        services.AddScoped<IReservationNotices, ReservationNotices>();
         services.AddScoped<IReservationSweep, ReservationSweep>();
 
         return services;

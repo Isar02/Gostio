@@ -129,6 +129,15 @@ public sealed class DatabaseFixture : IAsyncLifetime
     public ServiceProvider BuildServices(
         ICurrentUser? caller,
         IPaymentGateway? gateway,
+        params IInterceptor[] interceptors) =>
+        BuildServices(caller, gateway, new CapturedNotices(), interceptors);
+
+    // The broker takes no part in a test; what would have been published is
+    // kept in a list, or handed to whatever the test passed instead.
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller,
+        IPaymentGateway? gateway,
+        INotices notices,
         params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
@@ -138,6 +147,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => caller ?? new AnonymousUser());
         services.AddSingleton(Stripe);
         services.AddSingleton(Worker);
+        services.AddSingleton(notices);
         services.AddGostioLookupServices();
         services.AddGostioListingServices();
         services.AddGostioUserServices();
@@ -151,19 +161,29 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // The worker's composition rather than the API's: no caller, and a batch
     // the test picks.
-    public ServiceProvider BuildSweep(int batch, params IInterceptor[] interceptors)
+    public ServiceProvider BuildSweep(int batch, params IInterceptor[] interceptors) =>
+        BuildSweep(batch, new CapturedNotices(), interceptors);
+
+    public ServiceProvider BuildSweep(
+        int batch,
+        INotices notices,
+        params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
 
         services.AddLogging();
         services.AddScoped(_ => CreateContext(interceptors));
         services.AddSingleton(BatchOf(batch));
+        services.AddSingleton(notices);
         services.AddGostioReservationSweep();
 
         return services.BuildServiceProvider();
     }
 
-    public ServiceProvider BuildRefundSweep(IPaymentGateway gateway, int batch = 50)
+    public ServiceProvider BuildRefundSweep(
+        IPaymentGateway gateway,
+        int batch = 50,
+        INotices? notices = null)
     {
         var services = new ServiceCollection();
 
@@ -171,6 +191,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => CreateContext());
         services.AddSingleton(Stripe);
         services.AddSingleton(BatchOf(batch));
+        services.AddSingleton<INotices>(notices ?? new CapturedNotices());
+        services.AddGostioReservationSweep();
         services.AddGostioRefundSweep();
         services.AddScoped(_ => gateway);
 

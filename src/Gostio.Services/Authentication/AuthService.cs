@@ -1,8 +1,10 @@
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
+using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Authentication;
@@ -10,7 +12,9 @@ namespace Gostio.Services.Authentication;
 public sealed class AuthService(
     GostioDbContext db,
     JwtTokenService tokens,
-    ICurrentUser currentUser) : IAuthService
+    ICurrentUser currentUser,
+    INotices notices,
+    ApiSettings api) : IAuthService
 {
     private const string CredentialsRejected = "The username or password is incorrect.";
 
@@ -108,29 +112,34 @@ public sealed class AuthService(
         ForgotPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = await db.Users
+        var account = await db.Users
             .Where(user => user.Email == request.Email && user.IsActive)
-            .Select(user => (int?)user.Id)
+            .Select(user => new { user.Id, user.FirstName, user.Email })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (userId is null)
+        if (account is null)
         {
             return;
         }
 
         var issuedAt = DateTime.UtcNow;
+        var token = ResetTokens.Create();
 
         // The row keeps the hash. The token leaves by mail and by no other
         // road: never through a reply, never through the log.
         db.PasswordResetTokens.Add(new PasswordResetToken
         {
-            UserId = userId.Value,
-            TokenHash = ResetTokens.Hash(ResetTokens.Create()),
+            UserId = account.Id,
+            TokenHash = ResetTokens.Hash(token),
             CreatedAt = issuedAt,
             ExpiresAt = issuedAt + ResetTokens.Lifetime,
         });
 
         await db.SaveChangesAsync(cancellationToken);
+
+        await notices.SendAsync(
+            PasswordResetEmail.For(account.FirstName, account.Email, token, api),
+            cancellationToken);
     }
 
     public async Task ResetPasswordAsync(

@@ -14,7 +14,8 @@ internal sealed class ReservationMoveService(
     ReservationAccess access,
     ReservationPlaces places,
     IReservationTransitionService transitions,
-    ICancellationRefunds refunds) : IReservationMoveService
+    ICancellationRefunds refunds,
+    IReservationNotices notices) : IReservationMoveService
 {
     public async Task<ReservationResponse> ConfirmAsync(
         int reservationId,
@@ -45,6 +46,9 @@ internal sealed class ReservationMoveService(
         await RequireThePlaceIsStillFreeAsync(reservationId, booking, now, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+
+        await notices.MovedAsync(
+            reservationId, ReservationStatusCode.Confirmed, cancellationToken);
 
         return await access.ReadAsync(reservationId, cancellationToken);
     }
@@ -83,6 +87,9 @@ internal sealed class ReservationMoveService(
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+
+        await notices.MovedAsync(
+            reservationId, ReservationStatusCode.Cancelled, cancellationToken);
 
         return await access.ReadAsync(reservationId, cancellationToken);
     }

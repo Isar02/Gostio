@@ -15,7 +15,8 @@ internal sealed class ReservationService(
     ICurrentUser currentUser,
     ReservationAccess access,
     ReservationPlaces places,
-    AccommodationAccess accommodations) : IReservationService
+    AccommodationAccess accommodations,
+    IReservationNotices notices) : IReservationService
 {
     public async Task<ReservationResponse> CreateAsync(
         ReservationCreateRequest request,
@@ -276,6 +277,8 @@ internal sealed class ReservationService(
 
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await notices.CreatedAsync(reservation.Id, cancellationToken);
 
         return await access.ReadAsync(reservation.Id, cancellationToken);
     }

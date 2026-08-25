@@ -1,4 +1,5 @@
 using Gostio.Model.Exceptions;
+using Gostio.Model.Messaging;
 using Gostio.Model.Requests;
 using Gostio.Services.Authentication;
 using Gostio.Services.Database;
@@ -35,9 +36,44 @@ public class PasswordResetTests(DatabaseFixture fixture)
     {
         var before = await TokenCountAsync();
 
-        await ForgotAsync("nobody@example.com");
+        var notices = await ForgotAsync("nobody@example.com");
 
         Assert.Equal(before, await TokenCountAsync());
+        Assert.Empty(notices.Sent);
+    }
+
+    // The row keeps only a hash, so the code in the mail is the one road back
+    // to the account. A mail that never went is a reset nobody can finish.
+    [Fact]
+    public async Task TheCodeLeavesByMailAndTheMailIsWhatCarriesIt()
+    {
+        var userId = await fixture.AddUserAsync(OldPassword);
+        var address = await EmailOfAsync(userId);
+
+        var notices = await ForgotAsync(address);
+        var mail = Assert.Single(notices.Of<EmailMessage>());
+
+        Assert.Equal(address, mail.ToEmail);
+
+        await using var db = fixture.CreateContext();
+
+        var stored = await db.PasswordResetTokens.SingleAsync(row => row.UserId == userId);
+        var code = CodeIn(mail.Body);
+
+        Assert.Equal(stored.TokenHash, ResetTokens.Hash(code));
+        Assert.DoesNotContain(stored.TokenHash, mail.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task TheCodeInTheMailIsTheOneThatChangesThePassword()
+    {
+        var userId = await fixture.AddUserAsync(OldPassword);
+
+        var notices = await ForgotAsync(await EmailOfAsync(userId));
+
+        await ResetAsync(CodeIn(Assert.Single(notices.Of<EmailMessage>()).Body), NewPassword);
+
+        Assert.True(PasswordHasher.Verify(NewPassword, await PasswordHashOfAsync(userId)));
     }
 
     [Fact]
@@ -92,12 +128,16 @@ public class PasswordResetTests(DatabaseFixture fixture)
         Assert.True(PasswordHasher.Verify(OldPassword, await PasswordHashOfAsync(userId)));
     }
 
-    private async Task ForgotAsync(string email)
+    private async Task<CapturedNotices> ForgotAsync(string email)
     {
+        var notices = new CapturedNotices();
+
         await using var db = fixture.CreateContext();
 
-        await Service(db).ForgotPasswordAsync(
+        await Service(db, notices).ForgotPasswordAsync(
             new ForgotPasswordRequest { Email = email }, CancellationToken.None);
+
+        return notices;
     }
 
     private async Task ResetAsync(string token, string newPassword)
@@ -149,6 +189,15 @@ public class PasswordResetTests(DatabaseFixture fixture)
         return read(await db.Users.SingleAsync(user => user.Id == userId));
     }
 
+    // The body says where to enter it and then states it on a line of its own,
+    // which is the only word in the mail as long as a token.
+    private static string CodeIn(string body) =>
+        body
+            .Split(
+                ['\r', '\n'],
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Single(line => line.Length == ResetTokens.Create().Length);
+
     private async Task<int> TokenCountAsync()
     {
         await using var db = fixture.CreateContext();
@@ -156,6 +205,11 @@ public class PasswordResetTests(DatabaseFixture fixture)
         return await db.PasswordResetTokens.CountAsync();
     }
 
-    private AuthService Service(GostioDbContext db) =>
-        new(db, new JwtTokenService(fixture.Jwt), new AnonymousUser());
+    private AuthService Service(GostioDbContext db, CapturedNotices? notices = null) =>
+        new(
+            db,
+            new JwtTokenService(fixture.Jwt),
+            new AnonymousUser(),
+            notices ?? new CapturedNotices(),
+            fixture.Api);
 }

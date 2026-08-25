@@ -15,6 +15,7 @@ internal sealed class PaymentSettlement(
     GostioDbContext db,
     IReservationTransitionService transitions,
     ICancellationRefunds refunds,
+    IReservationNotices notices,
     ILogger<PaymentSettlement> logger) : IPaymentSettlement
 {
     public async Task SettleAsync(
@@ -24,7 +25,14 @@ internal sealed class PaymentSettlement(
         var charge = await db.Payments
             .AsNoTracking()
             .Where(payment => payment.StripePaymentIntentId == report.IntentId)
-            .Select(payment => new { payment.Id, payment.ReservationId, payment.Status })
+            .Select(payment => new
+            {
+                payment.Id,
+                payment.ReservationId,
+                payment.Status,
+                payment.Amount,
+                payment.Currency,
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (charge is null)
@@ -50,13 +58,30 @@ internal sealed class PaymentSettlement(
         await ReservationLock.TakeAsync(db, charge.ReservationId, cancellationToken);
 
         var settled = await CloseAsync(charge.Id, report.Outcome, cancellationToken);
+        var paid = settled && report.Outcome == PaymentOutcome.Succeeded;
 
-        if (settled && report.Outcome == PaymentOutcome.Succeeded)
-        {
-            await ConfirmTheBookingAsync(charge.ReservationId, charge.Id, cancellationToken);
-        }
+        var confirmed = paid
+            && await ConfirmTheBookingAsync(charge.ReservationId, charge.Id, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+
+        if (!paid)
+        {
+            return;
+        }
+
+        // Only the pass that closed the payment says so; a redelivery matched
+        // no row and must not tell a guest twice that their money arrived.
+        await notices.PaidAsync(
+            charge.ReservationId, charge.Amount, charge.Currency, cancellationToken);
+
+        // Two facts, and the second is owed in the words a host's confirmation
+        // would have used.
+        if (confirmed)
+        {
+            await notices.MovedAsync(
+                charge.ReservationId, ReservationStatusCode.Confirmed, cancellationToken);
+        }
     }
 
     // A decline leaves the intent reusable, so the row stays pending with its
@@ -114,7 +139,7 @@ internal sealed class PaymentSettlement(
     // written here — priced against the moment the booking ended and never
     // against now, because an event the processor delivered late must not cost a
     // guest a threshold they were inside of when they called it off.
-    private async Task ConfirmTheBookingAsync(
+    private async Task<bool> ConfirmTheBookingAsync(
         int reservationId,
         int paymentId,
         CancellationToken cancellationToken)
@@ -128,6 +153,8 @@ internal sealed class PaymentSettlement(
                 changedByUserId: null,
                 reason: null,
                 cancellationToken);
+
+            return true;
         }
         catch (BusinessException)
         {
@@ -138,6 +165,8 @@ internal sealed class PaymentSettlement(
                 reservationId);
 
             await OweTheChargeBackAsync(reservationId, cancellationToken);
+
+            return false;
         }
     }
 

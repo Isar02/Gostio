@@ -4,6 +4,8 @@ using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Listings;
 using Gostio.Services.Lookups;
+using Gostio.Services.Messaging;
+using Gostio.Services.Notifications;
 using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
 using Gostio.Services.Users;
@@ -53,6 +55,34 @@ public sealed class DatabaseFixture : IAsyncLifetime
         RefundSweepBatch = 50,
     };
 
+    public ApiSettings Api { get; } = new()
+    {
+        BaseUrl = "http://localhost:5000",
+        HttpPort = 5000,
+    };
+
+    public RabbitMqSettings Broker { get; } = new()
+    {
+        Host = "localhost",
+        Port = 5672,
+        Username = "integration",
+        Password = "integration",
+        VirtualHost = "/",
+        EmailQueue = "gostio.email.tests",
+        NotificationQueue = "gostio.notifications.tests",
+    };
+
+    public SmtpSettings Smtp { get; } = new()
+    {
+        Host = "localhost",
+        Port = 587,
+        Username = "",
+        Password = "",
+        UseSsl = false,
+        FromEmail = "integration@example.com",
+        FromName = "Gostio",
+    };
+
     public JwtSettings Jwt { get; } = new()
     {
         Key = "an-integration-test-signing-key-long-enough-for-hmac-sha256",
@@ -100,6 +130,15 @@ public sealed class DatabaseFixture : IAsyncLifetime
     public ServiceProvider BuildServices(
         ICurrentUser? caller,
         IPaymentGateway? gateway,
+        params IInterceptor[] interceptors) =>
+        BuildServices(caller, gateway, new CapturedNotices(), interceptors);
+
+    // The broker takes no part in a test; what would have been published is
+    // kept in a list, or handed to whatever the test passed instead.
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller,
+        IPaymentGateway? gateway,
+        INotices notices,
         params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
@@ -109,11 +148,13 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => caller ?? new AnonymousUser());
         services.AddSingleton(Stripe);
         services.AddSingleton(Worker);
+        services.AddSingleton(notices);
         services.AddGostioLookupServices();
         services.AddGostioListingServices();
         services.AddGostioUserServices();
         services.AddGostioReservationServices();
         services.AddGostioPaymentServices();
+        services.AddGostioNotificationServices();
 
         services.AddScoped(_ => gateway ?? new FakePaymentGateway());
 
@@ -122,19 +163,29 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // The worker's composition rather than the API's: no caller, and a batch
     // the test picks.
-    public ServiceProvider BuildSweep(int batch, params IInterceptor[] interceptors)
+    public ServiceProvider BuildSweep(int batch, params IInterceptor[] interceptors) =>
+        BuildSweep(batch, new CapturedNotices(), interceptors);
+
+    public ServiceProvider BuildSweep(
+        int batch,
+        INotices notices,
+        params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
 
         services.AddLogging();
         services.AddScoped(_ => CreateContext(interceptors));
         services.AddSingleton(BatchOf(batch));
+        services.AddSingleton(notices);
         services.AddGostioReservationSweep();
 
         return services.BuildServiceProvider();
     }
 
-    public ServiceProvider BuildRefundSweep(IPaymentGateway gateway, int batch = 50)
+    public ServiceProvider BuildRefundSweep(
+        IPaymentGateway gateway,
+        int batch = 50,
+        INotices? notices = null)
     {
         var services = new ServiceCollection();
 
@@ -142,6 +193,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => CreateContext());
         services.AddSingleton(Stripe);
         services.AddSingleton(BatchOf(batch));
+        services.AddSingleton<INotices>(notices ?? new CapturedNotices());
+        services.AddGostioReservationSweep();
         services.AddGostioRefundSweep();
         services.AddScoped(_ => gateway);
 
@@ -155,6 +208,21 @@ public sealed class DatabaseFixture : IAsyncLifetime
         RefundSweepSeconds = Worker.RefundSweepSeconds,
         RefundSweepBatch = batch,
     };
+
+    // The worker's composition for the queues: what a message asks for once it
+    // has been read, with nothing here reaching a broker.
+    public ServiceProvider BuildConsumers()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        services.AddScoped(_ => CreateContext());
+        services.AddSingleton(Broker);
+        services.AddSingleton(Smtp);
+        services.AddGostioMessageConsumers();
+
+        return services.BuildServiceProvider();
+    }
 
     public GostioDbContext CreateContext(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<GostioDbContext>()

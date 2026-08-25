@@ -1,5 +1,6 @@
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
+using Gostio.Services.Messaging;
 using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
 using Gostio.Worker;
@@ -11,8 +12,10 @@ var settings = builder.Services.AddGostioConfiguration();
 builder.Services.AddGostioDatabase(settings.Database);
 builder.Services.AddGostioReservationSweep();
 builder.Services.AddGostioRefundSweep();
+builder.Services.AddGostioMessageConsumers();
 
-builder.Services.AddHostedService<MessageConsumerService>();
+builder.Services.AddHostedService<EmailConsumerService>();
+builder.Services.AddHostedService<NotificationConsumerService>();
 builder.Services.AddHostedService<ReservationSweepService>();
 builder.Services.AddHostedService<RefundSweepService>();
 

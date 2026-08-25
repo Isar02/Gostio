@@ -191,6 +191,7 @@ public sealed class AccommodationsControllerTests : IAsyncLifetime
             CoverPhotoId = null,
             AverageRating = 4.5m,
             ReviewCount = 2,
+            IsFavorite = false,
             CreatedAt = DateTime.UtcNow,
         };
     }

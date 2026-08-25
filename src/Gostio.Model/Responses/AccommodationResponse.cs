@@ -54,5 +54,7 @@ public sealed class AccommodationResponse : IIdentified
 
     public required int ReviewCount { get; init; }
 
+    public required bool IsFavorite { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 }

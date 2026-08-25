@@ -56,6 +56,8 @@ internal sealed class AccommodationService(
                 .Average(review => (decimal?)review.Rating),
             ReviewCount = Db.Reviews
                 .Count(review => review.Reservation.AccommodationId == accommodation.Id),
+            IsFavorite = Db.Favorites.Any(favorite =>
+                favorite.UserId == CallerId && favorite.AccommodationId == accommodation.Id),
             CreatedAt = accommodation.CreatedAt,
         };
 

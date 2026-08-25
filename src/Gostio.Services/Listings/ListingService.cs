@@ -21,6 +21,8 @@ internal abstract class ListingService<TListing, TResponse, TSearch, TCreate, TU
 {
     protected ListingAccess<TListing> Access { get; } = access;
 
+    protected int? CallerId => currentUser.UserId;
+
     public override async Task<TResponse> GetAsync(int id, CancellationToken cancellationToken) =>
         await Access.Visible(Set.AsNoTracking())
             .Where(listing => listing.Id == id)

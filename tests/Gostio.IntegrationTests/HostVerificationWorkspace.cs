@@ -75,9 +75,9 @@ internal sealed class HostVerificationWorkspace(DatabaseFixture fixture)
             ApproveUnderAsync(second, id, barrier));
     }
 
-    // The other road to the same role row, landing underneath an approval
-    // that is already on its way: the roles are replaced in the instant before
-    // the approval takes the account, which is where the window would be.
+    // The other road to the same role row, landing underneath an approval that
+    // is already on its way: the roles are replaced in the instant before the
+    // approval takes the account, which is the window the old order left open.
     public async Task<(Exception? Outcome, bool Landed)>
         ApprovedWithTheRolesReplacedUnderneathAsync(
             int administrator,

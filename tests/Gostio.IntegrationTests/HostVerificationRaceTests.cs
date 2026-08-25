@@ -35,12 +35,12 @@ public class HostVerificationRaceTests(DatabaseFixture fixture)
         Assert.Equal(1, await workspace.HostRolesOfAsync(applicant));
     }
 
-    // An approval and a role change through the users write the same role row,
-    // and the approval takes the account before it reads what the account holds.
-    // The role change lands in exactly that instant, so the approval reads the
-    // row it wrote rather than inserting a second one: reading the roles before
-    // taking the account fails this with a duplicate key, which is the ordering
-    // going away.
+    // An approval and a role change through the users write the same role row.
+    // The role change is run in the instant before the approval takes the
+    // account, so the roles the approval reads after taking it are the ones the
+    // change left. With the read back in front of the lock it has happened by
+    // then and cannot see them, and the insert that follows is a duplicate key,
+    // which is the ordering going away.
     [Fact]
     public async Task AnApprovalGrantsTheRoleOnceWithARoleChangeLandingUnderneathIt()
     {

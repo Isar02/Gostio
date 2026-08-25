@@ -1,6 +1,8 @@
 using Gostio.API.Authentication;
+using Gostio.API.Hubs;
 using Gostio.API.Middleware;
 using Gostio.API.Swagger;
+using Gostio.Services.Chat;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Favorites;
@@ -34,6 +36,9 @@ builder.Services.AddGostioUserServices();
 builder.Services.AddGostioReservationServices();
 builder.Services.AddGostioPaymentServices();
 builder.Services.AddGostioReviewServices();
+builder.Services.AddGostioChatServices();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IChatBroadcast, ChatBroadcast>();
 builder.Services.AddGostioFavoriteServices();
 builder.Services.AddGostioHostVerificationServices();
 builder.Services.AddGostioMessaging();
@@ -72,5 +77,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>(ChatHubRoute.Path);
 
 app.Run();

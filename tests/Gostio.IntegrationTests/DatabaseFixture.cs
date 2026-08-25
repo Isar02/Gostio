@@ -1,4 +1,5 @@
 using Gostio.Services.Authentication;
+using Gostio.Services.Chat;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
@@ -142,6 +143,14 @@ public sealed class DatabaseFixture : IAsyncLifetime
         ICurrentUser? caller,
         IPaymentGateway? gateway,
         INotices notices,
+        params IInterceptor[] interceptors) =>
+        BuildServices(caller, gateway, notices, new CapturedBroadcast(), interceptors);
+
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller,
+        IPaymentGateway? gateway,
+        INotices notices,
+        IChatBroadcast broadcast,
         params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
@@ -149,6 +158,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddLogging();
         services.AddScoped(_ => CreateContext(interceptors));
         services.AddScoped(_ => caller ?? new AnonymousUser());
+        services.AddSingleton(broadcast);
         services.AddSingleton(Stripe);
         services.AddSingleton(Worker);
         services.AddSingleton(notices);
@@ -158,6 +168,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddGostioReservationServices();
         services.AddGostioPaymentServices();
         services.AddGostioReviewServices();
+        services.AddGostioChatServices();
         services.AddGostioFavoriteServices();
         services.AddGostioHostVerificationServices();
         services.AddGostioNotificationServices();

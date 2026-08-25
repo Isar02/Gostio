@@ -42,6 +42,7 @@ internal static class EngagementSeed
             var conversation = new Conversation
             {
                 Type = type,
+                OpenedByUser = first,
                 Reservation = reservation,
                 CreatedAt = opened,
                 Participants =

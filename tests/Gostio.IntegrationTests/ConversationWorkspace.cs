@@ -154,8 +154,16 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
             service => service.SearchAsync(conversationId, paging ?? new PagedRequest(), default),
             interceptors);
 
-    public Task<UnreadCountResponse> MarkReadAsync(int actor, string role, int conversationId) =>
-        AsMessagesAsync(actor, role, service => service.MarkReadAsync(conversationId, default));
+    public Task<UnreadCountResponse> MarkReadAsync(
+        int actor,
+        string role,
+        int conversationId,
+        params IInterceptor[] interceptors) =>
+        AsMessagesAsync(
+            actor,
+            role,
+            service => service.MarkReadAsync(conversationId, default),
+            interceptors);
 
     public Task<UnreadCountResponse> UnreadAsync(int actor, string role) =>
         AsMessagesAsync(actor, role, service => service.UnreadAsync(default));

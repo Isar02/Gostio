@@ -109,7 +109,8 @@ internal sealed class MessageService(
         await db.ConversationParticipants
             .Where(participant =>
                 participant.ConversationId == conversationId
-                && participant.UserId == callerId)
+                && participant.UserId == callerId
+                && (participant.LastReadAt == null || participant.LastReadAt < readAt))
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(participant => participant.LastReadAt, readAt),
                 cancellationToken);

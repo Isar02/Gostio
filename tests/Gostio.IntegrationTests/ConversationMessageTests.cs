@@ -138,6 +138,29 @@ public class ConversationMessageTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task AnOlderReadCannotMoveTheMarkerBehindANewerOne()
+    {
+        var guest = await workspace.AGuestAsync();
+        var host = await workspace.AHostAsync();
+        var thread = await workspace.ADirectThreadAsync(guest, host);
+
+        var newer = new RaceInterceptor(
+            "SET [c].[LastReadAt]",
+            async () =>
+            {
+                await Task.Delay(5);
+                await workspace.SayAsync(
+                    thread, host, "Written between the two marks.", DateTime.UtcNow);
+                await workspace.MarkReadAsync(guest, RoleNames.Guest, thread);
+            });
+
+        var marked = await workspace.MarkReadAsync(guest, RoleNames.Guest, thread, newer);
+
+        Assert.True(newer.Fired);
+        Assert.Equal(0, marked.Unread);
+    }
+
+    [Fact]
     public async Task TheBadgeAgreesWithTheRowsBeneathIt()
     {
         var host = await workspace.AHostAsync();

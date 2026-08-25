@@ -8,6 +8,10 @@ public class Conversation
 
     public ConversationType Type { get; set; } = ConversationType.Direct;
 
+    public int OpenedByUserId { get; set; }
+
+    public User OpenedByUser { get; set; } = null!;
+
     public int? ReservationId { get; set; }
 
     public Reservation? Reservation { get; set; }

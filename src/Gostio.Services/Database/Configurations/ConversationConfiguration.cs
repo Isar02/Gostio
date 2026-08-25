@@ -12,6 +12,17 @@ public sealed class ConversationConfiguration : IEntityTypeConfiguration<Convers
         builder.HasKey(conversation => conversation.Id);
 
         builder
+            .HasOne(conversation => conversation.OpenedByUser)
+            .WithMany()
+            .HasForeignKey(conversation => conversation.OpenedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasIndex(conversation => conversation.OpenedByUserId)
+            .IsUnique()
+            .HasFilter($"[{nameof(Conversation.Type)}] = {(int)ConversationType.Support}");
+
+        builder
             .HasOne(conversation => conversation.Reservation)
             .WithMany()
             .HasForeignKey(conversation => conversation.ReservationId)

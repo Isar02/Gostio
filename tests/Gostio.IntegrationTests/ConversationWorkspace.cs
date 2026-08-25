@@ -152,7 +152,6 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
     public Task<UnreadCountResponse> UnreadAsync(int actor, string role) =>
         AsMessagesAsync(actor, role, service => service.UnreadAsync(default));
 
-    // What the hub asks before it joins a connection to anything.
     public async Task<bool> ReachesAsync(int userId, bool isAdministrator, int conversationId)
     {
         await using var services = fixture.BuildServices(ListingWorkspace.Caller(userId));
@@ -192,6 +191,26 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
     public Task<ConversationResponse> ReadAsync(int actor, string role, int conversationId) =>
         AsAsync(actor, role, service => service.GetAsync(conversationId, default));
 
+    public async Task ReplaceRoleAsync(int userId, string role)
+    {
+        var roleId = await fixture.EnsureRoleAsync(role);
+
+        await using var db = fixture.CreateContext();
+
+        await db.UserRoles
+            .Where(assignment => assignment.UserId == userId)
+            .ExecuteDeleteAsync();
+
+        db.UserRoles.Add(new UserRole
+        {
+            UserId = userId,
+            RoleId = roleId,
+            AssignedAt = DateTime.UtcNow,
+        });
+
+        await db.SaveChangesAsync();
+    }
+
     public Task<PagedResult<ConversationResponse>> SearchAsync(
         int actor,
         string role,
@@ -213,6 +232,7 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
         var conversation = new Conversation
         {
             Type = type,
+            OpenedByUserId = participants[0],
             ReservationId = reservationId,
             CreatedAt = now,
             Participants =

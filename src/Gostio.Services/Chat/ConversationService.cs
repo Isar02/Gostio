@@ -118,7 +118,11 @@ internal sealed class ConversationService(
 
         var opened = await SupportThreadOfAsync(callerId, cancellationToken)
             ?? await WriteAsync(
-                ConversationType.Support, reservationId: null, [callerId], cancellationToken);
+                ConversationType.Support,
+                openedByUserId: callerId,
+                reservationId: null,
+                [callerId],
+                cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -154,6 +158,7 @@ internal sealed class ConversationService(
         {
             var opened = await WriteAsync(
                 ConversationType.Direct,
+                callerId,
                 reservationId,
                 [parties.GuestId, parties.HostId],
                 cancellationToken);
@@ -208,6 +213,7 @@ internal sealed class ConversationService(
         var opened = await EnquiryBetweenAsync(callerId, hostId, cancellationToken)
             ?? await WriteAsync(
                 ConversationType.Direct,
+                callerId,
                 reservationId: null,
                 [callerId, hostId],
                 cancellationToken);
@@ -219,6 +225,7 @@ internal sealed class ConversationService(
 
     private async Task<int> WriteAsync(
         ConversationType type,
+        int openedByUserId,
         int? reservationId,
         IReadOnlyList<int> participants,
         CancellationToken cancellationToken)
@@ -228,6 +235,7 @@ internal sealed class ConversationService(
         var conversation = new Conversation
         {
             Type = type,
+            OpenedByUserId = openedByUserId,
             ReservationId = reservationId,
             CreatedAt = now,
             Participants =
@@ -299,7 +307,7 @@ internal sealed class ConversationService(
             .AsNoTracking()
             .Where(conversation =>
                 conversation.Type == ConversationType.Support
-                && conversation.Participants.Any(participant => participant.UserId == callerId))
+                && conversation.OpenedByUserId == callerId)
             .OrderBy(conversation => conversation.Id)
             .Select(conversation => (int?)conversation.Id)
             .FirstOrDefaultAsync(cancellationToken);

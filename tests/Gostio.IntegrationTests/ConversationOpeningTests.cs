@@ -149,6 +149,26 @@ public class ConversationOpeningTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task AFormerAdministratorOpensTheirOwnSupportThread()
+    {
+        var guest = await workspace.AGuestAsync();
+        var administrator = await workspace.AnAdministratorAsync();
+        var guestsThread = await workspace.ASupportThreadAsync(guest);
+
+        await workspace.SendAsync(
+            administrator, RoleNames.Administrator, guestsThread, "I will look into this.");
+        await workspace.ReplaceRoleAsync(administrator, RoleNames.Guest);
+
+        var opened = await workspace.OpenSupportAsync(administrator, RoleNames.Guest);
+
+        Assert.NotEqual(guestsThread, opened.Id);
+        Assert.Equal([administrator], await workspace.ParticipantsOfAsync(opened.Id));
+        Assert.Equal(
+            opened.Id,
+            (await workspace.OpenSupportAsync(administrator, RoleNames.Guest)).Id);
+    }
+
+    [Fact]
     public async Task SupportIsAnsweredFromAnAdministratorRatherThanAskedOfIt()
     {
         var administrator = await workspace.AnAdministratorAsync();

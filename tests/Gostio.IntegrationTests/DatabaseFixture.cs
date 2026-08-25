@@ -1,4 +1,5 @@
 using Gostio.Services.Authentication;
+using Gostio.Services.Chat;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
@@ -158,6 +159,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddGostioReservationServices();
         services.AddGostioPaymentServices();
         services.AddGostioReviewServices();
+        services.AddGostioChatServices();
         services.AddGostioFavoriteServices();
         services.AddGostioHostVerificationServices();
         services.AddGostioNotificationServices();

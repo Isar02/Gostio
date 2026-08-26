@@ -269,16 +269,16 @@ internal static class EngagementSeed
         };
     }
 
-    private static IEnumerable<News> NewsItems(UserSeedResult users, DateTime now)
+    private static IEnumerable<NewsItem> NewsItems(UserSeedResult users, DateTime now)
     {
         var author = users.Administrator;
         var index = 0;
 
-        News Item(string title, string body, int daysAgo)
+        NewsItem Item(string title, string body, int daysAgo)
         {
             index++;
 
-            return new News
+            return new NewsItem
             {
                 CreatedByUser = author,
                 Title = title,

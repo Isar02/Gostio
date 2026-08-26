@@ -136,7 +136,7 @@ internal sealed class MessageService(
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await ChatLock.TakeAsync(db, message.SenderUserId, cancellationToken);
+        await AccountLock.TakeAsync(db, message.SenderUserId, cancellationToken);
 
         var joined = await db.ConversationParticipants.AnyAsync(
             participant =>

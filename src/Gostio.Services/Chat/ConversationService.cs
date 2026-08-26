@@ -114,7 +114,7 @@ internal sealed class ConversationService(
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await ChatLock.TakeAsync(db, callerId, cancellationToken);
+        await AccountLock.TakeAsync(db, callerId, cancellationToken);
 
         var opened = await SupportThreadOfAsync(callerId, cancellationToken)
             ?? await WriteAsync(
@@ -208,7 +208,7 @@ internal sealed class ConversationService(
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        await ChatLock.TakeAsync(db, callerId, hostId, cancellationToken);
+        await AccountLock.TakeAsync(db, callerId, hostId, cancellationToken);
 
         var opened = await EnquiryBetweenAsync(callerId, hostId, cancellationToken)
             ?? await WriteAsync(

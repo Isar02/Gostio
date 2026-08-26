@@ -1,6 +1,6 @@
 namespace Gostio.Services.Database.Entities;
 
-public class News
+public class NewsItem
 {
     public int Id { get; set; }
 

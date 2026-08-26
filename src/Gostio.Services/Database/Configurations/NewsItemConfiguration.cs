@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Gostio.Services.Database.Configurations;
 
-public sealed class NewsConfiguration : IEntityTypeConfiguration<News>
+public sealed class NewsItemConfiguration : IEntityTypeConfiguration<NewsItem>
 {
-    public void Configure(EntityTypeBuilder<News> builder)
+    public void Configure(EntityTypeBuilder<NewsItem> builder)
     {
         builder.HasKey(news => news.Id);
 

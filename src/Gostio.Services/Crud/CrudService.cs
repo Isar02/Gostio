@@ -27,7 +27,7 @@ internal abstract class CrudService<TEntity, TResponse, TSearch, TCreate, TUpdat
 
     protected abstract Expression<Func<TEntity, TResponse>> Projection { get; }
 
-    public Task<PagedResult<TResponse>> SearchAsync(
+    public virtual Task<PagedResult<TResponse>> SearchAsync(
         TSearch search,
         CancellationToken cancellationToken) =>
         Order(Filter(Set.AsNoTracking(), search))

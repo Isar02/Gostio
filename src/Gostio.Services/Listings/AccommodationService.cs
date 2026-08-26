@@ -1,23 +1,27 @@
 using System.Linq.Expressions;
+using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Authentication;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Search;
 
 namespace Gostio.Services.Listings;
 
 internal sealed class AccommodationService(
     GostioDbContext db,
     ICurrentUser currentUser,
-    AccommodationAccess access)
+    AccommodationAccess access,
+    ISearchRecorder searches,
+    SearchClock clock)
     : ListingService<
         Accommodation,
         AccommodationResponse,
         AccommodationSearchRequest,
         AccommodationCreateRequest,
-        AccommodationUpdateRequest>(db, currentUser, access, "accommodation"),
+        AccommodationUpdateRequest>(db, currentUser, access, searches, clock, "accommodation"),
       IAccommodationService
 {
     protected override string StillReferencedMessage =>
@@ -106,6 +110,17 @@ internal sealed class AccommodationService(
 
         return query;
     }
+
+    protected override SearchSignal Signal(AccommodationSearchRequest search) =>
+        new()
+        {
+            Target = SearchTarget.Accommodations,
+            Term = Trimmed(search.Title),
+            CityId = search.CityId,
+            GuestCount = search.MinGuests,
+            MinPrice = search.MinPrice,
+            MaxPrice = search.MaxPrice,
+        };
 
     protected override async Task<Accommodation> NewAsync(
         AccommodationCreateRequest request,

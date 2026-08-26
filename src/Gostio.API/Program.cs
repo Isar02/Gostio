@@ -15,6 +15,7 @@ using Gostio.Services.Notifications;
 using Gostio.Services.Payments;
 using Gostio.Services.Reservations;
 using Gostio.Services.Reviews;
+using Gostio.Services.Search;
 using Gostio.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,7 @@ builder.Services.AddGostioDatabase(settings.Database);
 builder.Services.AddControllers();
 builder.Services.AddGostioLookupServices();
 builder.Services.AddGostioListingServices();
+builder.Services.AddGostioSearchServices();
 builder.Services.AddGostioUserServices();
 builder.Services.AddGostioReservationServices();
 builder.Services.AddGostioPaymentServices();

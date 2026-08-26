@@ -1,10 +1,12 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Gostio.Model.Responses;
 using Gostio.Services.Authentication;
 using Gostio.Services.Crud;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Search;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Listings;
@@ -13,6 +15,8 @@ internal abstract class ListingService<TListing, TResponse, TSearch, TCreate, TU
     GostioDbContext db,
     ICurrentUser currentUser,
     ListingAccess<TListing> access,
+    ISearchRecorder searches,
+    SearchClock clock,
     string noun)
     : CrudService<TListing, TResponse, TSearch, TCreate, TUpdate>(db, noun)
     where TListing : class, IListing
@@ -22,6 +26,21 @@ internal abstract class ListingService<TListing, TResponse, TSearch, TCreate, TU
     protected ListingAccess<TListing> Access { get; } = access;
 
     protected int? CallerId => currentUser.UserId;
+
+    public override async Task<PagedResult<TResponse>> SearchAsync(
+        TSearch search,
+        CancellationToken cancellationToken)
+    {
+        var searchedAt = clock.Now();
+        var page = await base.SearchAsync(search, cancellationToken);
+
+        if (search.Page == 1)
+        {
+            await searches.RecordAsync(Signal(search), searchedAt, cancellationToken);
+        }
+
+        return page;
+    }
 
     public override async Task<TResponse> GetAsync(int id, CancellationToken cancellationToken) =>
         await Access.Visible(Set.AsNoTracking())
@@ -75,6 +94,8 @@ internal abstract class ListingService<TListing, TResponse, TSearch, TCreate, TU
     }
 
     protected abstract IQueryable<TListing> Matching(IQueryable<TListing> query, TSearch search);
+
+    protected abstract SearchSignal Signal(TSearch search);
 
     protected override IOrderedQueryable<TListing> Order(IQueryable<TListing> query) =>
         query

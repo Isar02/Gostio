@@ -11,6 +11,14 @@ internal sealed class StubNews : INewsService
 
     public NewsSearchRequest? LastSearch { get; private set; }
 
+    public NewsUpsertRequest? LastRequest { get; private set; }
+
+    public ImageUpload? LastImage { get; private set; }
+
+    public int? LastEdited { get; private set; }
+
+    public int? LastDeleted { get; private set; }
+
     public Task<PagedResult<NewsResponse>> SearchAsync(
         NewsSearchRequest search,
         CancellationToken cancellationToken)
@@ -31,6 +39,37 @@ internal sealed class StubNews : INewsService
 
     public Task<ImageContent> GetImageAsync(int id, CancellationToken cancellationToken) =>
         Task.FromResult(new ImageContent(Bytes, ImageRules.Jpeg));
+
+    public Task<NewsResponse> WriteAsync(
+        NewsUpsertRequest request,
+        ImageUpload image,
+        CancellationToken cancellationToken)
+    {
+        LastRequest = request;
+        LastImage = image;
+
+        return Task.FromResult(Row(1));
+    }
+
+    public Task<NewsResponse> UpdateAsync(
+        int id,
+        NewsUpsertRequest request,
+        ImageUpload? image,
+        CancellationToken cancellationToken)
+    {
+        LastEdited = id;
+        LastRequest = request;
+        LastImage = image;
+
+        return Task.FromResult(Row(id));
+    }
+
+    public Task DeleteAsync(int id, CancellationToken cancellationToken)
+    {
+        LastDeleted = id;
+
+        return Task.CompletedTask;
+    }
 
     private static NewsResponse Row(int id) => new()
     {

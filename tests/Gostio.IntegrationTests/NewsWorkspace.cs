@@ -63,6 +63,52 @@ internal sealed class NewsWorkspace(DatabaseFixture fixture)
         NewsSearchRequest search) =>
         AsAsync(actor, role, service => service.SearchAsync(search, default));
 
+    public Task<NewsResponse> WriteAsync(
+        int actor,
+        string title = "A title worth reading",
+        string body = "The text that sits under it.",
+        byte[]? image = null,
+        string? contentType = null,
+        string role = RoleNames.Administrator) =>
+        AsAsync(
+            actor,
+            role,
+            service => service.WriteAsync(
+                Upsert(title, body),
+                new ImageUpload(image ?? Jpeg, contentType),
+                default));
+
+    public Task<NewsResponse> UpdateAsync(
+        int actor,
+        int id,
+        string title = "A title that was corrected",
+        string body = "The text that was corrected with it.",
+        byte[]? image = null,
+        string? contentType = null,
+        string role = RoleNames.Administrator) =>
+        AsAsync(
+            actor,
+            role,
+            service => service.UpdateAsync(
+                id,
+                Upsert(title, body),
+                image is null ? null : new ImageUpload(image, contentType),
+                default));
+
+    public Task DeleteAsync(int actor, int id, string role = RoleNames.Administrator) =>
+        AsAsync(
+            actor,
+            role,
+            async service =>
+            {
+                await service.DeleteAsync(id, default);
+
+                return true;
+            });
+
+    private static NewsUpsertRequest Upsert(string title, string body) =>
+        new() { Title = title, Body = body };
+
     private async Task<TResult> AsAsync<TResult>(
         int actor,
         string role,

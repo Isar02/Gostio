@@ -12,4 +12,17 @@ public interface INewsService
     Task<NewsResponse> GetAsync(int id, CancellationToken cancellationToken);
 
     Task<ImageContent> GetImageAsync(int id, CancellationToken cancellationToken);
+
+    Task<NewsResponse> WriteAsync(
+        NewsUpsertRequest request,
+        ImageUpload image,
+        CancellationToken cancellationToken);
+
+    Task<NewsResponse> UpdateAsync(
+        int id,
+        NewsUpsertRequest request,
+        ImageUpload? image,
+        CancellationToken cancellationToken);
+
+    Task DeleteAsync(int id, CancellationToken cancellationToken);
 }

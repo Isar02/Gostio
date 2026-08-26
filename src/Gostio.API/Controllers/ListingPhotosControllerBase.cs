@@ -12,11 +12,6 @@ namespace Gostio.API.Controllers;
 public abstract class ListingPhotosControllerBase<TService>(TService photos) : ControllerBase
     where TService : IListingPhotoService
 {
-    // Boundaries and headers travel with the image, so the ceiling sits above
-    // it. This one is refused before a body is read, which the check in the
-    // service cannot be.
-    private const int UploadLimit = ImageRules.MaximumBytes + (8 * 1024);
-
     [HttpGet]
     public Task<PagedResult<ListingPhotoResponse>> Search(
         int listingId,
@@ -43,20 +38,16 @@ public abstract class ListingPhotosControllerBase<TService>(TService photos) : C
     }
 
     [Authorize(Roles = RoleNames.HostOrAdministrator)]
-    [RequestSizeLimit(UploadLimit)]
+    [RequestSizeLimit(UploadLimits.Multipart)]
     [HttpPost]
     public async Task<ActionResult<ListingPhotoResponse>> Upload(
         int listingId,
         [FromForm] ListingPhotoUpload upload,
         CancellationToken cancellationToken)
     {
-        using var buffer = new MemoryStream();
-
-        await upload.File.CopyToAsync(buffer, cancellationToken);
-
         var created = await photos.AddAsync(
             listingId,
-            new ImageUpload(buffer.ToArray(), upload.File.ContentType),
+            await upload.File.ToImageUploadAsync(cancellationToken),
             cancellationToken);
 
         return CreatedAtAction(

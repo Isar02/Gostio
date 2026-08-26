@@ -78,7 +78,7 @@ internal abstract class ListingPhotoService<TListing, TPhoto>(
     {
         await Access.RequireOwnedAsync(listingId, cancellationToken);
 
-        var contentType = RequireImage(upload);
+        var contentType = ImageRules.RequireImage(upload, FileField);
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
@@ -180,49 +180,6 @@ internal abstract class ListingPhotoService<TListing, TPhoto>(
                     setters => setters.SetProperty(photo => photo.IsCover, true),
                     cancellationToken);
         }
-    }
-
-    private static string RequireImage(ImageUpload upload)
-    {
-        if (upload.Content.Length == 0)
-        {
-            throw new ValidationException(FileField, "Choose an image to upload.");
-        }
-
-        if (upload.Content.Length > ImageRules.MaximumBytes)
-        {
-            throw new ValidationException(
-                FileField,
-                $"An image is at most {ImageRules.MaximumBytes / (1024 * 1024)} MB.");
-        }
-
-        var detected = ImageRules.Detect(upload.Content)
-            ?? throw new ValidationException(
-                FileField,
-                $"An image has to be one of {string.Join(", ", ImageRules.Allowed)}.");
-
-        // The claim is checked and then dropped: what reaches the column is
-        // what the bytes proved, so a stored type holds on the way back out.
-        var claimed = Claimed(upload.ContentType);
-
-        if (claimed is not null
-            && !string.Equals(claimed, detected, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ValidationException(
-                FileField, $"This file was sent as {claimed} and its bytes say {detected}.");
-        }
-
-        return detected;
-    }
-
-    private static string? Claimed(string? contentType)
-    {
-        var named = contentType?.Split(';')[0].Trim();
-
-        return string.IsNullOrEmpty(named)
-            || string.Equals(named, ImageRules.Unknown, StringComparison.OrdinalIgnoreCase)
-                ? null
-                : named;
     }
 
     private IQueryable<TPhoto> ForPhoto(int listingId, int photoId) =>

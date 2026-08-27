@@ -44,7 +44,8 @@ internal sealed class ApiHost : IAsyncDisposable
 
         builder.Services
             .AddControllers()
-            .AddApplicationPart(typeof(AmenitiesController).Assembly);
+            .AddApplicationPart(typeof(AmenitiesController).Assembly)
+            .AddGostioJson();
 
         builder.Services.AddGostioValidationErrors();
         builder.Services.AddGostioAuthentication(Settings());

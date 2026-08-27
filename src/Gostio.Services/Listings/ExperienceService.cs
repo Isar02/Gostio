@@ -1,23 +1,27 @@
 using System.Linq.Expressions;
+using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Authentication;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
+using Gostio.Services.Search;
 
 namespace Gostio.Services.Listings;
 
 internal sealed class ExperienceService(
     GostioDbContext db,
     ICurrentUser currentUser,
-    ExperienceAccess access)
+    ExperienceAccess access,
+    ISearchRecorder searches,
+    SearchClock clock)
     : ListingService<
         Experience,
         ExperienceResponse,
         ExperienceSearchRequest,
         ExperienceCreateRequest,
-        ExperienceUpdateRequest>(db, currentUser, access, "experience"),
+        ExperienceUpdateRequest>(db, currentUser, access, searches, clock, "experience"),
       IExperienceService
 {
     protected override string StillReferencedMessage =>
@@ -118,6 +122,17 @@ internal sealed class ExperienceService(
                 .Where(ReservationQueries.IsActive(now))
                 .Sum(reservation => reservation.GuestCount) >= places));
     }
+
+    protected override SearchSignal Signal(ExperienceSearchRequest search) =>
+        new()
+        {
+            Target = SearchTarget.Experiences,
+            Term = Trimmed(search.Title),
+            CityId = search.CityId,
+            GuestCount = search.Places,
+            MinPrice = search.MinPrice,
+            MaxPrice = search.MaxPrice,
+        };
 
     private static void RequireAWindow(ExperienceSearchRequest search)
     {

@@ -13,8 +13,10 @@ using Gostio.Services.Messaging;
 using Gostio.Services.News;
 using Gostio.Services.Notifications;
 using Gostio.Services.Payments;
+using Gostio.Services.Recommendations;
 using Gostio.Services.Reservations;
 using Gostio.Services.Reviews;
+using Gostio.Services.Search;
 using Gostio.Services.Users;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,9 +32,10 @@ if (string.IsNullOrWhiteSpace(builder.Configuration[WebHostDefaults.ServerUrlsKe
 
 builder.Services.AddGostioDatabase(settings.Database);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddGostioJson();
 builder.Services.AddGostioLookupServices();
 builder.Services.AddGostioListingServices();
+builder.Services.AddGostioSearchServices();
 builder.Services.AddGostioUserServices();
 builder.Services.AddGostioReservationServices();
 builder.Services.AddGostioPaymentServices();
@@ -45,6 +48,7 @@ builder.Services.AddGostioHostVerificationServices();
 builder.Services.AddGostioMessaging();
 builder.Services.AddGostioNewsServices();
 builder.Services.AddGostioNotificationServices();
+builder.Services.AddGostioRecommendationServices();
 builder.Services.AddGostioValidationErrors();
 builder.Services.AddGostioAuthentication(settings.Jwt);
 builder.Services.AddGostioSwagger();

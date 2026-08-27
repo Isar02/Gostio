@@ -11,8 +11,10 @@ using Gostio.Services.Messaging;
 using Gostio.Services.News;
 using Gostio.Services.Notifications;
 using Gostio.Services.Payments;
+using Gostio.Services.Recommendations;
 using Gostio.Services.Reservations;
 using Gostio.Services.Reviews;
+using Gostio.Services.Search;
 using Gostio.Services.Users;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -165,6 +167,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddSingleton(notices);
         services.AddGostioLookupServices();
         services.AddGostioListingServices();
+        services.AddGostioSearchServices();
         services.AddGostioUserServices();
         services.AddGostioReservationServices();
         services.AddGostioPaymentServices();
@@ -174,6 +177,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddGostioHostVerificationServices();
         services.AddGostioNewsServices();
         services.AddGostioNotificationServices();
+        services.AddGostioRecommendationServices();
 
         services.AddScoped(_ => gateway ?? new FakePaymentGateway());
 

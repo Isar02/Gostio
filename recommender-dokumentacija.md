@@ -57,10 +57,10 @@ what every other value of this kind in the API already answers with. `kind` is
 one of `City`, `Category`, `AccommodationType`, `Amenity`, `Term`, `Price`,
 `Capacity`, `Rating`, `Popularity` and `OnOffer`.
 
-`score` is a place in one ranking rather than a measure of its own. Two of its
-three parts are worked out against every other listing that ranking considered,
-which is the whole catalogue and not the page that came back, so scores are
-comparable between the pages of one request and between no two requests.
+`score` is a place in one ranking rather than a measure of its own. Every
+request recomputes it against the whole eligible catalogue before cutting out
+the requested page. Scores in one response therefore come from the same
+ranking, but scores from separate requests are not guaranteed to be comparable.
 
 ---
 
@@ -167,8 +167,8 @@ listing is left out when
 - it is not published,
 - the caller hosts it,
 - the caller already keeps it or has already booked it, which is no news,
-- it is an experience with no term still ahead of it, which is one nobody
-  could book.
+- it is an experience with no active term still ahead of it, which is one
+  nobody could book.
 
 Each candidate is read as its card, its axes, its average rating, its review
 count, and the number of favourites and reservations it has gathered. Engaged
@@ -199,7 +199,7 @@ capacity fit = 1 if room ≥ party, else room / party
 ```
 
 `room` is how many the listing holds: the accommodation's `MaxGuests`, or for
-an experience the largest capacity among the terms it still has ahead of it.
+an experience the largest capacity among its active terms still ahead of it.
 
 The price fit is `1` at the asked price and `0.5` at twice it, and it falls
 smoothly, so nothing is cut off by a bound nobody set.

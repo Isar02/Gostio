@@ -22,8 +22,7 @@ public static class RecommendationWeights
 
     public const double ColdPopularity = 0.5;
 
-    // How many reviews a listing needs before its own average outweighs the
-    // catalogue's.
+    // The catalogue contributes this many average-rating pseudo-reviews.
     public const int RatingPrior = 5;
 
     public const int MaximumReasons = 3;

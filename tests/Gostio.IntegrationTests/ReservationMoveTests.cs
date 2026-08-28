@@ -199,6 +199,23 @@ public class ReservationMoveTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task ATermTheGuestBookedAgainWhileTheHoldWasDownRefusesTheConfirmation()
+    {
+        var (host, slot) = await workspace.ATermAsync(capacity: 6, startsAt: Later);
+        var guest = await workspace.AGuestAsync();
+        var booked = await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        await workspace.LapseAsync(booked.Id);
+        await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        var refused = await Assert.ThrowsAsync<BusinessException>(
+            () => workspace.ConfirmAsync(host, RoleNames.Host, booked.Id));
+
+        Assert.Contains("booked this term again", refused.Message);
+        Assert.Equal(ReservationStatusCode.Pending, await workspace.StatusOfAsync(booked.Id));
+    }
+
+    [Fact]
     public async Task DatesClosedAfterTheBookingRefuseTheConfirmation()
     {
         var (host, listing) = await workspace.AListingAsync();

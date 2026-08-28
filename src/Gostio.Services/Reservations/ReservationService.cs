@@ -231,6 +231,13 @@ internal sealed class ReservationService(
             throw new BusinessException("This term has already started.");
         }
 
+        if (await places.HoldsAPlaceAsync(slotId, guestId, now, null, cancellationToken))
+        {
+            throw new BusinessException(
+                "You already hold a place on this term. "
+                + "Change that booking instead of making a second one.");
+        }
+
         var seatsTaken = await places.SeatsTakenAsync(slotId, now, null, cancellationToken);
         var placesLeft = term.Capacity - seatsTaken;
 

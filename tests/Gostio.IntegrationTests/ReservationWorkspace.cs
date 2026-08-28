@@ -454,6 +454,41 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             .SingleAsync();
     }
 
+    public Task<ReservationResponse> BookStayAtAsync(
+        DateTime now,
+        int guest,
+        int listing,
+        DateOnly checkIn,
+        int nights) =>
+        AtAsync(
+            now,
+            guest,
+            (IReservationService service) => service.CreateAsync(
+                new ReservationCreateRequest
+                {
+                    AccommodationId = listing,
+                    CheckInDate = checkIn,
+                    CheckOutDate = checkIn.AddDays(nights),
+                    GuestCount = 2,
+                },
+                default));
+
+    private async Task<TResult> AtAsync<TService, TResult>(
+        DateTime now,
+        int userId,
+        Func<TService, Task<TResult>> work)
+        where TService : notnull
+    {
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(userId, RoleNames.Guest),
+            gateway: null,
+            new CapturedNotices(),
+            new CapturedBroadcast(),
+            new FixedClock(now));
+
+        return await work(services.GetRequiredService<TService>());
+    }
+
     private async Task<TResult> AsAsync<TService, TResult>(
         int userId,
         string role,

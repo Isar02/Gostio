@@ -1,6 +1,7 @@
 using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Gostio.Services.Reservations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.IntegrationTests;
@@ -178,6 +179,43 @@ public class ReservationCreationTests(DatabaseFixture fixture)
 
         await Assert.ThrowsAsync<ValidationException>(() => workspace.BookStayAsync(
             guest, listing, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), nights: 2));
+    }
+
+    [Fact]
+    public async Task AHoldNeverOutlivesTheStayItTakes()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var tomorrow = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
+
+        var booked = await workspace.BookStayAsync(guest, listing, tomorrow, nights: 2);
+
+        Assert.True(booked.ExpiresAt <= StayTimes.BeginsAt(booked.CheckInDate!.Value));
+    }
+
+    [Fact]
+    public async Task AStayForTheDayItIsBookedOnIsTakenUntilCheckIn()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var checkIn = new DateOnly(2027, 7, 15);
+
+        var booked = await workspace.BookStayAtAsync(
+            StayTimes.BeginsAt(checkIn).AddMinutes(-1), guest, listing, checkIn, nights: 2);
+
+        Assert.Equal(checkIn, booked.CheckInDate);
+        Assert.Equal(StayTimes.BeginsAt(checkIn), booked.ExpiresAt);
+    }
+
+    [Fact]
+    public async Task AStayForTheDayItIsBookedOnIsRefusedOnceCheckInHasPassed()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var checkIn = new DateOnly(2027, 7, 15);
+
+        await Assert.ThrowsAsync<ValidationException>(() => workspace.BookStayAtAsync(
+            StayTimes.BeginsAt(checkIn), guest, listing, checkIn, nights: 2));
     }
 
     [Fact]

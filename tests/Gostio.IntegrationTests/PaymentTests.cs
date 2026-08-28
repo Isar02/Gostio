@@ -85,6 +85,23 @@ public class PaymentTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task AStayThatIsOverIsNotPaidForWhileItsHoldStillStands()
+    {
+        var (_, listing) = await workspace.Reservations.AListingAsync();
+        var guest = await workspace.Reservations.AGuestAsync();
+        var booked = await workspace.Reservations.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        await workspace.Reservations.MoveTheStayAsync(
+            booked.Id, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)));
+
+        var refused = await Assert.ThrowsAsync<BusinessException>(
+            () => workspace.StartAsync(guest, RoleNames.Guest, booked.Id));
+
+        Assert.Contains("over", refused.Message);
+        Assert.Empty(await workspace.PaymentsOfAsync(booked.Id));
+    }
+
+    [Fact]
     public async Task AHoldThatRanOutIsNotPaidFor()
     {
         var (_, listing) = await workspace.Reservations.AListingAsync();

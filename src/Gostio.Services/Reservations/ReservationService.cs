@@ -16,7 +16,8 @@ internal sealed class ReservationService(
     ReservationAccess access,
     ReservationPlaces places,
     AccommodationAccess accommodations,
-    IReservationNotices notices) : IReservationService
+    IReservationNotices notices,
+    TimeProvider clock) : IReservationService
 {
     public async Task<ReservationResponse> CreateAsync(
         ReservationCreateRequest request,
@@ -42,7 +43,7 @@ internal sealed class ReservationService(
             .ThenByDescending(reservation => reservation.Id)
             .ToPagedResultAsync(search, ReservationAccess.Projection, cancellationToken);
 
-    private static IQueryable<Reservation> Matching(
+    private IQueryable<Reservation> Matching(
         IQueryable<Reservation> query,
         ReservationSearchRequest search)
     {
@@ -80,7 +81,7 @@ internal sealed class ReservationService(
 
         if (search.IsActive is bool isActive)
         {
-            var now = DateTime.UtcNow;
+            var now = clock.GetUtcNow().UtcDateTime;
 
             query = query.Where(isActive
                 ? ReservationQueries.IsActive(now)
@@ -113,7 +114,7 @@ internal sealed class ReservationService(
         // Everything below is decided on this instant, read after the wait for
         // the lock. A call that queued behind another booking would otherwise
         // measure the world against the clock it arrived on.
-        var now = DateTime.UtcNow;
+        var now = clock.GetUtcNow().UtcDateTime;
 
         RequireTheStayIsStillAhead(checkIn, now);
 
@@ -171,7 +172,7 @@ internal sealed class ReservationService(
             CheckOutDate = checkOut,
             GuestCount = guestCount,
             ReservationStatusId = (int)ReservationStateMachine.Created,
-            ExpiresAt = ReservationHold.Deadline(now, checkIn.ToDateTime(TimeOnly.MinValue)),
+            ExpiresAt = ReservationHold.Deadline(now, StayTimes.BeginsAt(checkIn)),
             AccommodationTotal = accommodationTotal,
             CleaningFee = listing.CleaningFee,
             TotalPrice = accommodationTotal + listing.CleaningFee,
@@ -208,7 +209,7 @@ internal sealed class ReservationService(
         // read outside and says only which lock to take.
         await places.LockExperienceAsync(experienceId, cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = clock.GetUtcNow().UtcDateTime;
 
         var term = await db.ExperienceSlots
             .AsNoTracking()
@@ -313,10 +314,12 @@ internal sealed class ReservationService(
 
     private static void RequireTheStayIsStillAhead(DateOnly checkIn, DateTime now)
     {
-        if (checkIn < DateOnly.FromDateTime(now))
+        if (StayTimes.HasBegun(checkIn, now))
         {
             throw new ValidationException(
-                nameof(ReservationCreateRequest.CheckInDate), "A stay begins today or later.");
+                nameof(ReservationCreateRequest.CheckInDate),
+                $"A stay is booked before check-in, which is {StayTimes.CheckInText} on the day it "
+                    + "begins.");
         }
     }
 

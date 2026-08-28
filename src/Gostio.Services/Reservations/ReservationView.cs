@@ -30,7 +30,9 @@ internal sealed class ReservationView
 
     public required decimal TotalPrice { get; init; }
 
-    // A stay begins on the first night it covers, a term at the hour it names.
-    public DateTime StartsAt =>
-        CheckInDate?.ToDateTime(TimeOnly.MinValue) ?? SlotStartTime!.Value;
+    // A stay begins at check-in on the first day it covers, a term at the hour
+    // it names.
+    public DateTime StartsAt => CheckInDate is { } checkIn
+        ? StayTimes.BeginsAt(checkIn)
+        : SlotStartTime!.Value;
 }

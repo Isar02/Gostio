@@ -201,7 +201,9 @@ internal sealed class PaymentSettlement(
             new CancelledBooking(
                 reservationId,
                 ended.CreatedAt,
-                ended.CheckInDate?.ToDateTime(TimeOnly.MinValue) ?? ended.SlotStartTime!.Value,
+                ended.CheckInDate is { } checkIn
+                    ? StayTimes.BeginsAt(checkIn)
+                    : ended.SlotStartTime!.Value,
                 ended.CancelledAt ?? DateTime.UtcNow),
             cancellationToken);
     }

@@ -188,6 +188,11 @@ internal sealed class PaymentService(
             throw new BusinessException($"A {status} reservation is not paid for.");
         }
 
+        if (booking.CheckOutDate is { } checkOut && StayTimes.HasEnded(checkOut, now))
+        {
+            throw new BusinessException("A stay that is over is not paid for.");
+        }
+
         if (status == ReservationStatusCode.Pending && booking.ExpiresAt <= now)
         {
             throw new BusinessException("The hold on this booking has run out. Book it again.");

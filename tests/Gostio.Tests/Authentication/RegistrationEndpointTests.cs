@@ -120,6 +120,7 @@ public sealed class RegistrationEndpointTests : IAsyncLifetime
             Username = "amina.kovacevic",
             Email = "amina.kovacevic@example.com",
             PhoneNumber = null,
+            HasProfileImage = false,
             IsActive = true,
             Roles = [RoleNames.Guest],
             CreatedAt = DateTime.UtcNow,

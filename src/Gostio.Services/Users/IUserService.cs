@@ -13,6 +13,21 @@ public interface IUserService
         UserUpdateRequest request,
         CancellationToken cancellationToken);
 
+    Task<ImageContent> GetImageAsync(int id, CancellationToken cancellationToken);
+
+    Task<UserResponse> SetImageAsync(
+        int id,
+        ImageUpload upload,
+        CancellationToken cancellationToken);
+
+    Task<UserResponse> SetMineImageAsync(
+        ImageUpload upload,
+        CancellationToken cancellationToken);
+
+    Task ClearImageAsync(int id, CancellationToken cancellationToken);
+
+    Task ClearMineImageAsync(CancellationToken cancellationToken);
+
     Task<UserResponse> SetRolesAsync(
         int id,
         UserRolesRequest request,

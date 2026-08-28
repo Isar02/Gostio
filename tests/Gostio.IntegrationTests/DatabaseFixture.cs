@@ -155,6 +155,15 @@ public sealed class DatabaseFixture : IAsyncLifetime
         IPaymentGateway? gateway,
         INotices notices,
         IChatBroadcast broadcast,
+        params IInterceptor[] interceptors) =>
+        BuildServices(caller, gateway, notices, broadcast, clock: null, interceptors);
+
+    public ServiceProvider BuildServices(
+        ICurrentUser? caller,
+        IPaymentGateway? gateway,
+        INotices notices,
+        IChatBroadcast broadcast,
+        TimeProvider? clock,
         params IInterceptor[] interceptors)
     {
         var services = new ServiceCollection();
@@ -166,6 +175,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddSingleton(Stripe);
         services.AddSingleton(Worker);
         services.AddSingleton(notices);
+        services.AddSingleton(clock ?? TimeProvider.System);
         services.AddGostioLookupServices();
         services.AddGostioListingServices();
         services.AddGostioSearchServices();

@@ -1,6 +1,7 @@
 using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Gostio.Services.Reservations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.IntegrationTests;
@@ -181,6 +182,43 @@ public class ReservationCreationTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task AHoldNeverOutlivesTheStayItTakes()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var tomorrow = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
+
+        var booked = await workspace.BookStayAsync(guest, listing, tomorrow, nights: 2);
+
+        Assert.True(booked.ExpiresAt <= StayTimes.BeginsAt(booked.CheckInDate!.Value));
+    }
+
+    [Fact]
+    public async Task AStayForTheDayItIsBookedOnIsTakenUntilCheckIn()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var checkIn = new DateOnly(2027, 7, 15);
+
+        var booked = await workspace.BookStayAtAsync(
+            StayTimes.BeginsAt(checkIn).AddMinutes(-1), guest, listing, checkIn, nights: 2);
+
+        Assert.Equal(checkIn, booked.CheckInDate);
+        Assert.Equal(StayTimes.BeginsAt(checkIn), booked.ExpiresAt);
+    }
+
+    [Fact]
+    public async Task AStayForTheDayItIsBookedOnIsRefusedOnceCheckInHasPassed()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var checkIn = new DateOnly(2027, 7, 15);
+
+        await Assert.ThrowsAsync<ValidationException>(() => workspace.BookStayAtAsync(
+            StayTimes.BeginsAt(checkIn), guest, listing, checkIn, nights: 2));
+    }
+
+    [Fact]
     public async Task AStayEndingBeforeItBeginsIsRefused()
     {
         var (_, listing) = await workspace.AListingAsync();
@@ -332,6 +370,72 @@ public class ReservationCreationTests(DatabaseFixture fixture)
             await workspace.AGuestAsync(), slot, guestCount: 3);
 
         Assert.NotEqual(first.Id, second.Id);
+    }
+
+    [Fact]
+    public async Task AGuestHoldingATermIsRefusedASecondBookingOnIt()
+    {
+        var (_, slot) = await workspace.ATermAsync(6, DateTime.UtcNow.AddDays(10));
+        var guest = await workspace.AGuestAsync();
+
+        await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        var refused = await Assert.ThrowsAsync<BusinessException>(
+            () => workspace.BookTermAsync(guest, slot, guestCount: 1));
+
+        Assert.Contains("already hold a place", refused.Message);
+    }
+
+    [Fact]
+    public async Task ATermTheGuestCalledOffIsOpenToThemAgain()
+    {
+        var (_, slot) = await workspace.ATermAsync(6, DateTime.UtcNow.AddDays(10));
+        var guest = await workspace.AGuestAsync();
+
+        var first = await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        await workspace.CancelAsync(first.Id);
+
+        var second = await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        Assert.NotEqual(first.Id, second.Id);
+    }
+
+    [Fact]
+    public async Task ATermAGuestLetLapseIsOpenToThemAgain()
+    {
+        var (_, slot) = await workspace.ATermAsync(6, DateTime.UtcNow.AddDays(10));
+        var guest = await workspace.AGuestAsync();
+
+        var first = await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        await workspace.LapseAsync(first.Id);
+
+        var second = await workspace.BookTermAsync(guest, slot, guestCount: 1);
+
+        Assert.NotEqual(first.Id, second.Id);
+    }
+
+    // Both taps are held until each has reached the lock, so the one that loses
+    // the race asks its question after the other has written its booking. That
+    // is what proves the guard sits inside the lock rather than in front of it.
+    [Fact]
+    public async Task ATermBookedTwiceAtOnceByOneGuestLeavesOneBooking()
+    {
+        var (_, slot) = await workspace.ATermAsync(6, DateTime.UtcNow.AddDays(10));
+        var guest = await workspace.AGuestAsync();
+        var barrier = new CommandBarrier(2, "UPDLOCK", "[Experiences]");
+
+        var results = await Task.WhenAll(
+            Attempt(() => workspace.BookTermAsync(guest, slot, guestCount: 1, barrier)),
+            Attempt(() => workspace.BookTermAsync(guest, slot, guestCount: 1, barrier)));
+
+        Assert.Equal(2, barrier.Arrived);
+        Assert.Single(results, failure => failure is null);
+
+        var refused = Assert.Single(results.OfType<BusinessException>());
+
+        Assert.Contains("already hold a place", refused.Message);
     }
 
     [Fact]

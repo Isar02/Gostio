@@ -13,8 +13,6 @@ internal sealed class ReservationSweep(
     IReservationNotices notices,
     WorkerSettings settings) : IReservationSweep
 {
-    private const string TheHoldRanOut = "The hold on this booking ran out.";
-
     public async Task<ReservationSweepReport> RunAsync(CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -23,7 +21,7 @@ internal sealed class ReservationSweep(
             db.Reservations.Where(ReservationQueries.IsALapsedHold(now)),
             ReservationStatusCode.Pending,
             ReservationStatusCode.Cancelled,
-            TheHoldRanOut,
+            ReservationHold.RanOut,
             settings.ReservationSweepBatch,
             cancellationToken);
 

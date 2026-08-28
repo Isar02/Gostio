@@ -25,14 +25,14 @@ public class ReservationHoldTests
             ReservationHold.Deadline(Now, Now + ReservationHold.Window));
 
     [Fact]
-    public void AStartAlreadyBehindDoesNotShortenTheWindow() =>
-        Assert.Equal(
-            Now + ReservationHold.Window,
-            ReservationHold.Deadline(Now, Now.Date));
-
-    [Fact]
     public void TheDeadlineIsAlwaysAfterTheMomentItWasTakenFrom() =>
         Assert.All(
-            new[] { Now.AddDays(-4), Now, Now.AddSeconds(1), Now.AddDays(9) },
+            new[] { Now.AddSeconds(1), Now.AddHours(3), Now.AddDays(9) },
             start => Assert.True(ReservationHold.Deadline(Now, start) > Now));
+
+    [Fact]
+    public void TheDeadlineNeverReachesPastTheStartItIsTakenAgainst() =>
+        Assert.All(
+            new[] { Now.AddSeconds(1), Now.AddHours(3), Now.AddDays(9) },
+            start => Assert.True(ReservationHold.Deadline(Now, start) <= start));
 }

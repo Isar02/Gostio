@@ -66,6 +66,16 @@ internal sealed class ReservationPlaces(
             .Where(other => other.ExperienceSlotId == slotId)
             .SumAsync(other => other.GuestCount, cancellationToken);
 
+    public Task<bool> HoldsAPlaceAsync(
+        int slotId,
+        int guestId,
+        DateTime now,
+        int? exceptReservationId,
+        CancellationToken cancellationToken) =>
+        Active(now, exceptReservationId)
+            .Where(other => other.ExperienceSlotId == slotId && other.UserId == guestId)
+            .AnyAsync(cancellationToken);
+
     // A confirmation leaves its own row out: it is pending and still active
     // until the hold lapses, so a count that kept it would find it in the way.
     private IQueryable<Reservation> Active(DateTime now, int? exceptReservationId)

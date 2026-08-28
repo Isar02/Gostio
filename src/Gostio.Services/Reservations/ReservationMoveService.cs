@@ -165,6 +165,15 @@ internal sealed class ReservationMoveService(
             throw new BusinessException("This term has already started.");
         }
 
+        var duplicate = await places.HoldsAPlaceAsync(
+            slotId, booking.GuestId, now, reservationId, cancellationToken);
+
+        if (duplicate)
+        {
+            throw new BusinessException(
+                "This guest booked this term again while this booking was pending.");
+        }
+
         var seatsTaken = await places.SeatsTakenAsync(
             slotId, now, reservationId, cancellationToken);
 

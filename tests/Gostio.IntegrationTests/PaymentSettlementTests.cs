@@ -1,6 +1,7 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
 using Gostio.Services.Payments;
+using Gostio.Services.Reservations;
 
 namespace Gostio.IntegrationTests;
 
@@ -142,7 +143,8 @@ public class PaymentSettlementTests(DatabaseFixture fixture)
         var payment = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
 
         await workspace.Reservations.AgeAsync(booked.Id, TimeSpan.FromDays(5));
-        await workspace.Reservations.CancelAsync(booked.Id);
+        await workspace.Reservations.CancelAsync(
+            guest, RoleNames.Guest, booked.Id, ReservationHold.RanOut);
         await workspace.SucceedAsync(payment.Id);
 
         var owed = Assert.Single(await workspace.RefundsOfAsync(booked.Id));
@@ -185,6 +187,83 @@ public class PaymentSettlementTests(DatabaseFixture fixture)
             history => history.NewStatusId == (int)ReservationStatusCode.Confirmed);
 
         Assert.Equal(host, confirmed.ChangedByUserId);
+    }
+
+    [Fact]
+    public async Task AChargeThatSettledAfterTheHoldRanOutEndsTheBookingAndOwesItBack()
+    {
+        var (_, booked, payment) = await APendingChargeAsync();
+
+        await workspace.Reservations.LapseAsync(booked);
+        await workspace.SucceedAsync(payment);
+
+        var charge = Assert.Single(await workspace.PaymentsOfAsync(booked));
+
+        Assert.Equal(PaymentStatus.Succeeded, charge.Status);
+        Assert.Equal(
+            ReservationStatusCode.Cancelled,
+            await workspace.Reservations.StatusOfAsync(booked));
+
+        var ended = Assert.Single(
+            await workspace.Reservations.HistoryOfAsync(booked),
+            history => history.NewStatusId == (int)ReservationStatusCode.Cancelled);
+
+        Assert.Null(ended.ChangedByUserId);
+        Assert.Equal(charge.Amount, Assert.Single(await workspace.RefundsOfAsync(booked)).Amount);
+    }
+
+    [Fact]
+    public async Task AChargeOnALapsedHoldLeavesOneLiveBookingOnTheTerm()
+    {
+        var (_, slot) = await workspace.Reservations.ATermAsync(6, DateTime.UtcNow.AddDays(10));
+        var guest = await workspace.Reservations.AGuestAsync();
+        var first = await workspace.Reservations.BookTermAsync(guest, slot, guestCount: 1);
+        var payment = await workspace.StartAsync(guest, RoleNames.Guest, first.Id);
+
+        await workspace.Reservations.LapseAsync(first.Id);
+
+        var barrier = new CommandBarrier(2, "UPDLOCK", "[Experiences]");
+        var settlement = workspace.SucceedAsync(payment.Id, barrier);
+        var replacement = workspace.Reservations.BookTermAsync(
+            guest, slot, guestCount: 1, barrier);
+
+        await Task.WhenAll(settlement, replacement);
+
+        Assert.Equal(2, barrier.Arrived);
+
+        var second = await replacement;
+
+        Assert.Equal(
+            ReservationStatusCode.Cancelled,
+            await workspace.Reservations.StatusOfAsync(first.Id));
+
+        Assert.Equal(
+            ReservationStatusCode.Pending,
+            await workspace.Reservations.StatusOfAsync(second.Id));
+
+        Assert.Single(await workspace.RefundsOfAsync(first.Id));
+    }
+
+    [Fact]
+    public async Task AChargeAfterAStartTimeExpiryIsFullyOwedBackEvenAfterTheSweep()
+    {
+        var (_, slot) = await workspace.Reservations.ATermAsync(
+            6, DateTime.UtcNow.AddHours(3));
+        var guest = await workspace.Reservations.AGuestAsync();
+        var booked = await workspace.Reservations.BookTermAsync(guest, slot, guestCount: 1);
+        var payment = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
+
+        await workspace.Reservations.LapseAtTheTermStartAsync(booked.Id);
+
+        var swept = await workspace.Reservations.SweepAsync();
+
+        Assert.True(swept.Expired >= 1);
+
+        await workspace.SucceedAsync(payment.Id);
+
+        var refund = Assert.Single(await workspace.RefundsOfAsync(booked.Id));
+
+        Assert.Equal(payment.Amount, refund.Amount);
     }
 
     private async Task<(int Guest, int Booked, int Payment)> APendingChargeAsync()

@@ -29,6 +29,9 @@ internal sealed class RefundService(
     ReservationAccess reservations,
     StripeSettings stripe) : IRefundService, ICancellationRefunds
 {
+    private const string ExpiredHoldReason =
+        "The charge settled after the reservation hold had run out.";
+
     // Answers before a cancellation as well as after one, which is the point: a
     // guest is told what calling it off costs while calling it off is still a
     // choice. Against a booking nothing was charged for, it prices the policy on
@@ -149,6 +152,33 @@ internal sealed class RefundService(
 
         var amount = CancellationPolicy.AmountOf(charge.Amount, entitlement.Percentage);
 
+        await RecordAsync(
+            charge, amount, entitlement.Reason, booking.CancelledAt, cancellationToken);
+    }
+
+    public async Task RecordFullAsync(
+        int reservationId,
+        DateTime owedAt,
+        CancellationToken cancellationToken)
+    {
+        var charge = await SettledChargeAsync(reservationId, cancellationToken);
+
+        if (charge is null)
+        {
+            return;
+        }
+
+        await RecordAsync(
+            charge, charge.Amount, ExpiredHoldReason, owedAt, cancellationToken);
+    }
+
+    private async Task RecordAsync(
+        SettledCharge charge,
+        decimal amount,
+        string reason,
+        DateTime createdAt,
+        CancellationToken cancellationToken)
+    {
         if (amount <= 0 || await OwedRefundAsync(charge.Id, cancellationToken) is not null)
         {
             return;
@@ -159,8 +189,8 @@ internal sealed class RefundService(
             PaymentId = charge.Id,
             Status = RefundStatus.Pending,
             Amount = amount,
-            Reason = entitlement.Reason,
-            CreatedAt = booking.CancelledAt,
+            Reason = reason,
+            CreatedAt = createdAt,
         });
 
         await db.SaveChangesAsync(cancellationToken);

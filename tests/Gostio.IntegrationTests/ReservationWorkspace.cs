@@ -275,6 +275,32 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
                 .SetProperty(reservation => reservation.ExpiresAt, lapsed));
     }
 
+    public async Task LapseAtTheTermStartAsync(int reservationId)
+    {
+        var now = DateTime.UtcNow;
+        var startsAt = now.AddMinutes(-1);
+
+        await using var db = fixture.CreateContext();
+
+        var slotId = await db.Reservations
+            .AsNoTracking()
+            .Where(reservation => reservation.Id == reservationId)
+            .Select(reservation => reservation.ExperienceSlotId)
+            .SingleAsync()
+            ?? throw new InvalidOperationException("The reservation does not book a term.");
+
+        await db.ExperienceSlots
+            .Where(slot => slot.Id == slotId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(slot => slot.StartTime, startsAt));
+
+        await db.Reservations
+            .Where(reservation => reservation.Id == reservationId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(reservation => reservation.CreatedAt, now.AddHours(-2))
+                .SetProperty(reservation => reservation.ExpiresAt, startsAt));
+    }
+
     // Moves when the booking was made without moving what it books, so a test
     // can leave the grace period behind. `ExpiresAt` follows it, because
     // CK_Reservations_Expiry keeps the one after the other.
@@ -452,6 +478,41 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             .Where(user => user.Id == userId)
             .Select(user => user.Email)
             .SingleAsync();
+    }
+
+    public Task<ReservationResponse> BookStayAtAsync(
+        DateTime now,
+        int guest,
+        int listing,
+        DateOnly checkIn,
+        int nights) =>
+        AtAsync(
+            now,
+            guest,
+            (IReservationService service) => service.CreateAsync(
+                new ReservationCreateRequest
+                {
+                    AccommodationId = listing,
+                    CheckInDate = checkIn,
+                    CheckOutDate = checkIn.AddDays(nights),
+                    GuestCount = 2,
+                },
+                default));
+
+    private async Task<TResult> AtAsync<TService, TResult>(
+        DateTime now,
+        int userId,
+        Func<TService, Task<TResult>> work)
+        where TService : notnull
+    {
+        await using var services = fixture.BuildServices(
+            ListingWorkspace.Caller(userId, RoleNames.Guest),
+            gateway: null,
+            new CapturedNotices(),
+            new CapturedBroadcast(),
+            new FixedClock(now));
+
+        return await work(services.GetRequiredService<TService>());
     }
 
     private async Task<TResult> AsAsync<TService, TResult>(

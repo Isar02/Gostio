@@ -266,7 +266,7 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         user.FirstName = request.FirstName.Trim();
         user.LastName = request.LastName.Trim();
         user.Email = email;
-        user.PhoneNumber = Trimmed(request.PhoneNumber);
+        user.PhoneNumber = PhoneNumbers.Normalise(request.PhoneNumber);
         user.ModifiedAt = DateTime.UtcNow;
     }
 

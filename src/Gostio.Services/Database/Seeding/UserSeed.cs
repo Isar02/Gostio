@@ -1,5 +1,6 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
+using Gostio.Model.Validation;
 using Gostio.Services.Authentication;
 using Gostio.Services.Database.Entities;
 
@@ -36,7 +37,8 @@ internal static class UserSeed
                 LastName = lastName,
                 Username = username,
                 Email = $"{username}@example.com",
-                PhoneNumber = $"+387 6{users.Count % 10} {310 + users.Count:000} {480 + users.Count * 3:000}",
+                PhoneNumber = PhoneNumbers.Normalise(
+                    $"+387 6{users.Count % 10} {310 + users.Count:000} {480 + users.Count * 3:000}"),
                 PasswordHash = hash,
                 ProfileImage = photo is null ? null : SeedImages.Profile(photo.Value),
                 ProfileImageContentType = photo is null ? null : SeedImages.ContentType,

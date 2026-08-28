@@ -26,7 +26,7 @@ public class RegistrationTests(DatabaseFixture fixture) : IAsyncLifetime
         Assert.True(registered.ExpiresAt > DateTime.UtcNow);
         Assert.Equal([RoleNames.Guest], registered.User.Roles);
         Assert.True(registered.User.IsActive);
-        Assert.Equal("061 234 567", registered.User.PhoneNumber);
+        Assert.Equal("+38761234567", registered.User.PhoneNumber);
 
         await using var db = fixture.CreateContext();
 

@@ -104,7 +104,7 @@ public class UserCrudTests(DatabaseFixture fixture)
 
         Assert.Equal(mine, saved.Id);
         Assert.Equal("Vedrana", saved.FirstName);
-        Assert.Equal("+387 61 111 222", saved.PhoneNumber);
+        Assert.Equal("+38761111222", saved.PhoneNumber);
     }
 
     [Fact]

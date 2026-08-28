@@ -121,8 +121,47 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
         Assert.Equal([wifi], stored.Select(amenity => amenity.Id));
     }
 
-    // The amenities follow the listing: one nobody may see hides them too, and
-    // answers the same 404 rather than admitting it is there.
+    [Fact]
+    public async Task TheAmenitiesComeBackAPageAtATime()
+    {
+        var (host, listing) = await AListingAsync();
+        var wifi = await fixture.EnsureAmenityAsync("Wi-Fi");
+        var parking = await fixture.EnsureAmenityAsync("Parking");
+        var kitchen = await fixture.EnsureAmenityAsync("Kitchen");
+
+        await SetAsync(host, listing, [wifi, parking, kitchen]);
+
+        var page = await GetAsync(host, listing, new PagedRequest { PageSize = 2 });
+
+        Assert.Equal(3, page.TotalCount);
+        Assert.Equal(2, page.Items.Count);
+    }
+
+    [Fact]
+    public async Task APageBeyondTheLastAmenityIsEmptyRatherThanMissing()
+    {
+        var (host, listing) = await AListingAsync();
+        var wifi = await fixture.EnsureAmenityAsync("Wi-Fi");
+
+        await SetAsync(host, listing, [wifi]);
+
+        var page = await GetAsync(host, listing, new PagedRequest { Page = 5 });
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Empty(page.Items);
+    }
+
+    [Fact]
+    public async Task AListingOfferingNothingIsAnEmptyPageAndNotA404()
+    {
+        var (host, listing) = await AListingAsync();
+
+        var page = await GetAsync(host, listing, new PagedRequest());
+
+        Assert.Equal(0, page.TotalCount);
+        Assert.Empty(page.Items);
+    }
+
     [Fact]
     public async Task TheAmenitiesOfAWithdrawnListingAreOutOfReach()
     {
@@ -135,7 +174,7 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
 
         await Assert.ThrowsAsync<NotFoundException>(() => AsAsync(
             ListingWorkspace.Caller(guest, RoleNames.Guest),
-            amenities => amenities.GetAsync(listing, default)));
+            amenities => amenities.GetAsync(listing, new PagedRequest(), default)));
     }
 
     // A search naming two amenities is naming both of them, so a listing that
@@ -221,6 +260,12 @@ public class AccommodationAmenityTests(DatabaseFixture fixture)
             .OrderBy(amenityId => amenityId)
             .ToListAsync();
     }
+
+    private Task<PagedResult<LookupResponse>> GetAsync(
+        int host,
+        int listing,
+        PagedRequest request) =>
+        AsHostAsync(host, amenities => amenities.GetAsync(listing, request, default));
 
     private Task<(int Host, int Listing)> AListingAsync() => workspace.AListingAsync(Password);
 

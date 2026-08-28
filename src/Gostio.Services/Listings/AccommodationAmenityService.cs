@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
@@ -10,13 +11,24 @@ namespace Gostio.Services.Listings;
 internal sealed class AccommodationAmenityService(GostioDbContext db, AccommodationAccess access)
     : IAccommodationAmenityService
 {
-    public async Task<IReadOnlyList<LookupResponse>> GetAsync(
+    private static readonly Expression<Func<AccommodationAmenity, LookupResponse>> Projection =
+        offering => new LookupResponse
+        {
+            Id = offering.AmenityId,
+            Name = offering.Amenity.Name,
+        };
+
+    // The count and not the page decides which 404 to raise: a page past the
+    // last row is empty on a listing that is there and offers something.
+    public async Task<PagedResult<LookupResponse>> GetAsync(
         int accommodationId,
+        PagedRequest request,
         CancellationToken cancellationToken)
     {
-        var offered = await ReadAsync(Visible(accommodationId), cancellationToken);
+        var offered = await Ordered(Visible(accommodationId))
+            .ToPagedResultAsync(request, Projection, cancellationToken);
 
-        if (offered.Count == 0)
+        if (offered.TotalCount == 0)
         {
             await access.RequireVisibleAsync(accommodationId, cancellationToken);
         }
@@ -96,15 +108,12 @@ internal sealed class AccommodationAmenityService(GostioDbContext db, Accommodat
             .Where(offering => access.VisibleListings()
                 .Any(listing => listing.Id == offering.AccommodationId));
 
+    private static IOrderedQueryable<AccommodationAmenity> Ordered(
+        IQueryable<AccommodationAmenity> offerings) =>
+        offerings.OrderBy(offering => offering.Amenity.Name);
+
     private static async Task<IReadOnlyList<LookupResponse>> ReadAsync(
         IQueryable<AccommodationAmenity> offerings,
         CancellationToken cancellationToken) =>
-        await offerings
-            .OrderBy(offering => offering.Amenity.Name)
-            .Select(offering => new LookupResponse
-            {
-                Id = offering.AmenityId,
-                Name = offering.Amenity.Name,
-            })
-            .ToListAsync(cancellationToken);
+        await Ordered(offerings).Select(Projection).ToListAsync(cancellationToken);
 }

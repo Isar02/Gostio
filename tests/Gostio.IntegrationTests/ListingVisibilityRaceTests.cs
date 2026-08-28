@@ -118,7 +118,8 @@ public class ListingVisibilityRaceTests(DatabaseFixture fixture)
         await Assert.ThrowsAsync<NotFoundException>(() => ReadAsync(
             host,
             "[AccommodationAmenities]",
-            (IAccommodationAmenityService amenities) => amenities.GetAsync(listing, default),
+            (IAccommodationAmenityService amenities) => amenities.GetAsync(
+                listing, new PagedRequest(), default),
             listing));
     }
 

@@ -4,6 +4,8 @@ public static class ReservationHold
 {
     public static readonly TimeSpan Window = TimeSpan.FromHours(24);
 
+    public const string RanOut = "The hold on this booking ran out.";
+
     // A hold that outlives what it holds blocks the dates of a stay nobody paid
     // for, so it is shortened whenever the thing begins before the window ends.
     // Nothing is booked once it has begun, so there is no start behind `now`.

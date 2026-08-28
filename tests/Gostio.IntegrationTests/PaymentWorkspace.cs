@@ -49,9 +49,11 @@ internal sealed class PaymentWorkspace(DatabaseFixture fixture)
     public Task<PaymentResponse> ReadAsync(int actor, string role, int reservationId) =>
         AsAsync(actor, role, service => service.GetAsync(reservationId, default));
 
-    public async Task SettleAsync(PaymentOutcomeReport report)
+    public async Task SettleAsync(
+        PaymentOutcomeReport report,
+        params IInterceptor[] interceptors)
     {
-        await using var services = fixture.BuildServices(caller: null, Gateway);
+        await using var services = fixture.BuildServices(caller: null, Gateway, interceptors);
 
         await services.GetRequiredService<IPaymentSettlement>().SettleAsync(report, default);
     }
@@ -167,9 +169,10 @@ internal sealed class PaymentWorkspace(DatabaseFixture fixture)
         return (cancel, settle);
     }
 
-    public Task SucceedAsync(int paymentId) =>
+    public Task SucceedAsync(int paymentId, params IInterceptor[] interceptors) =>
         SettleAsync(new PaymentOutcomeReport(
-            FakePaymentGateway.IntentOf(paymentId), PaymentOutcome.Succeeded, null));
+            FakePaymentGateway.IntentOf(paymentId), PaymentOutcome.Succeeded, null),
+            interceptors);
 
     public async Task<CapturedNotices> SucceedWatchedAsync(int paymentId)
     {

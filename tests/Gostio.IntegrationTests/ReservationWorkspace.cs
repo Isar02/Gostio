@@ -275,6 +275,32 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
                 .SetProperty(reservation => reservation.ExpiresAt, lapsed));
     }
 
+    public async Task LapseAtTheTermStartAsync(int reservationId)
+    {
+        var now = DateTime.UtcNow;
+        var startsAt = now.AddMinutes(-1);
+
+        await using var db = fixture.CreateContext();
+
+        var slotId = await db.Reservations
+            .AsNoTracking()
+            .Where(reservation => reservation.Id == reservationId)
+            .Select(reservation => reservation.ExperienceSlotId)
+            .SingleAsync()
+            ?? throw new InvalidOperationException("The reservation does not book a term.");
+
+        await db.ExperienceSlots
+            .Where(slot => slot.Id == slotId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(slot => slot.StartTime, startsAt));
+
+        await db.Reservations
+            .Where(reservation => reservation.Id == reservationId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(reservation => reservation.CreatedAt, now.AddHours(-2))
+                .SetProperty(reservation => reservation.ExpiresAt, startsAt));
+    }
+
     // Moves when the booking was made without moving what it books, so a test
     // can leave the grace period behind. `ExpiresAt` follows it, because
     // CK_Reservations_Expiry keeps the one after the other.

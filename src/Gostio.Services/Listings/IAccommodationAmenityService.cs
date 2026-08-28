@@ -5,8 +5,9 @@ namespace Gostio.Services.Listings;
 
 public interface IAccommodationAmenityService
 {
-    Task<IReadOnlyList<LookupResponse>> GetAsync(
+    Task<PagedResult<LookupResponse>> GetAsync(
         int accommodationId,
+        PagedRequest request,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<LookupResponse>> SetAsync(

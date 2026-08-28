@@ -13,13 +13,15 @@ namespace Gostio.API.Controllers;
 public sealed class AccommodationAmenitiesController(IAccommodationAmenityService amenities)
     : ControllerBase
 {
-    // A set rather than a page: it is written whole, so it is read whole.
     [HttpGet]
-    public Task<IReadOnlyList<LookupResponse>> Get(
+    public Task<PagedResult<LookupResponse>> Get(
         int accommodationId,
+        [FromQuery] PagedRequest request,
         CancellationToken cancellationToken) =>
-        amenities.GetAsync(accommodationId, cancellationToken);
+        amenities.GetAsync(accommodationId, request, cancellationToken);
 
+    // The whole set rather than a page of it, because it is the set this call
+    // just wrote.
     [Authorize(Roles = RoleNames.HostOrAdministrator)]
     [HttpPut]
     public Task<IReadOnlyList<LookupResponse>> Set(

@@ -85,10 +85,17 @@ public sealed class AccommodationAmenitiesControllerTests : IAsyncLifetime
 
         public int? LastAccommodationId { get; private set; }
 
-        public Task<IReadOnlyList<LookupResponse>> GetAsync(
+        public Task<PagedResult<LookupResponse>> GetAsync(
             int accommodationId,
+            PagedRequest request,
             CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<LookupResponse>>([Row(4)]);
+            Task.FromResult(new PagedResult<LookupResponse>
+            {
+                Items = [Row(4)],
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalCount = 1,
+            });
 
         public Task<IReadOnlyList<LookupResponse>> SetAsync(
             int accommodationId,

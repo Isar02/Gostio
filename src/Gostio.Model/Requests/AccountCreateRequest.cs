@@ -29,6 +29,7 @@ public abstract class AccountCreateRequest
     public string Email { get; set; } = null!;
 
     [StringLength(ColumnLengths.PhoneNumber)]
+    [PhoneNumber]
     public string? PhoneNumber { get; set; }
 
     [Required(ErrorMessage = "Enter a password.")]

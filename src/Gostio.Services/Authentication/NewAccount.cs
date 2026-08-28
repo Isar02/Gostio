@@ -1,4 +1,5 @@
 using Gostio.Model.Requests;
+using Gostio.Model.Validation;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Authentication;
@@ -15,9 +16,7 @@ internal sealed class NewAccount(AccountCreateRequest request)
         LastName = request.LastName.Trim(),
         Username = Username,
         Email = Email,
-        PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber)
-            ? null
-            : request.PhoneNumber.Trim(),
+        PhoneNumber = PhoneNumbers.Normalise(request.PhoneNumber),
         PasswordHash = PasswordHasher.Hash(request.Password),
         CreatedAt = now,
         UserRoles =

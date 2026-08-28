@@ -23,5 +23,6 @@ public sealed class UserUpdateRequest
     public string Email { get; set; } = null!;
 
     [StringLength(ColumnLengths.PhoneNumber)]
+    [PhoneNumber]
     public string? PhoneNumber { get; set; }
 }

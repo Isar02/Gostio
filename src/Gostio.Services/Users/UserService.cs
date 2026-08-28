@@ -188,8 +188,9 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         UserCreateRequest request,
         CancellationToken cancellationToken)
     {
-        var username = request.Username.Trim();
-        var email = request.Email.Trim();
+        var account = new NewAccount(request);
+        var username = account.Username;
+        var email = account.Email;
 
         await RequireUniqueAsync(
             candidate => candidate.Username == username,
@@ -208,20 +209,7 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         var roleIds = await RequireRoleIdsAsync(
             request.Roles, nameof(request.Roles), cancellationToken);
 
-        var now = DateTime.UtcNow;
-
-        return new User
-        {
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            Username = username,
-            Email = email,
-            PhoneNumber = Trimmed(request.PhoneNumber),
-            PasswordHash = PasswordHasher.Hash(request.Password),
-            CreatedAt = now,
-            UserRoles =
-                [.. roleIds.Select(roleId => new UserRole { RoleId = roleId, AssignedAt = now })],
-        };
+        return account.CreateUser(roleIds, DateTime.UtcNow);
     }
 
     protected override async Task ApplyAsync(

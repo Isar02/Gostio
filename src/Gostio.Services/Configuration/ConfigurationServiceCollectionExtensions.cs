@@ -17,6 +17,7 @@ public static class ConfigurationServiceCollectionExtensions
         services.AddSingleton(settings.Stripe);
         services.AddSingleton(settings.Seed);
         services.AddSingleton(settings.Worker);
+        services.AddSingleton(settings.Cache);
 
         return settings;
     }

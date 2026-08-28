@@ -1,19 +1,18 @@
 using System.Linq.Expressions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
-using Gostio.Services.Crud;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Lookups;
 
-internal sealed class CountryService(GostioDbContext db)
-    : CrudService<
+internal sealed class CountryService(GostioDbContext db, ILookupCache cache)
+    : CachedLookupService<
         Country,
         CountryResponse,
         CountrySearchRequest,
         CountryUpsertRequest,
-        CountryUpsertRequest>(db, "country"),
+        CountryUpsertRequest>(db, "country", cache),
       ICountryService
 {
     protected override Expression<Func<Country, CountryResponse>> Projection =>

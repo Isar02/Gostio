@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Lookups;
 
-internal sealed class RoleService(GostioDbContext db) : LookupService<Role>(db, "role"), IRoleService
+internal sealed class RoleService(GostioDbContext db, ILookupCache cache)
+    : LookupService<Role>(db, "role", cache), IRoleService
 {
     public override async Task<LookupResponse> UpdateAsync(
         int id,

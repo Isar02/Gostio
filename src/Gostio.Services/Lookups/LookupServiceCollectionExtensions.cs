@@ -6,6 +6,9 @@ public static class LookupServiceCollectionExtensions
 {
     public static IServiceCollection AddGostioLookupServices(this IServiceCollection services)
     {
+        services.AddMemoryCache();
+        services.AddSingleton<ILookupCache, LookupCache>();
+
         services.AddScoped<IAccommodationTypeService, AccommodationTypeService>();
         services.AddScoped<IAccommodationCategoryService, AccommodationCategoryService>();
         services.AddScoped<IExperienceCategoryService, ExperienceCategoryService>();

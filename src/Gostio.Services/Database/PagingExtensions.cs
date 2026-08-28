@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Database;
 
-public static class QueryablePagingExtensions
+public static class PagingExtensions
 {
     // IOrderedQueryable rather than IQueryable: skipping over an unordered
     // query lets the database return rows in any order it likes, so page two
@@ -35,6 +35,23 @@ public static class QueryablePagingExtensions
             Page = request.Page,
             PageSize = request.PageSize,
             TotalCount = totalCount,
+        };
+    }
+
+    public static PagedResult<T> ToPagedResult<T>(
+        this IReadOnlyList<T> source,
+        PagedRequest request)
+    {
+        List<T> items = request.Offset >= source.Count
+            ? []
+            : [.. source.Skip((int)request.Offset).Take(request.PageSize)];
+
+        return new PagedResult<T>
+        {
+            Items = items,
+            Page = request.Page,
+            PageSize = request.PageSize,
+            TotalCount = source.Count,
         };
     }
 }

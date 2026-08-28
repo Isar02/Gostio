@@ -1,16 +1,21 @@
 using System.Linq.Expressions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
-using Gostio.Services.Crud;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Lookups;
 
-internal abstract class LookupService<TEntity>(GostioDbContext db, string noun)
-    : CrudService<TEntity, LookupResponse, LookupSearchRequest, LookupUpsertRequest, LookupUpsertRequest>(
-        db,
-        noun),
+internal abstract class LookupService<TEntity>(
+    GostioDbContext db,
+    string noun,
+    ILookupCache cache)
+    : CachedLookupService<
+        TEntity,
+        LookupResponse,
+        LookupSearchRequest,
+        LookupUpsertRequest,
+        LookupUpsertRequest>(db, noun, cache),
       ILookupService
     where TEntity : class, ILookupEntity, new()
 {

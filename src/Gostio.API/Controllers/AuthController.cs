@@ -18,6 +18,13 @@ public sealed class AuthController(IAuthService auth) : ControllerBase
         CancellationToken cancellationToken) =>
         await auth.LoginAsync(request, cancellationToken);
 
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<ActionResult<AuthResponse>> Register(
+        RegisterRequest request,
+        CancellationToken cancellationToken) =>
+        await auth.RegisterAsync(request, cancellationToken);
+
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> Me(CancellationToken cancellationToken) =>
         await auth.GetCurrentUserAsync(cancellationToken);

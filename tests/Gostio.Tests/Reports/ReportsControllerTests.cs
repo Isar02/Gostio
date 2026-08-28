@@ -1,5 +1,6 @@
 using System.Net;
 using Gostio.Model.Authorization;
+using Gostio.Model.Enums;
 using Gostio.Services.Reports;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,6 +9,9 @@ namespace Gostio.Tests.Reports;
 public sealed class ReportsControllerTests : IAsyncLifetime
 {
     private const string Revenue = "/api/reports/revenue?from=2026-01-01&to=2026-03-31";
+
+    private const string Listings =
+        "/api/reports/listings?from=2026-01-01&to=2026-03-31&target=Experiences";
 
     private readonly StubReports reports = new();
 
@@ -19,22 +23,37 @@ public sealed class ReportsControllerTests : IAsyncLifetime
     public async Task DisposeAsync() => await host.DisposeAsync();
 
     [Theory]
-    [InlineData(RoleNames.Guest)]
-    [InlineData(RoleNames.Host)]
-    public async Task AReportIsClosedToEverybodyButAnAdministrator(string role)
+    [InlineData(RoleNames.Guest, Revenue)]
+    [InlineData(RoleNames.Guest, Listings)]
+    [InlineData(RoleNames.Host, Revenue)]
+    [InlineData(RoleNames.Host, Listings)]
+    public async Task AReportIsClosedToEverybodyButAnAdministrator(string role, string path)
     {
-        var response = await host.SendAsync(HttpMethod.Get, Revenue, role);
+        var response = await host.SendAsync(HttpMethod.Get, path, role);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Null(reports.LastRange);
+        Assert.Null(reports.LastListings);
+    }
+
+    [Theory]
+    [InlineData(Revenue)]
+    [InlineData(Listings)]
+    public async Task NoReportIsReachableWithoutAToken(string path)
+    {
+        var response = await host.SendAsync(HttpMethod.Get, path);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task NoReportIsReachableWithoutAToken()
+    public async Task TheCatalogueIsNamedRatherThanNumberedOnTheWayIn()
     {
-        var response = await host.SendAsync(HttpMethod.Get, Revenue);
+        var response = await host.SendAsync(HttpMethod.Get, Listings, RoleNames.Administrator);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(SearchTarget.Experiences, reports.LastListings!.Target);
+        Assert.Equal(new DateOnly(2026, 1, 1), reports.LastListings.From);
     }
 
     [Fact]

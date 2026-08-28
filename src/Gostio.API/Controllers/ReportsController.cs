@@ -17,4 +17,10 @@ public sealed class ReportsController(IReportService reports) : ControllerBase
         [FromQuery] ReportRangeRequest request,
         CancellationToken cancellationToken) =>
         reports.RevenueAsync(request, cancellationToken);
+
+    [HttpGet("listings")]
+    public Task<ListingReportResponse> Listings(
+        [FromQuery] ListingReportRequest request,
+        CancellationToken cancellationToken) =>
+        reports.ListingsAsync(request, cancellationToken);
 }

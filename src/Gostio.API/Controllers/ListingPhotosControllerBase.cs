@@ -42,7 +42,7 @@ public abstract class ListingPhotosControllerBase<TService>(TService photos) : C
     [HttpPost]
     public async Task<ActionResult<ListingPhotoResponse>> Upload(
         int listingId,
-        [FromForm] ListingPhotoUpload upload,
+        [FromForm] ImageFileUpload upload,
         CancellationToken cancellationToken)
     {
         var created = await photos.AddAsync(

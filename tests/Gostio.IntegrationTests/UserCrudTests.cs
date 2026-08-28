@@ -80,21 +80,19 @@ public class UserCrudTests(DatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task AnAccountHolderReadsAndEditsTheirOwnProfileAndNobodyElses()
+    public async Task AnAccountHolderReadsAndEditsTheProfileTheirTokenNames()
     {
         var mine = await fixture.AddUserAsync(Password);
-        var theirs = await fixture.AddUserAsync(Password);
 
         await using var services = fixture.BuildServices(new SignedInUser(mine, RoleNames.Guest));
 
         var users = services.GetRequiredService<IUserService>();
 
-        var read = await users.GetAsync(mine, CancellationToken.None);
+        var read = await users.GetMineAsync(CancellationToken.None);
 
         Assert.Equal(mine, read.Id);
 
-        var saved = await users.UpdateAsync(
-            mine,
+        var saved = await users.UpdateMineAsync(
             new UserUpdateRequest
             {
                 FirstName = "Vedrana",
@@ -104,11 +102,9 @@ public class UserCrudTests(DatabaseFixture fixture)
             },
             CancellationToken.None);
 
+        Assert.Equal(mine, saved.Id);
         Assert.Equal("Vedrana", saved.FirstName);
         Assert.Equal("+387 61 111 222", saved.PhoneNumber);
-
-        await Assert.ThrowsAsync<ForbiddenException>(
-            () => users.GetAsync(theirs, CancellationToken.None));
     }
 
     [Fact]

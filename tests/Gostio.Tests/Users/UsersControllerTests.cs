@@ -8,9 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.Tests.Users;
 
-// No two of these endpoints answer to the same rule, so the whole authorization
-// surface is written out. An attribute quietly left off one of them opens a
-// list of people to anybody holding a token.
+// Everything under an id belongs to an administrator except the picture, and
+// what sits under `me` belongs to whoever is signed in, so the whole
+// authorization surface is written out. An attribute quietly left off one of
+// them opens a list of people to anybody holding a token.
 public sealed class UsersControllerTests : IAsyncLifetime
 {
     private ApiHost host = null!;
@@ -24,8 +25,12 @@ public sealed class UsersControllerTests : IAsyncLifetime
     [Theory]
     [InlineData("GET", "/api/users")]
     [InlineData("POST", "/api/users")]
+    [InlineData("GET", "/api/users/5")]
+    [InlineData("PUT", "/api/users/5")]
     [InlineData("PUT", "/api/users/5/roles")]
     [InlineData("PUT", "/api/users/5/state")]
+    [InlineData("PUT", "/api/users/5/image")]
+    [InlineData("DELETE", "/api/users/5/image")]
     [InlineData("DELETE", "/api/users/5")]
     public async Task WhatBelongsToAnAdministratorIsClosedToAGuest(string method, string path)
     {
@@ -38,8 +43,12 @@ public sealed class UsersControllerTests : IAsyncLifetime
     [Theory]
     [InlineData("GET", "/api/users", HttpStatusCode.OK)]
     [InlineData("POST", "/api/users", HttpStatusCode.Created)]
+    [InlineData("GET", "/api/users/5", HttpStatusCode.OK)]
+    [InlineData("PUT", "/api/users/5", HttpStatusCode.OK)]
     [InlineData("PUT", "/api/users/5/roles", HttpStatusCode.OK)]
     [InlineData("PUT", "/api/users/5/state", HttpStatusCode.OK)]
+    [InlineData("PUT", "/api/users/5/image", HttpStatusCode.OK)]
+    [InlineData("DELETE", "/api/users/5/image", HttpStatusCode.NoContent)]
     [InlineData("DELETE", "/api/users/5", HttpStatusCode.NoContent)]
     public async Task AnAdministratorReachesAllOfIt(
         string method,
@@ -52,15 +61,29 @@ public sealed class UsersControllerTests : IAsyncLifetime
         Assert.Equal(expected, response.StatusCode);
     }
 
-    // Open to any signed in account at the endpoint, because whether the caller
-    // may see this particular row is a question only the service can answer.
     [Theory]
-    [InlineData("GET", "/api/users/5")]
-    [InlineData("PUT", "/api/users/5")]
-    public async Task TheOwnProfileEndpointsAreLeftToTheService(string method, string path)
+    [InlineData("GET", "/api/users/me", HttpStatusCode.OK)]
+    [InlineData("PUT", "/api/users/me", HttpStatusCode.OK)]
+    [InlineData("PUT", "/api/users/me/image", HttpStatusCode.OK)]
+    [InlineData("DELETE", "/api/users/me/image", HttpStatusCode.NoContent)]
+    public async Task AnAccountReachesItsOwnProfileWhateverRoleItHolds(
+        string method,
+        string path,
+        HttpStatusCode expected)
     {
         var response = await host.SendAsync(
             new HttpMethod(method), path, RoleNames.Guest, BodyFor(path));
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
+    // A host's picture stands beside their listings and a participant's beside
+    // their messages, so the one read under an id is open to anybody signed in.
+    [Fact]
+    public async Task APictureUnderAnIdIsReadByAnybodySignedIn()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Get, "/api/users/5/image", RoleNames.Guest);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -109,6 +132,7 @@ public sealed class UsersControllerTests : IAsyncLifetime
 
     private static object? BodyFor(string path) => path switch
     {
+        "/api/users/5/image" or "/api/users/me/image" => UserImages.Form(),
         "/api/users" => new UserCreateRequest
         {
             FirstName = "Amina",
@@ -121,7 +145,7 @@ public sealed class UsersControllerTests : IAsyncLifetime
         },
         "/api/users/5/roles" => new UserRolesRequest { Roles = [RoleNames.Guest] },
         "/api/users/5/state" => new UserStateRequest { IsActive = false },
-        "/api/users/5" => new UserUpdateRequest
+        "/api/users/5" or "/api/users/me" => new UserUpdateRequest
         {
             FirstName = "Amina",
             LastName = "Kovačević",
@@ -129,56 +153,4 @@ public sealed class UsersControllerTests : IAsyncLifetime
         },
         _ => null,
     };
-
-    private sealed class StubUsers : IUserService
-    {
-        public Task<PagedResult<UserResponse>> SearchAsync(
-            UserSearchRequest search,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(new PagedResult<UserResponse>
-            {
-                Items = [Row(1)],
-                Page = search.Page,
-                PageSize = search.PageSize,
-                TotalCount = 1,
-            });
-
-        public Task<UserResponse> GetAsync(int id, CancellationToken cancellationToken) =>
-            Task.FromResult(Row(id));
-
-        public Task<UserResponse> CreateAsync(
-            UserCreateRequest request,
-            CancellationToken cancellationToken) => Task.FromResult(Row(9));
-
-        public Task<UserResponse> UpdateAsync(
-            int id,
-            UserUpdateRequest request,
-            CancellationToken cancellationToken) => Task.FromResult(Row(id));
-
-        public Task<UserResponse> SetRolesAsync(
-            int id,
-            UserRolesRequest request,
-            CancellationToken cancellationToken) => Task.FromResult(Row(id));
-
-        public Task<UserResponse> SetStateAsync(
-            int id,
-            UserStateRequest request,
-            CancellationToken cancellationToken) => Task.FromResult(Row(id));
-
-        public Task DeleteAsync(int id, CancellationToken cancellationToken) =>
-            Task.CompletedTask;
-
-        private static UserResponse Row(int id) => new()
-        {
-            Id = id,
-            FirstName = "Amina",
-            LastName = "Kovačević",
-            Username = "amina.kovacevic",
-            Email = "amina.kovacevic@example.com",
-            PhoneNumber = null,
-            IsActive = true,
-            Roles = [RoleNames.Guest],
-            CreatedAt = DateTime.UtcNow,
-        };
-    }
 }

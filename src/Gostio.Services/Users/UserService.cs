@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
-using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
+using Gostio.Model.Validation;
 using Gostio.Services.Authentication;
 using Gostio.Services.Crud;
 using Gostio.Services.Database;
@@ -17,6 +17,8 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         "user"),
       IUserService
 {
+    private const string FileField = "File";
+
     protected override string StillReferencedMessage =>
         "This account owns records that have to be kept. Deactivate it instead of deleting it.";
 
@@ -29,6 +31,7 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
             Username = user.Username,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
+            HasProfileImage = user.ProfileImage != null,
             IsActive = user.IsActive,
             Roles = user.UserRoles.Select(assignment => assignment.Role.Name).ToList(),
             CreatedAt = user.CreatedAt,
@@ -37,22 +40,56 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
     protected override IOrderedQueryable<User> Order(IQueryable<User> query) =>
         query.OrderBy(user => user.LastName).ThenBy(user => user.FirstName).ThenBy(user => user.Id);
 
-    public override Task<UserResponse> GetAsync(int id, CancellationToken cancellationToken)
-    {
-        RequireSelfOrAdministrator(id);
+    public Task<UserResponse> GetMineAsync(CancellationToken cancellationToken) =>
+        GetAsync(currentUser.RequireUserId(), cancellationToken);
 
-        return base.GetAsync(id, cancellationToken);
+    public Task<UserResponse> UpdateMineAsync(
+        UserUpdateRequest request,
+        CancellationToken cancellationToken) =>
+        UpdateAsync(currentUser.RequireUserId(), request, cancellationToken);
+
+    public async Task<ImageContent> GetImageAsync(int id, CancellationToken cancellationToken)
+    {
+        var image = await Set
+            .AsNoTracking()
+            .Where(user => user.Id == id && user.ProfileImage != null)
+            .Select(user => new ImageContent(user.ProfileImage!, user.ProfileImageContentType!))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (image is not null)
+        {
+            return image;
+        }
+
+        var exists = await Set.AsNoTracking().AnyAsync(user => user.Id == id, cancellationToken);
+
+        throw exists ? NoPicture(id) : Missing(id);
     }
 
-    public override Task<UserResponse> UpdateAsync(
+    public async Task<UserResponse> SetImageAsync(
         int id,
-        UserUpdateRequest request,
+        ImageUpload upload,
         CancellationToken cancellationToken)
     {
-        RequireSelfOrAdministrator(id);
+        await WriteImageAsync(
+            id,
+            upload.Content,
+            ImageRules.RequireImage(upload, FileField),
+            cancellationToken);
 
-        return base.UpdateAsync(id, request, cancellationToken);
+        return await ReadAsync(id, cancellationToken);
     }
+
+    public Task<UserResponse> SetMineImageAsync(
+        ImageUpload upload,
+        CancellationToken cancellationToken) =>
+        SetImageAsync(currentUser.RequireUserId(), upload, cancellationToken);
+
+    public Task ClearImageAsync(int id, CancellationToken cancellationToken) =>
+        WriteImageAsync(id, null, null, cancellationToken);
+
+    public Task ClearMineImageAsync(CancellationToken cancellationToken) =>
+        ClearImageAsync(currentUser.RequireUserId(), cancellationToken);
 
     public override Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
@@ -233,6 +270,31 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         user.ModifiedAt = DateTime.UtcNow;
     }
 
+    // Column by column rather than through a tracked row: a picture runs to
+    // megabytes, and replacing one has no reason to read the old one back.
+    private async Task WriteImageAsync(
+        int id,
+        byte[]? content,
+        string? contentType,
+        CancellationToken cancellationToken)
+    {
+        DateTime? now = DateTime.UtcNow;
+
+        var written = await Set
+            .Where(user => user.Id == id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.ProfileImage, content)
+                    .SetProperty(user => user.ProfileImageContentType, contentType)
+                    .SetProperty(user => user.ModifiedAt, now),
+                cancellationToken);
+
+        if (written == 0)
+        {
+            throw Missing(id);
+        }
+    }
+
     private async Task<List<int>> RequireRoleIdsAsync(
         List<string>? names,
         string field,
@@ -267,16 +329,8 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         return [.. found.Select(role => role.Id)];
     }
 
-    private void RequireSelfOrAdministrator(int userId)
-    {
-        if (currentUser.RequireUserId() == userId
-            || currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return;
-        }
-
-        throw new ForbiddenException("This account may only work on its own profile.");
-    }
+    private NotFoundException NoPicture(int id) =>
+        new($"The {Noun} with the id {id} has no picture.");
 
     private void RequireAnotherAccount(int userId, string action)
     {

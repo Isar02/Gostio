@@ -17,6 +17,7 @@ internal sealed record UserAccount
             Username = user.Username,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
+            HasProfileImage = user.ProfileImage != null,
             PasswordHash = user.PasswordHash,
             IsActive = user.IsActive,
             TokenVersion = user.TokenVersion,
@@ -35,6 +36,8 @@ internal sealed record UserAccount
     public required string Email { get; init; }
 
     public required string? PhoneNumber { get; init; }
+
+    public required bool HasProfileImage { get; init; }
 
     public required string PasswordHash { get; init; }
 
@@ -58,6 +61,7 @@ internal sealed record UserAccount
             Username = Username,
             Email = Email,
             PhoneNumber = PhoneNumber,
+            HasProfileImage = HasProfileImage,
             IsActive = IsActive,
             Roles = Roles,
             CreatedAt = CreatedAt,

@@ -19,8 +19,17 @@ public sealed class UsersController(IUserService users) : ControllerBase
         CancellationToken cancellationToken) =>
         users.SearchAsync(search, cancellationToken);
 
-    // No role attribute: self or administrator is a question about the row,
-    // so the service answers it.
+    [HttpGet("me")]
+    public Task<UserResponse> Mine(CancellationToken cancellationToken) =>
+        users.GetMineAsync(cancellationToken);
+
+    [HttpPut("me")]
+    public Task<UserResponse> UpdateMine(
+        UserUpdateRequest request,
+        CancellationToken cancellationToken) =>
+        users.UpdateMineAsync(request, cancellationToken);
+
+    [Authorize(Roles = RoleNames.Administrator)]
     [HttpGet("{id:int}")]
     public Task<UserResponse> Get(int id, CancellationToken cancellationToken) =>
         users.GetAsync(id, cancellationToken);
@@ -36,6 +45,7 @@ public sealed class UsersController(IUserService users) : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
+    [Authorize(Roles = RoleNames.Administrator)]
     [HttpPut("{id:int}")]
     public Task<UserResponse> Update(
         int id,

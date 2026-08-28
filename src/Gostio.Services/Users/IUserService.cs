@@ -7,6 +7,12 @@ namespace Gostio.Services.Users;
 public interface IUserService
     : ICrudService<UserResponse, UserSearchRequest, UserCreateRequest, UserUpdateRequest>
 {
+    Task<UserResponse> GetMineAsync(CancellationToken cancellationToken);
+
+    Task<UserResponse> UpdateMineAsync(
+        UserUpdateRequest request,
+        CancellationToken cancellationToken);
+
     Task<UserResponse> SetRolesAsync(
         int id,
         UserRolesRequest request,

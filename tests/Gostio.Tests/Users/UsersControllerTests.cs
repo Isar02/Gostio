@@ -8,9 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Gostio.Tests.Users;
 
-// No two of these endpoints answer to the same rule, so the whole authorization
-// surface is written out. An attribute quietly left off one of them opens a
-// list of people to anybody holding a token.
+// Everything under an id belongs to an administrator and the two under `me`
+// belong to whoever is signed in, so the whole authorization surface is written
+// out. An attribute quietly left off one of them opens a list of people to
+// anybody holding a token.
 public sealed class UsersControllerTests : IAsyncLifetime
 {
     private ApiHost host = null!;
@@ -24,6 +25,8 @@ public sealed class UsersControllerTests : IAsyncLifetime
     [Theory]
     [InlineData("GET", "/api/users")]
     [InlineData("POST", "/api/users")]
+    [InlineData("GET", "/api/users/5")]
+    [InlineData("PUT", "/api/users/5")]
     [InlineData("PUT", "/api/users/5/roles")]
     [InlineData("PUT", "/api/users/5/state")]
     [InlineData("DELETE", "/api/users/5")]
@@ -38,6 +41,8 @@ public sealed class UsersControllerTests : IAsyncLifetime
     [Theory]
     [InlineData("GET", "/api/users", HttpStatusCode.OK)]
     [InlineData("POST", "/api/users", HttpStatusCode.Created)]
+    [InlineData("GET", "/api/users/5", HttpStatusCode.OK)]
+    [InlineData("PUT", "/api/users/5", HttpStatusCode.OK)]
     [InlineData("PUT", "/api/users/5/roles", HttpStatusCode.OK)]
     [InlineData("PUT", "/api/users/5/state", HttpStatusCode.OK)]
     [InlineData("DELETE", "/api/users/5", HttpStatusCode.NoContent)]
@@ -52,12 +57,12 @@ public sealed class UsersControllerTests : IAsyncLifetime
         Assert.Equal(expected, response.StatusCode);
     }
 
-    // Open to any signed in account at the endpoint, because whether the caller
-    // may see this particular row is a question only the service can answer.
     [Theory]
-    [InlineData("GET", "/api/users/5")]
-    [InlineData("PUT", "/api/users/5")]
-    public async Task TheOwnProfileEndpointsAreLeftToTheService(string method, string path)
+    [InlineData("GET", "/api/users/me")]
+    [InlineData("PUT", "/api/users/me")]
+    public async Task AnAccountReachesItsOwnProfileWhateverRoleItHolds(
+        string method,
+        string path)
     {
         var response = await host.SendAsync(
             new HttpMethod(method), path, RoleNames.Guest, BodyFor(path));
@@ -121,7 +126,7 @@ public sealed class UsersControllerTests : IAsyncLifetime
         },
         "/api/users/5/roles" => new UserRolesRequest { Roles = [RoleNames.Guest] },
         "/api/users/5/state" => new UserStateRequest { IsActive = false },
-        "/api/users/5" => new UserUpdateRequest
+        "/api/users/5" or "/api/users/me" => new UserUpdateRequest
         {
             FirstName = "Amina",
             LastName = "Kovačević",
@@ -145,6 +150,13 @@ public sealed class UsersControllerTests : IAsyncLifetime
 
         public Task<UserResponse> GetAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Row(id));
+
+        public Task<UserResponse> GetMineAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(Row(1));
+
+        public Task<UserResponse> UpdateMineAsync(
+            UserUpdateRequest request,
+            CancellationToken cancellationToken) => Task.FromResult(Row(1));
 
         public Task<UserResponse> CreateAsync(
             UserCreateRequest request,

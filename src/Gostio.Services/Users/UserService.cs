@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
@@ -37,22 +36,13 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
     protected override IOrderedQueryable<User> Order(IQueryable<User> query) =>
         query.OrderBy(user => user.LastName).ThenBy(user => user.FirstName).ThenBy(user => user.Id);
 
-    public override Task<UserResponse> GetAsync(int id, CancellationToken cancellationToken)
-    {
-        RequireSelfOrAdministrator(id);
+    public Task<UserResponse> GetMineAsync(CancellationToken cancellationToken) =>
+        GetAsync(currentUser.RequireUserId(), cancellationToken);
 
-        return base.GetAsync(id, cancellationToken);
-    }
-
-    public override Task<UserResponse> UpdateAsync(
-        int id,
+    public Task<UserResponse> UpdateMineAsync(
         UserUpdateRequest request,
-        CancellationToken cancellationToken)
-    {
-        RequireSelfOrAdministrator(id);
-
-        return base.UpdateAsync(id, request, cancellationToken);
-    }
+        CancellationToken cancellationToken) =>
+        UpdateAsync(currentUser.RequireUserId(), request, cancellationToken);
 
     public override Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
@@ -265,17 +255,6 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         }
 
         return [.. found.Select(role => role.Id)];
-    }
-
-    private void RequireSelfOrAdministrator(int userId)
-    {
-        if (currentUser.RequireUserId() == userId
-            || currentUser.IsInRole(RoleNames.Administrator))
-        {
-            return;
-        }
-
-        throw new ForbiddenException("This account may only work on its own profile.");
     }
 
     private void RequireAnotherAccount(int userId, string action)

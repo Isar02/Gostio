@@ -10,6 +10,7 @@ public sealed class AppSettings
     public required StripeSettings Stripe { get; init; }
     public required SeedSettings Seed { get; init; }
     public required WorkerSettings Worker { get; init; }
+    public required CacheSettings Cache { get; init; }
     public required IReadOnlyList<string> CorsAllowedOrigins { get; init; }
 }
 
@@ -76,6 +77,13 @@ public sealed class StripeSettings
 public sealed class SeedSettings
 {
     public required string DefaultPassword { get; init; }
+}
+
+public sealed class CacheSettings
+{
+    public required int LookupSeconds { get; init; }
+
+    public TimeSpan LookupLifetime => TimeSpan.FromSeconds(LookupSeconds);
 }
 
 public sealed class WorkerSettings

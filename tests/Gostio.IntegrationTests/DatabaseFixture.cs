@@ -63,6 +63,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
         RefundSweepBatch = 50,
     };
 
+    public CacheSettings Cache { get; } = new() { LookupSeconds = 600 };
+
     public ApiSettings Api { get; } = new()
     {
         BaseUrl = "http://localhost:5000",
@@ -174,6 +176,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddSingleton(broadcast);
         services.AddSingleton(Stripe);
         services.AddSingleton(Worker);
+        services.AddSingleton(Cache);
         services.AddSingleton(notices);
         services.AddSingleton(clock ?? TimeProvider.System);
         services.AddGostioLookupServices();

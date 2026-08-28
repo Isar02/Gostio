@@ -3,19 +3,18 @@ using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
-using Gostio.Services.Crud;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Lookups;
 
-internal sealed class ReservationStatusService(GostioDbContext db)
-    : CrudService<
+internal sealed class ReservationStatusService(GostioDbContext db, ILookupCache cache)
+    : CachedLookupService<
         ReservationStatus,
         ReservationStatusResponse,
         LookupSearchRequest,
         ReservationStatusUpsertRequest,
-        ReservationStatusUpsertRequest>(db, "reservation status"),
+        ReservationStatusUpsertRequest>(db, "reservation status", cache),
       IReservationStatusService
 {
     // A restricting foreign key blocks a delete only once a row is referenced,

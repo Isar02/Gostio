@@ -2,17 +2,19 @@ using System.Linq.Expressions;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
-using Gostio.Services.Crud;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gostio.Services.Lookups;
 
-internal sealed class CityService(GostioDbContext db)
-    : CrudService<City, CityResponse, CitySearchRequest, CityUpsertRequest, CityUpsertRequest>(
-        db,
-        "city"),
+internal sealed class CityService(GostioDbContext db, ILookupCache cache)
+    : CachedLookupService<
+        City,
+        CityResponse,
+        CitySearchRequest,
+        CityUpsertRequest,
+        CityUpsertRequest>(db, "city", cache),
       ICityService
 {
     protected override Expression<Func<City, CityResponse>> Projection =>

@@ -3,5 +3,5 @@ using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Lookups;
 
-internal sealed class AccommodationTypeService(GostioDbContext db)
-    : LookupService<AccommodationType>(db, "accommodation type"), IAccommodationTypeService;
+internal sealed class AccommodationTypeService(GostioDbContext db, ILookupCache cache)
+    : LookupService<AccommodationType>(db, "accommodation type", cache), IAccommodationTypeService;

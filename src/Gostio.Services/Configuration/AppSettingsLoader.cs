@@ -19,6 +19,9 @@ public static class AppSettingsLoader
     private const int DefaultRefundSweepSeconds = 120;
     private const int DefaultRefundSweepBatch = 50;
     private const string DefaultCurrency = "eur";
+    private const int DefaultLookupCacheSeconds = 600;
+    private const int MinimumLookupCacheSeconds = 5;
+    private const int MaximumLookupCacheSeconds = 60 * 60 * 24;
 
     public static AppSettings Load()
     {
@@ -102,6 +105,14 @@ public static class AppSettingsLoader
                     OptionalInteger("WORKER_REFUND_SWEEP_BATCH", DefaultRefundSweepBatch),
                     1,
                     MaximumSweepBatch)
+            },
+            Cache = new CacheSettings
+            {
+                LookupSeconds = RequireRange(
+                    "CACHE_LOOKUP_SECONDS",
+                    OptionalInteger("CACHE_LOOKUP_SECONDS", DefaultLookupCacheSeconds),
+                    MinimumLookupCacheSeconds,
+                    MaximumLookupCacheSeconds)
             },
             CorsAllowedOrigins = ReadCorsAllowedOrigins()
         };

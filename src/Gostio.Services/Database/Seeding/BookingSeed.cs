@@ -267,6 +267,131 @@ internal static class BookingSeed
         yield return Term(
             "waterfall-confirmed-term", "denis.softic", "jajce-waterfall-hike", 2, 3,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Stay(
+            "mostar-house-completed-stay", "sara.jukic", "mostar-old-bridge-house", -75, 4, 5,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 5,
+            comment: "Waking up to the bridge from the terrace is worth the whole trip. "
+                + "The stairs are steep, which the listing does say.");
+
+        yield return Stay(
+            "blagaj-completed-stay", "tarik.mujic", "blagaj-spring-house", -50, 3, 4,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 4,
+            comment: "The garden runs right down to the water and the tekke is two "
+                + "minutes away. Warm at midday with no air conditioning upstairs.");
+
+        yield return Stay(
+            "livno-completed-stay", "mobile", "livno-field-house", -33, 3, 5,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 5,
+            comment: "Nothing but the field out of every window. We found the horses on "
+                + "the second morning without a guide.");
+
+        yield return Stay(
+            "travnik-completed-stay", "maja.popovic", "travnik-vlasic-cottage", -40, 5, 6,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 5,
+            comment: "Wood stove, drying room, and the farms start where the garden ends. "
+                + "Exactly what was described.");
+
+        yield return Stay(
+            "zenica-completed-stay", "denis.softic", "zenica-central-flat", -25, 6, 2,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 3,
+            comment: "Good desk and fast internet for a working week. The pedestrian "
+                + "street below is noisy until late on a Friday.");
+
+        yield return Stay(
+            "visegrad-completed-stay", "guest", "visegrad-drina-studio", -18, 2, 2,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 4,
+            comment: "Small, but the bridge is out of the window and that is the point.");
+
+        yield return Stay(
+            "pocitelj-confirmed-stay", "mobile", "pocitelj-walled-town-house", 11, 3, 4,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Stay(
+            "kupres-confirmed-stay", "emir.kovac", "kupres-ski-chalet", 15, 4, 7,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Stay(
+            "mostar-flat-confirmed-stay", "tarik.mujic", "mostar-riverside-apartment", 19, 4, 3,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Stay(
+            "trebinje-villa-confirmed-stay", "sara.jukic", "trebinje-vineyard-villa", 26, 6, 8,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Stay(
+            "stolac-confirmed-stay", "ivana.matic", "stolac-bregava-villa", 30, 5, 6,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Stay(
+            "fojnica-refunded-stay", "maja.popovic", "fojnica-spa-apartment", 24, 7, 2,
+            ReservationStatusCode.Cancelled, PaymentStatus.Succeeded,
+            refundShare: 0.5m);
+
+        yield return Stay(
+            "banjaluka-cancelled-stay", "denis.softic", "banjaluka-room", 16, 2, 1,
+            ReservationStatusCode.Cancelled, PaymentStatus.Cancelled);
+
+        yield return Stay(
+            "prijedor-pending-stay", "guest", "prijedor-family-room", 20, 2, 2,
+            ReservationStatusCode.Pending, PaymentStatus.Pending,
+            openedHoursAgo: 5);
+
+        yield return Term(
+            "hammam-completed-term", "sara.jukic", "trebinje-hammam", 1, 2,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 5,
+            comment: "Two hours that undo a week. Go on an empty stomach and leave the "
+                + "afternoon free afterwards.");
+
+        yield return Term(
+            "cheese-completed-term", "mobile", "travnik-cheese-farm", 1, 3,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 4,
+            comment: "The milking at six is early but it is the whole reason to go. "
+                + "Lunch at the end is larger than anyone expects.");
+
+        yield return Term(
+            "dervish-completed-term", "guest", "blagaj-dervish-house", 2, 2,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 5,
+            comment: "An hour inside and a walk up to the fort, told by someone who "
+                + "clearly reads about it for pleasure.");
+
+        yield return Term(
+            "horses-completed-term", "emir.kovac", "livno-wild-horses", 1, 4,
+            ReservationStatusCode.Completed, PaymentStatus.Succeeded,
+            rating: 4,
+            comment: "A long wait in the cold and then the herd came down to drink "
+                + "twenty metres away. Worth it, but dress for it.");
+
+        yield return Term(
+            "boat-confirmed-term", "denis.softic", "visegrad-drina-boat", 2, 3,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Term(
+            "baths-confirmed-term", "ivana.matic", "fojnica-thermal-baths", 3, 2,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Term(
+            "nightlife-confirmed-term", "tarik.mujic", "banjaluka-nightlife", 3, 5,
+            ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
+
+        yield return Term(
+            "horse-ride-refunded-term", "maja.popovic", "kupres-horse-ride", 2, 2,
+            ReservationStatusCode.Cancelled, PaymentStatus.Succeeded,
+            refundShare: 1m);
+
+        yield return Term(
+            "hammam-pending-term", "mobile", "trebinje-hammam", 3, 2,
+            ReservationStatusCode.Pending, PaymentStatus.Pending,
+            openedHoursAgo: 2);
     }
 
     // A booking is normally opened three weeks before the thing it books, which

@@ -93,18 +93,32 @@ internal static class ListingSeed
             };
 
             // A row is an exception to an otherwise open calendar: a block, or a price.
+            // The block is staggered per listing but wrapped short of the priced
+            // weeks below, because two ranges over one night have no defined
+            // winner and the endpoint that writes them refuses to overlap.
+            const int firstBlockedDay = 40;
+            const int blockedDays = 7;
+            const int staggerDays = 3;
+            const int specialPriceFromDay = 80;
+            const int specialPriceThroughDay = 110;
+
+            const int staggerPositions =
+                ((specialPriceFromDay - firstBlockedDay - blockedDays) / staggerDays) + 1;
+
+            var blockedFrom = firstBlockedDay + ((index % staggerPositions) * staggerDays);
+
             accommodation.Availability =
             [
                 new AccommodationAvailability
                 {
-                    StartDate = DateOnly.FromDateTime(now.AddDays((index * 3) + 40)),
-                    EndDate = DateOnly.FromDateTime(now.AddDays((index * 3) + 46)),
+                    StartDate = DateOnly.FromDateTime(now.AddDays(blockedFrom)),
+                    EndDate = DateOnly.FromDateTime(now.AddDays(blockedFrom + blockedDays - 1)),
                     IsAvailable = false,
                 },
                 new AccommodationAvailability
                 {
-                    StartDate = DateOnly.FromDateTime(now.AddDays(80)),
-                    EndDate = DateOnly.FromDateTime(now.AddDays(110)),
+                    StartDate = DateOnly.FromDateTime(now.AddDays(specialPriceFromDay)),
+                    EndDate = DateOnly.FromDateTime(now.AddDays(specialPriceThroughDay)),
                     IsAvailable = true,
                     PriceOverride = Math.Round(pricePerNight * 1.35m, 2),
                 },

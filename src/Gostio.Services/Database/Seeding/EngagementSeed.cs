@@ -75,29 +75,29 @@ internal static class EngagementSeed
             return conversation;
         }
 
-        Conversation AboutBooking(int index, DateTime opened, params string[] lines)
+        Conversation AboutBooking(string key, TimeSpan afterOpening, params string[] lines)
         {
-            var booking = bookings.Bookings[index];
+            var booking = bookings.Bookings[key];
 
             return Thread(
                 ConversationType.Direct,
                 booking.Reservation,
                 booking.Reservation.User,
                 booking.Host,
-                opened,
+                booking.Reservation.CreatedAt.Add(afterOpening),
                 lines);
         }
 
         yield return AboutBooking(
-            0,
-            bookings.Bookings[0].Reservation.CreatedAt.AddHours(5),
+            "loft-completed-stay",
+            TimeSpan.FromHours(5),
             "Hello, we land around nine in the evening. Is a late check-in possible?",
             "Of course. I will leave the key in the box by the door and send you the code.",
             "That works, thank you.");
 
         yield return AboutBooking(
-            3,
-            bookings.Bookings[3].Reservation.CreatedAt.AddHours(2),
+            "villa-parking-stay",
+            TimeSpan.FromHours(2),
             "Is there parking at the villa, or should we leave the car down in the town?",
             "There is room for two cars inside the gate. The road up is narrow but "
                 + "paved the whole way, so an ordinary car manages it.",
@@ -105,28 +105,28 @@ internal static class EngagementSeed
             "See you in three weeks.");
 
         yield return AboutBooking(
-            4,
-            bookings.Bookings[4].Reservation.CreatedAt.AddHours(9),
-            "Is the pool heated in October?",
-            "It is, we keep it at 28 degrees until the season closes.");
+            "villa-terrace-stay",
+            TimeSpan.FromHours(9),
+            "Does the roof terrace get much wind in the evening?",
+            "The west wall shelters it in the evening, but bring a layer after sunset.");
 
         yield return AboutBooking(
-            6,
-            bookings.Bookings[6].Reservation.CreatedAt.AddDays(1),
+            "konjic-refunded-stay",
+            TimeSpan.FromDays(1),
             "Something came up at work and we have to cancel. What happens with the payment?",
             "Sorry to hear it. You are well inside the notice period, so the full amount "
                 + "goes back to the same card.",
             "Thank you for being straightforward about it.");
 
         yield return AboutBooking(
-            10,
-            bookings.Bookings[10].Reservation.CreatedAt.AddHours(4),
+            "tunnel-completed-term",
+            TimeSpan.FromHours(4),
             "How much walking is there in total?",
             "About four kilometres, all of it flat except the last stretch up to Kovači.");
 
         yield return AboutBooking(
-            12,
-            bookings.Bookings[12].Reservation.CreatedAt.AddHours(6),
+            "wine-confirmed-term",
+            TimeSpan.FromHours(6),
             "Do you collect us at the accommodation or do we meet at the bridge?",
             "At the bridge, by the bus stop. We leave at eight sharp.");
 
@@ -137,7 +137,7 @@ internal static class EngagementSeed
             users.ByUsername["ivana.matic"],
             users.ByUsername["lejla.begic"],
             now.AddDays(-9),
-            "Is the Konjic apartment free for the first week of November?",
+            "Is the Konjic apartment free for the first week of next month?",
             "It is, and the price drops after the season ends. Send me the dates and I "
                 + "will hold it for a day.");
 
@@ -177,7 +177,7 @@ internal static class EngagementSeed
         BookingSeedResult bookings,
         DateTime now)
     {
-        foreach (var booking in bookings.Bookings)
+        foreach (var booking in bookings.Bookings.Values)
         {
             var reservation = booking.Reservation;
             var guest = reservation.User;
@@ -277,14 +277,15 @@ internal static class EngagementSeed
         NewsItem Item(string title, string body, int daysAgo)
         {
             index++;
+            var image = SeedImages.News(index);
 
             return new NewsItem
             {
                 CreatedByUser = author,
                 Title = title,
                 Body = body,
-                Image = SeedImages.News(index),
-                ImageContentType = SeedImages.ContentType,
+                Image = image.Content,
+                ImageContentType = image.ContentType,
                 PublishedAt = now.AddDays(-daysAgo),
             };
         }
@@ -356,36 +357,36 @@ internal static class EngagementSeed
         yield return Ran("guest", SearchTarget.Accommodations, "loft", "Sarajevo", null, null, null);
         yield return Ran("guest", SearchTarget.Experiences, "walking tour", "Sarajevo", 2, null, 120m);
         yield return Ran("guest", SearchTarget.Experiences, null, "Mostar", 2, null, null);
-        yield return Ran("guest", SearchTarget.Accommodations, "villa", "Trebinje", 6, 300m, 600m);
+        yield return Ran("guest", SearchTarget.Accommodations, "villa", "Neum", 6, 400m, 800m);
 
         yield return Ran("mobile", SearchTarget.Accommodations, "sea view", "Neum", 4, 120m, 280m);
         yield return Ran("mobile", SearchTarget.Accommodations, null, "Konjic", 3, null, 260m);
-        yield return Ran("mobile", SearchTarget.Accommodations, "apartment", "Trebinje", 4, null, null);
+        yield return Ran("mobile", SearchTarget.Accommodations, "apartment", "Tuzla", 4, null, null);
         yield return Ran("mobile", SearchTarget.Experiences, "rafting", "Mostar", 3, null, 180m);
-        yield return Ran("mobile", SearchTarget.Experiences, "kayak", "Bihać", 2, null, null);
+        yield return Ran("mobile", SearchTarget.Experiences, "coffee", "Sarajevo", 2, null, null);
 
-        yield return Ran("emir.kovac", SearchTarget.Accommodations, "stone house", "Mostar", 5, null, 320m);
-        yield return Ran("emir.kovac", SearchTarget.Accommodations, null, "Mostar", 5, 160m, 400m);
+        yield return Ran("emir.kovac", SearchTarget.Accommodations, "cottage", "Jajce", 5, null, 320m);
+        yield return Ran("emir.kovac", SearchTarget.Accommodations, null, "Jajce", 5, 160m, 400m);
         yield return Ran("emir.kovac", SearchTarget.Experiences, "coffee", "Sarajevo", 4, null, 120m);
 
         yield return Ran("sara.jukic", SearchTarget.Accommodations, "stone villa", "Neum", 6, 400m, 800m);
-        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Trebinje", 6, null, 700m);
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Neum", 6, null, 700m);
         yield return Ran("sara.jukic", SearchTarget.Experiences, "wine", "Mostar", 2, null, 240m);
 
-        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "pool", "Trebinje", 7, 400m, 640m);
+        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "terrace", "Neum", 7, 400m, 800m);
         yield return Ran("tarik.mujic", SearchTarget.Accommodations, "cottage", "Jajce", 5, null, 240m);
         yield return Ran("tarik.mujic", SearchTarget.Experiences, "waterfall", "Jajce", 2, null, null);
 
         yield return Ran("ivana.matic", SearchTarget.Accommodations, "studio", "Sarajevo", 2, null, 140m);
         yield return Ran("ivana.matic", SearchTarget.Accommodations, null, "Konjic", 2, 120m, 280m);
-        yield return Ran("ivana.matic", SearchTarget.Experiences, "sunrise", "Bihać", 2, null, 160m);
+        yield return Ran("ivana.matic", SearchTarget.Experiences, "old town", "Sarajevo", 2, null, 160m);
 
         yield return Ran("denis.softic", SearchTarget.Accommodations, "river", "Konjic", 3, null, 300m);
         yield return Ran("denis.softic", SearchTarget.Experiences, "hike", "Jajce", 3, null, null);
 
         yield return Ran("maja.popovic", SearchTarget.Accommodations, "lake", "Jajce", 4, null, 260m);
-        yield return Ran("maja.popovic", SearchTarget.Experiences, "spa", "Trebinje", 2, null, 180m);
-        yield return Ran("maja.popovic", SearchTarget.Experiences, null, "Trebinje", 2, null, null);
+        yield return Ran("maja.popovic", SearchTarget.Experiences, "wine", "Mostar", 2, null, 180m);
+        yield return Ran("maja.popovic", SearchTarget.Experiences, null, "Mostar", 2, null, null);
     }
 
     private static IEnumerable<Favorite> Favorites(
@@ -395,7 +396,7 @@ internal static class EngagementSeed
     {
         var index = 0;
 
-        Favorite Saved(string guest, int? accommodation, int? experience)
+        Favorite Saved(string guest, string? accommodation, string? experience)
         {
             index++;
 
@@ -404,29 +405,29 @@ internal static class EngagementSeed
                 User = users.ByUsername[guest],
                 Accommodation = accommodation is null
                     ? null
-                    : listings.Accommodations[accommodation.Value],
-                Experience = experience is null ? null : listings.Experiences[experience.Value],
+                    : listings.Accommodations[accommodation],
+                Experience = experience is null ? null : listings.Experiences[experience],
                 CreatedAt = now.AddDays(-index * 4),
             };
         }
 
-        yield return Saved("guest", 0, null);
-        yield return Saved("guest", 5, null);
-        yield return Saved("guest", 7, null);
-        yield return Saved("guest", null, 4);
-        yield return Saved("mobile", 4, null);
-        yield return Saved("mobile", 8, null);
-        yield return Saved("mobile", null, 2);
-        yield return Saved("mobile", null, 5);
-        yield return Saved("emir.kovac", 1, null);
-        yield return Saved("emir.kovac", null, 1);
-        yield return Saved("sara.jukic", 7, null);
-        yield return Saved("sara.jukic", null, 4);
-        yield return Saved("tarik.mujic", 5, null);
-        yield return Saved("ivana.matic", 2, null);
-        yield return Saved("ivana.matic", null, 5);
-        yield return Saved("maja.popovic", 3, null);
-        yield return Saved("denis.softic", 8, null);
-        yield return Saved("denis.softic", null, 3);
+        yield return Saved("guest", "sarajevo-loft", null);
+        yield return Saved("guest", "jajce-cottage", null);
+        yield return Saved("guest", "neum-stone-villa", null);
+        yield return Saved("guest", null, "mostar-kravice-wine");
+        yield return Saved("mobile", "neum-seafront", null);
+        yield return Saved("mobile", "konjic-apartment", null);
+        yield return Saved("mobile", null, "mostar-rafting");
+        yield return Saved("mobile", null, "bihac-kayak");
+        yield return Saved("emir.kovac", "tuzla-flat", null);
+        yield return Saved("emir.kovac", null, "sarajevo-coffee-burek");
+        yield return Saved("sara.jukic", "neum-stone-villa", null);
+        yield return Saved("sara.jukic", null, "mostar-kravice-wine");
+        yield return Saved("tarik.mujic", "neum-stone-villa", null);
+        yield return Saved("ivana.matic", "sarajevo-studio", null);
+        yield return Saved("ivana.matic", null, "bihac-kayak");
+        yield return Saved("maja.popovic", "jajce-cottage", null);
+        yield return Saved("denis.softic", "konjic-apartment", null);
+        yield return Saved("denis.softic", null, "jajce-waterfall-hike");
     }
 }

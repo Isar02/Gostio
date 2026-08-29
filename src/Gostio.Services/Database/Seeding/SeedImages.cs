@@ -1,37 +1,55 @@
-using System.Reflection;
+using Gostio.Model.Validation;
 
 namespace Gostio.Services.Database.Seeding;
+
+internal readonly record struct SeedImage(byte[] Content, string ContentType);
 
 internal static class SeedImages
 {
     private const string Prefix = "Gostio.Services.Database.Seeding.Assets.";
 
-    // Every embedded asset is a JPEG, and this is the one place that changes if
-    // that stops being true.
-    public const string ContentType = "image/jpeg";
+    // Keyed without the extension, so a photograph and an illustration can each be
+    // stored in the format that suits it and neither the caller nor the file name
+    // has to say which.
+    private static readonly Dictionary<string, string> Resources = Index();
 
-    public static byte[] Accommodation(int index) => Load($"accommodation{Wrap(index, 12):00}.jpg");
+    public static SeedImage Listing(string slug, int number) => Load($"{slug}-{number}");
 
-    public static byte[] Experience(int index) => Load($"experience{Wrap(index, 8):00}.jpg");
+    public static SeedImage News(int number) => Load($"news-{number}");
 
-    public static byte[] News(int index) => Load($"news{Wrap(index, 4):00}.jpg");
+    public static SeedImage Profile(int number) => Load($"profile-{number}");
 
-    public static byte[] Profile(int index) => Load($"profile{Wrap(index, 6):00}.jpg");
+    private static Dictionary<string, string> Index() =>
+        typeof(SeedImages).Assembly.GetManifestResourceNames()
+            .Where(name => name.StartsWith(Prefix, StringComparison.Ordinal))
+            .ToDictionary(
+                name => Path.GetFileNameWithoutExtension(name[Prefix.Length..]),
+                name => name,
+                StringComparer.OrdinalIgnoreCase);
 
-    private static int Wrap(int index, int count) => ((index - 1) % count) + 1;
-
-    private static byte[] Load(string fileName)
+    private static SeedImage Load(string name)
     {
         var assembly = typeof(SeedImages).Assembly;
 
-        using var stream = assembly.GetManifestResourceStream(Prefix + fileName)
-            ?? throw new InvalidOperationException(
-                $"Seed image '{fileName}' is missing from the embedded resources of "
+        if (!Resources.TryGetValue(name, out var resource))
+        {
+            throw new InvalidOperationException(
+                $"Seed image '{name}' is missing from the embedded resources of "
                 + $"{assembly.GetName().Name}.");
+        }
 
+        using var stream = assembly.GetManifestResourceStream(resource)!;
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);
 
-        return buffer.ToArray();
+        var content = buffer.ToArray();
+
+        // Read off the bytes by the rule the upload endpoints run, so a seeded row
+        // and an uploaded one can never disagree about what they hold.
+        return new SeedImage(
+            content,
+            ImageRules.Detect(content)
+                ?? throw new InvalidOperationException(
+                    $"Seed image '{name}' is not in a format this application serves."));
     }
 }

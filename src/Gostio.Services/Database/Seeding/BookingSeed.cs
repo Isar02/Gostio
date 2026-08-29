@@ -15,7 +15,7 @@ internal sealed record SeededBooking(
     int? Rating,
     string? Comment);
 
-internal sealed record BookingSeedResult(IReadOnlyList<SeededBooking> Bookings);
+internal sealed record BookingSeedResult(IReadOnlyDictionary<string, SeededBooking> Bookings);
 
 internal static class BookingSeed
 {
@@ -29,15 +29,16 @@ internal static class BookingSeed
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var bookings = Bookings(users, listings, now).ToList();
+        var bookings = Bookings(users, listings, now)
+            .ToDictionary(item => item.Key, item => item.Booking, StringComparer.Ordinal);
 
-        db.AddRange(bookings.Select(booking => booking.Reservation));
+        db.AddRange(bookings.Values.Select(booking => booking.Reservation));
 
         await db.SaveChangesAsync(cancellationToken);
 
         var sequence = 0;
 
-        foreach (var booking in bookings)
+        foreach (var booking in bookings.Values)
         {
             sequence++;
 
@@ -70,7 +71,7 @@ internal static class BookingSeed
         return new BookingSeedResult(bookings);
     }
 
-    private static IEnumerable<SeededBooking> Bookings(
+    private static IEnumerable<(string Key, SeededBooking Booking)> Bookings(
         UserSeedResult users,
         ListingSeedResult listings,
         DateTime now)
@@ -78,12 +79,13 @@ internal static class BookingSeed
         var accommodations = listings.Accommodations;
         var experiences = listings.Experiences;
 
-        ExperienceSlot Slot(int experience, int slot) =>
+        ExperienceSlot Slot(string experience, int slot) =>
             experiences[experience].Slots.ElementAt(slot);
 
-        SeededBooking Stay(
+        (string Key, SeededBooking Booking) Stay(
+            string key,
             string guest,
-            int accommodation,
+            string accommodation,
             int checkInOffset,
             int nights,
             int guestCount,
@@ -100,7 +102,7 @@ internal static class BookingSeed
             var total = listing.PricePerNight * nights;
             var charged = total + listing.CleaningFee;
 
-            return new SeededBooking(
+            return (key, new SeededBooking(
                 new Reservation
                 {
                     User = users.ByUsername[guest],
@@ -121,12 +123,13 @@ internal static class BookingSeed
                 payment,
                 RefundAmount(charged, refundShare),
                 rating,
-                comment);
+                comment));
         }
 
-        SeededBooking Term(
+        (string Key, SeededBooking Booking) Term(
+            string key,
             string guest,
-            int experience,
+            string experience,
             int slot,
             int guestCount,
             ReservationStatusCode status,
@@ -141,7 +144,7 @@ internal static class BookingSeed
             var price = listing.PricePerPerson;
             var charged = price * guestCount;
 
-            return new SeededBooking(
+            return (key, new SeededBooking(
                 new Reservation
                 {
                     User = users.ByUsername[guest],
@@ -159,104 +162,104 @@ internal static class BookingSeed
                 payment,
                 RefundAmount(charged, refundShare),
                 rating,
-                comment);
+                comment));
         }
 
         yield return Stay(
-            "guest", 0, -120, 5, 2,
+            "loft-completed-stay", "guest", "sarajevo-loft", -120, 5, 2,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 5,
             comment: "The view is exactly what the photos promise and the host left "
                 + "coffee and a map on the table.");
 
         yield return Stay(
-            "mobile", 4, -90, 7, 4,
+            "seafront-completed-stay", "mobile", "neum-seafront", -90, 7, 4,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 4,
             comment: "Two steps from the sea and quiet at night. The kitchen could use "
                 + "a second pan.");
 
         yield return Stay(
-            "emir.kovac", 1, -60, 4, 5,
+            "cottage-completed-stay", "emir.kovac", "jajce-cottage", -60, 4, 5,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 5,
-            comment: "Cool inside even at noon, and the walk down to the bridge takes "
-                + "five minutes.");
+            comment: "The stove was already lit when we arrived, and the boat that comes "
+                + "with the house is worth the walk down to the water.");
 
         yield return Stay(
-            "sara.jukic", 7, 21, 5, 6,
+            "villa-parking-stay", "sara.jukic", "neum-stone-villa", 21, 5, 6,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
         yield return Stay(
-            "tarik.mujic", 5, 34, 4, 7,
+            "villa-terrace-stay", "tarik.mujic", "neum-stone-villa", 34, 4, 7,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
         yield return Stay(
-            "ivana.matic", 2, 12, 3, 2,
+            "studio-pending-stay", "ivana.matic", "sarajevo-studio", 12, 3, 2,
             ReservationStatusCode.Pending, PaymentStatus.Pending);
 
         yield return Stay(
-            "denis.softic", 8, 45, 4, 3,
+            "konjic-refunded-stay", "denis.softic", "konjic-apartment", 45, 4, 3,
             ReservationStatusCode.Cancelled, PaymentStatus.Succeeded,
             refundShare: 1m);
 
         yield return Stay(
-            "maja.popovic", 3, 18, 4, 4,
+            "cottage-cancelled-stay", "maja.popovic", "jajce-cottage", 18, 4, 4,
             ReservationStatusCode.Cancelled, PaymentStatus.Cancelled);
 
         yield return Stay(
-            "guest", 9, -30, 3, 3,
+            "tuzla-completed-stay", "guest", "tuzla-flat", -30, 3, 3,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 3,
             comment: "Fine for the price and close to everything, but the street is "
                 + "loud before seven.");
 
         yield return Stay(
-            "mobile", 6, 8, 2, 1,
+            "tuzla-confirmed-stay", "mobile", "tuzla-flat", 8, 2, 1,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
         yield return Term(
-            "guest", 0, 0, 2,
+            "tunnel-completed-term", "guest", "sarajevo-tunnel-walk", 0, 2,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 5,
             comment: "Three hours that explain the city better than any museum on "
                 + "its own.");
 
         yield return Term(
-            "mobile", 2, 0, 3,
+            "rafting-completed-term", "mobile", "mostar-rafting", 0, 3,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 4,
             comment: "Well run and genuinely fun. Bring shoes you do not mind soaking.");
 
         yield return Term(
-            "sara.jukic", 4, 2, 2,
+            "wine-confirmed-term", "sara.jukic", "mostar-kravice-wine", 2, 2,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
         yield return Term(
-            "emir.kovac", 1, 2, 4,
+            "coffee-pending-term", "emir.kovac", "sarajevo-coffee-burek", 2, 4,
             ReservationStatusCode.Pending, PaymentStatus.Pending);
 
         yield return Term(
-            "ivana.matic", 5, 2, 2,
+            "kayak-confirmed-term", "ivana.matic", "bihac-kayak", 2, 2,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
         yield return Term(
-            "tarik.mujic", 3, 1, 2,
+            "waterfall-completed-term", "tarik.mujic", "jajce-waterfall-hike", 1, 2,
             ReservationStatusCode.Completed, PaymentStatus.Succeeded,
             rating: 4,
             comment: "An easy walk with a good story at every mill.");
 
         yield return Term(
-            "maja.popovic", 6, 2, 2,
+            "wine-refunded-term", "maja.popovic", "mostar-kravice-wine", 2, 2,
             ReservationStatusCode.Cancelled, PaymentStatus.Succeeded,
             refundShare: 0.5m);
 
         yield return Term(
-            "guest", 0, 3, 2,
+            "tunnel-confirmed-term", "guest", "sarajevo-tunnel-walk", 3, 2,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
         yield return Term(
-            "denis.softic", 3, 2, 3,
+            "waterfall-confirmed-term", "denis.softic", "jajce-waterfall-hike", 2, 3,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
     }
 

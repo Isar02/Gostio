@@ -3,8 +3,8 @@ using Gostio.Services.Database.Entities;
 namespace Gostio.Services.Database.Seeding;
 
 internal sealed record ListingSeedResult(
-    IReadOnlyList<Accommodation> Accommodations,
-    IReadOnlyList<Experience> Experiences);
+    IReadOnlyDictionary<string, Accommodation> Accommodations,
+    IReadOnlyDictionary<string, Experience> Experiences);
 
 internal static class ListingSeed
 {
@@ -15,25 +15,28 @@ internal static class ListingSeed
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var accommodations = Accommodations(lookups, users, now).ToList();
-        var experiences = Experiences(lookups, users, now).ToList();
+        var accommodations = Accommodations(lookups, users, now)
+            .ToDictionary(item => item.Slug, item => item.Listing, StringComparer.Ordinal);
+        var experiences = Experiences(lookups, users, now)
+            .ToDictionary(item => item.Slug, item => item.Listing, StringComparer.Ordinal);
 
-        db.AddRange(accommodations);
-        db.AddRange(experiences);
+        db.AddRange(accommodations.Values);
+        db.AddRange(experiences.Values);
 
         await db.SaveChangesAsync(cancellationToken);
 
         return new ListingSeedResult(accommodations, experiences);
     }
 
-    private static IEnumerable<Accommodation> Accommodations(
+    private static IEnumerable<(string Slug, Accommodation Listing)> Accommodations(
         LookupSeedResult lookups,
         UserSeedResult users,
         DateTime now)
     {
         var index = 0;
 
-        Accommodation Listing(
+        (string Slug, Accommodation Listing) Listing(
+            string slug,
             string host,
             string title,
             string description,
@@ -74,13 +77,18 @@ internal static class ListingSeed
                 {
                     Amenity = lookups.Amenities[name],
                 })],
-                Photos = [.. Enumerable.Range(0, 3).Select(offset => new AccommodationPhoto
+                Photos = [.. Enumerable.Range(0, 3).Select(offset =>
                 {
-                    Image = SeedImages.Accommodation(index + offset),
-                    ContentType = SeedImages.ContentType,
-                    IsCover = offset == 0,
-                    DisplayOrder = offset,
-                    UploadedAt = created.AddHours(offset),
+                    var photo = SeedImages.Listing(slug, offset + 1);
+
+                    return new AccommodationPhoto
+                    {
+                        Image = photo.Content,
+                        ContentType = photo.ContentType,
+                        IsCover = offset == 0,
+                        DisplayOrder = offset,
+                        UploadedAt = created.AddHours(offset),
+                    };
                 })],
             };
 
@@ -102,10 +110,11 @@ internal static class ListingSeed
                 },
             ];
 
-            return accommodation;
+            return (slug, accommodation);
         }
 
         yield return Listing(
+            "sarajevo-loft",
             "host",
             "Old town loft with a Baščaršija view",
             "A top-floor loft two minutes from Sebilj, with beams, a reading nook and a "
@@ -115,15 +124,7 @@ internal static class ListingSeed
             ["Wi-Fi", "Air conditioning", "Kitchen", "Heating", "TV", "Workspace"]);
 
         yield return Listing(
-            "amina.hodzic",
-            "Stone house above the Neretva",
-            "A restored stone house on the left bank, five minutes uphill from the Old "
-            + "Bridge. Thick walls keep it cool through August.",
-            "House", "Historic", "Mostar", "Maršala Tita 88",
-            43.3391m, 17.8156m, 6, 3, 2, 235m, 60m,
-            ["Wi-Fi", "Air conditioning", "Kitchen", "Free parking", "Balcony", "Washing machine"]);
-
-        yield return Listing(
+            "sarajevo-studio",
             "host",
             "Compact studio by the Miljacka",
             "A quiet studio on the riverside walk, built for one or two people who plan "
@@ -133,6 +134,7 @@ internal static class ListingSeed
             ["Wi-Fi", "Heating", "Kitchen", "TV"]);
 
         yield return Listing(
+            "jajce-cottage",
             "marko.perisic",
             "Cottage by the Pliva lakes",
             "A timber cottage at the waterside outside Jajce, with a wood stove, a "
@@ -142,6 +144,7 @@ internal static class ListingSeed
             ["Wi-Fi", "Free parking", "Kitchen", "Heating", "Pet friendly", "Balcony"]);
 
         yield return Listing(
+            "neum-seafront",
             "lejla.begic",
             "Seafront apartment in Neum",
             "A first-floor apartment with the sea directly across the road, a shaded "
@@ -151,36 +154,20 @@ internal static class ListingSeed
             ["Wi-Fi", "Air conditioning", "Kitchen", "Balcony", "Free parking", "TV"]);
 
         yield return Listing(
-            "nikola.savic",
-            "Villa with a pool above Trebinje",
-            "A hillside villa in the vineyards, with a heated pool, an outdoor kitchen "
-            + "and the whole valley below the terrace.",
-            "Villa", "Luxury", "Trebinje", "Gornje Police 7",
-            42.7189m, 18.3494m, 8, 4, 3, 510m, 120m,
-            [
-                "Wi-Fi", "Air conditioning", "Kitchen", "Swimming pool", "Free parking",
-                "Washing machine", "Balcony", "TV"
-            ]);
-
-        yield return Listing(
-            "amina.hodzic",
-            "Quiet room in the centre of Banja Luka",
-            "A private room in a shared flat one block from Gospodska, suited to a "
-            + "single traveller who wants a bed and a desk.",
-            "Private room", "City break", "Banja Luka", "Veselina Masleše 30",
-            44.7722m, 17.1910m, 2, 1, 1, 80m, 20m,
-            ["Wi-Fi", "Heating", "Workspace", "TV"]);
-
-        yield return Listing(
+            "neum-stone-villa",
             "marko.perisic",
             "Stone villa on the hill above Neum",
             "A three-storey villa in the pines above the town, with a walled garden, a "
             + "roof terrace and steps down to a bay the road does not reach.",
             "Villa", "Seaside", "Neum", "Kralja Tomislava 58",
             42.9281m, 17.5996m, 7, 4, 3, 625m, 140m,
-            ["Wi-Fi", "Air conditioning", "Kitchen", "Balcony", "Washing machine", "TV"]);
+            [
+                "Wi-Fi", "Air conditioning", "Kitchen", "Free parking", "Balcony",
+                "Washing machine", "TV"
+            ]);
 
         yield return Listing(
+            "konjic-apartment",
             "lejla.begic",
             "Apartment above the Neretva in Konjic",
             "A small apartment on the upper bank, with a balcony over the green water "
@@ -190,6 +177,7 @@ internal static class ListingSeed
             ["Wi-Fi", "Air conditioning", "Kitchen", "Balcony", "TV"]);
 
         yield return Listing(
+            "tuzla-flat",
             "nikola.savic",
             "Riverside flat in Tuzla",
             "A renovated flat by the Jala, ten minutes on foot from the salt lakes and "
@@ -199,27 +187,30 @@ internal static class ListingSeed
             ["Wi-Fi", "Heating", "Kitchen", "Washing machine", "Free parking"]);
 
         var withdrawn = Listing(
+            "bihac-attic",
             "amina.hodzic",
-            "Attic studio in Bihać",
-            "An attic studio by the Una, withdrawn from the catalogue while the roof is "
-            + "being replaced.",
-            "Studio", "Countryside", "Bihać", "Bosanska 19",
-            44.8169m, 15.8708m, 2, 1, 1, 100m, 20m,
-            ["Wi-Fi", "Heating", "Kitchen"]);
+            "Open-plan attic above the rooftops of Bihać",
+            "A wide top-floor flat under the eaves, with skylights over the kitchen "
+            + "island and windows onto the roofs. Withdrawn from the catalogue while "
+            + "the roof above it is being replaced.",
+            "Apartment", "Luxury", "Bihać", "Bosanska 19",
+            44.8169m, 15.8708m, 5, 2, 2, 260m, 55m,
+            ["Wi-Fi", "Heating", "Kitchen", "Air conditioning", "Workspace", "TV"]);
 
-        withdrawn.IsActive = false;
+        withdrawn.Listing.IsActive = false;
 
         yield return withdrawn;
     }
 
-    private static IEnumerable<Experience> Experiences(
+    private static IEnumerable<(string Slug, Experience Listing)> Experiences(
         LookupSeedResult lookups,
         UserSeedResult users,
         DateTime now)
     {
         var index = 0;
 
-        Experience Listing(
+        (string Slug, Experience Listing) Listing(
+            string slug,
             string host,
             string title,
             string description,
@@ -236,7 +227,7 @@ internal static class ListingSeed
             index++;
             var created = now.AddMonths(-10).AddDays(index * 13);
 
-            return new Experience
+            return (slug, new Experience
             {
                 Host = users.ByUsername[host],
                 Title = title,
@@ -249,13 +240,18 @@ internal static class ListingSeed
                 DurationMinutes = durationMinutes,
                 PricePerPerson = pricePerPerson,
                 CreatedAt = created,
-                Photos = [.. Enumerable.Range(0, 2).Select(offset => new ExperiencePhoto
+                Photos = [.. Enumerable.Range(0, 2).Select(offset =>
                 {
-                    Image = SeedImages.Experience(index + offset),
-                    ContentType = SeedImages.ContentType,
-                    IsCover = offset == 0,
-                    DisplayOrder = offset,
-                    UploadedAt = created.AddHours(offset),
+                    var photo = SeedImages.Listing(slug, offset + 1);
+
+                    return new ExperiencePhoto
+                    {
+                        Image = photo.Content,
+                        ContentType = photo.ContentType,
+                        IsCover = offset == 0,
+                        DisplayOrder = offset,
+                        UploadedAt = created.AddHours(offset),
+                    };
                 })],
                 Slots = [.. slotDayOffsets.Select(offset => new ExperienceSlot
                 {
@@ -264,10 +260,11 @@ internal static class ListingSeed
                     Capacity = capacity,
                     CreatedAt = created,
                 })],
-            };
+            });
         }
 
         yield return Listing(
+            "sarajevo-tunnel-walk",
             "host",
             "War tunnel and old town on foot",
             "Half a day across Sarajevo on foot and by tram: the tunnel museum first, "
@@ -276,6 +273,7 @@ internal static class ListingSeed
             43.8186m, 18.3450m, 180, 70m, 12, [-96, -40, -12, 9, 23, 44]);
 
         yield return Listing(
+            "sarajevo-coffee-burek",
             "amina.hodzic",
             "Bosnian coffee and burek workshop",
             "Roll the dough by hand, learn why the pan is turned, then eat what you made "
@@ -284,6 +282,7 @@ internal static class ListingSeed
             43.8601m, 18.4360m, 150, 90m, 8, [-58, -21, 6, 19, 33]);
 
         yield return Listing(
+            "mostar-rafting",
             "marko.perisic",
             "Rafting the Neretva canyon",
             "A full descent with two guides, a break at a spring nobody finds from the "
@@ -292,6 +291,7 @@ internal static class ListingSeed
             43.5044m, 18.1417m, 300, 135m, 16, [-70, -30, 11, 26, 47]);
 
         yield return Listing(
+            "jajce-waterfall-hike",
             "marko.perisic",
             "Pliva waterfall and mill hike",
             "An easy walk from the town gate down to the waterfall and along the little "
@@ -300,6 +300,7 @@ internal static class ListingSeed
             44.3419m, 17.2711m, 240, 60m, 14, [-63, -18, 8, 21, 39]);
 
         yield return Listing(
+            "mostar-kravice-wine",
             "lejla.begic",
             "Kravice falls and Herzegovina wine",
             "The falls in the morning while they are still quiet, then two cellars in "
@@ -307,31 +308,17 @@ internal static class ListingSeed
             "Food and drink", "Mostar", "Bus stop by the Old Bridge",
             43.3372m, 17.8148m, 360, 165m, 10, [-48, -15, 13, 29, 51]);
 
-        yield return Listing(
+        var paused = Listing(
+            "bihac-kayak",
             "lejla.begic",
             "The Una by kayak at sunrise",
             "Out before the town wakes, down the still water past the captain's tower "
-            + "and back with breakfast on the bank.",
+            + "and back with breakfast on the bank. Paused until the spring, while the "
+            + "water runs too high to launch from the promenade.",
             "Adventure", "Bihać", "Kayak landing, Una riverside promenade",
             44.8231m, 15.8629m, 210, 110m, 10, [-35, -9, 7, 17, 31]);
 
-        yield return Listing(
-            "nikola.savic",
-            "Hammam and spa afternoon in Trebinje",
-            "An unhurried afternoon in a restored hammam, with a massage and mint tea in "
-            + "the courtyard afterwards.",
-            "Wellness", "Trebinje", "Hammam, Trebinje old town",
-            42.7112m, 18.3437m, 120, 120m, 6, [-27, -5, 10, 24, 41]);
-
-        var paused = Listing(
-            "nikola.savic",
-            "Banja Luka after dark",
-            "A night walk between three bars and the riverside, paused for the season "
-            + "while the guide is away.",
-            "Nightlife", "Banja Luka", "Krajina square, by the clock",
-            44.7686m, 17.1919m, 120, 50m, 12, [-40, -12]);
-
-        paused.IsActive = false;
+        paused.Listing.IsActive = false;
 
         yield return paused;
     }

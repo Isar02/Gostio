@@ -161,10 +161,10 @@ listing in the catalogue carries. Both are the cold start below.
 
 ## The candidates
 
-The whole published catalogue of the target is scored on every request. A
-listing is left out when
+The whole catalogue of the target is scored on every request. A listing is left
+out when
 
-- it is not published,
+- its `IsActive` column is `false`,
 - the caller hosts it,
 - the caller already keeps it or has already booked it, which is no news,
 - it is an experience with no active term still ahead of it, which is one

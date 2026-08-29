@@ -13,11 +13,34 @@ internal static class SeedImages
     // has to say which.
     private static readonly Dictionary<string, string> Resources = Index();
 
-    public static SeedImage Listing(string slug, int number) => Load($"{slug}-{number}");
+    // A listing carries the photographs it was given rather than a number fixed
+    // in the seed, so one shot from a second angle and one from a third are both
+    // whole sets rather than a set with a hole in it.
+    public static IReadOnlyList<SeedImage> Listing(string slug)
+    {
+        var prefix = $"{slug}-";
+        var photos = Resources.Keys
+            .Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(name => (Name: name, Number: PhotoNumber(name, prefix.Length)))
+            .OrderBy(photo => photo.Number)
+            .Select(photo => Load(photo.Name))
+            .ToArray();
+
+        return photos.Length > 0
+            ? photos
+            : throw new InvalidOperationException(
+                $"No seed image is named for the listing '{slug}'.");
+    }
 
     public static SeedImage News(int number) => Load($"news-{number}");
 
     public static SeedImage Profile(int number) => Load($"profile-{number}");
+
+    private static int PhotoNumber(string name, int prefixLength) =>
+        int.TryParse(name[prefixLength..], out var number) && number > 0
+            ? number
+            : throw new InvalidOperationException(
+                $"Seed image '{name}' must end in a positive photograph number.");
 
     private static Dictionary<string, string> Index() =>
         typeof(SeedImages).Assembly.GetManifestResourceNames()

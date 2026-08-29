@@ -77,19 +77,15 @@ internal static class ListingSeed
                 {
                     Amenity = lookups.Amenities[name],
                 })],
-                Photos = [.. Enumerable.Range(0, 3).Select(offset =>
-                {
-                    var photo = SeedImages.Listing(slug, offset + 1);
-
-                    return new AccommodationPhoto
+                Photos = [.. SeedImages.Listing(slug).Select((photo, offset) =>
+                    new AccommodationPhoto
                     {
                         Image = photo.Content,
                         ContentType = photo.ContentType,
                         IsCover = offset == 0,
                         DisplayOrder = offset,
                         UploadedAt = created.AddHours(offset),
-                    };
-                })],
+                    })],
             };
 
             // A row is an exception to an otherwise open calendar: a block, or a price.
@@ -254,19 +250,15 @@ internal static class ListingSeed
                 DurationMinutes = durationMinutes,
                 PricePerPerson = pricePerPerson,
                 CreatedAt = created,
-                Photos = [.. Enumerable.Range(0, 2).Select(offset =>
-                {
-                    var photo = SeedImages.Listing(slug, offset + 1);
-
-                    return new ExperiencePhoto
+                Photos = [.. SeedImages.Listing(slug).Select((photo, offset) =>
+                    new ExperiencePhoto
                     {
                         Image = photo.Content,
                         ContentType = photo.ContentType,
                         IsCover = offset == 0,
                         DisplayOrder = offset,
                         UploadedAt = created.AddHours(offset),
-                    };
-                })],
+                    })],
                 Slots = [.. slotDayOffsets.Select(offset => new ExperienceSlot
                 {
                     StartTime = now.Date.AddDays(offset).AddHours(9 + (Math.Abs(offset) % 8)),

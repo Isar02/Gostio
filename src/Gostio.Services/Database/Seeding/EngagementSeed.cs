@@ -351,40 +351,40 @@ internal static class EngagementSeed
             };
         }
 
-        yield return Ran("guest", SearchTarget.Accommodations, "old town", "Sarajevo", 2, 40m, 120m);
-        yield return Ran("guest", SearchTarget.Accommodations, null, "Sarajevo", 2, null, 100m);
+        yield return Ran("guest", SearchTarget.Accommodations, "old town", "Sarajevo", 2, 80m, 240m);
+        yield return Ran("guest", SearchTarget.Accommodations, null, "Sarajevo", 2, null, 200m);
         yield return Ran("guest", SearchTarget.Accommodations, "loft", "Sarajevo", null, null, null);
-        yield return Ran("guest", SearchTarget.Experiences, "walking tour", "Sarajevo", 2, null, 60m);
+        yield return Ran("guest", SearchTarget.Experiences, "walking tour", "Sarajevo", 2, null, 120m);
         yield return Ran("guest", SearchTarget.Experiences, null, "Mostar", 2, null, null);
-        yield return Ran("guest", SearchTarget.Accommodations, "villa", "Trebinje", 6, 150m, 300m);
+        yield return Ran("guest", SearchTarget.Accommodations, "villa", "Trebinje", 6, 300m, 600m);
 
-        yield return Ran("mobile", SearchTarget.Accommodations, "sea view", "Neum", 4, 60m, 140m);
-        yield return Ran("mobile", SearchTarget.Accommodations, null, "Konjic", 3, null, 130m);
+        yield return Ran("mobile", SearchTarget.Accommodations, "sea view", "Neum", 4, 120m, 280m);
+        yield return Ran("mobile", SearchTarget.Accommodations, null, "Konjic", 3, null, 260m);
         yield return Ran("mobile", SearchTarget.Accommodations, "apartment", "Trebinje", 4, null, null);
-        yield return Ran("mobile", SearchTarget.Experiences, "rafting", "Mostar", 3, null, 90m);
+        yield return Ran("mobile", SearchTarget.Experiences, "rafting", "Mostar", 3, null, 180m);
         yield return Ran("mobile", SearchTarget.Experiences, "kayak", "Bihać", 2, null, null);
 
-        yield return Ran("emir.kovac", SearchTarget.Accommodations, "stone house", "Mostar", 5, null, 160m);
-        yield return Ran("emir.kovac", SearchTarget.Accommodations, null, "Mostar", 5, 80m, 200m);
-        yield return Ran("emir.kovac", SearchTarget.Experiences, "coffee", "Sarajevo", 4, null, 60m);
+        yield return Ran("emir.kovac", SearchTarget.Accommodations, "stone house", "Mostar", 5, null, 320m);
+        yield return Ran("emir.kovac", SearchTarget.Accommodations, null, "Mostar", 5, 160m, 400m);
+        yield return Ran("emir.kovac", SearchTarget.Experiences, "coffee", "Sarajevo", 4, null, 120m);
 
-        yield return Ran("sara.jukic", SearchTarget.Accommodations, "stone villa", "Neum", 6, 200m, 400m);
-        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Trebinje", 6, null, 350m);
-        yield return Ran("sara.jukic", SearchTarget.Experiences, "wine", "Mostar", 2, null, 120m);
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, "stone villa", "Neum", 6, 400m, 800m);
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Trebinje", 6, null, 700m);
+        yield return Ran("sara.jukic", SearchTarget.Experiences, "wine", "Mostar", 2, null, 240m);
 
-        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "pool", "Trebinje", 7, 200m, 320m);
-        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "cottage", "Jajce", 5, null, 120m);
+        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "pool", "Trebinje", 7, 400m, 640m);
+        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "cottage", "Jajce", 5, null, 240m);
         yield return Ran("tarik.mujic", SearchTarget.Experiences, "waterfall", "Jajce", 2, null, null);
 
-        yield return Ran("ivana.matic", SearchTarget.Accommodations, "studio", "Sarajevo", 2, null, 70m);
-        yield return Ran("ivana.matic", SearchTarget.Accommodations, null, "Konjic", 2, 60m, 140m);
-        yield return Ran("ivana.matic", SearchTarget.Experiences, "sunrise", "Bihać", 2, null, 80m);
+        yield return Ran("ivana.matic", SearchTarget.Accommodations, "studio", "Sarajevo", 2, null, 140m);
+        yield return Ran("ivana.matic", SearchTarget.Accommodations, null, "Konjic", 2, 120m, 280m);
+        yield return Ran("ivana.matic", SearchTarget.Experiences, "sunrise", "Bihać", 2, null, 160m);
 
-        yield return Ran("denis.softic", SearchTarget.Accommodations, "river", "Konjic", 3, null, 150m);
+        yield return Ran("denis.softic", SearchTarget.Accommodations, "river", "Konjic", 3, null, 300m);
         yield return Ran("denis.softic", SearchTarget.Experiences, "hike", "Jajce", 3, null, null);
 
-        yield return Ran("maja.popovic", SearchTarget.Accommodations, "lake", "Jajce", 4, null, 130m);
-        yield return Ran("maja.popovic", SearchTarget.Experiences, "spa", "Trebinje", 2, null, 90m);
+        yield return Ran("maja.popovic", SearchTarget.Accommodations, "lake", "Jajce", 4, null, 260m);
+        yield return Ran("maja.popovic", SearchTarget.Experiences, "spa", "Trebinje", 2, null, 180m);
         yield return Ran("maja.popovic", SearchTarget.Experiences, null, "Trebinje", 2, null, null);
     }
 

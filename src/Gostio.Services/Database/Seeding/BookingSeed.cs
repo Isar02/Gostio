@@ -93,12 +93,13 @@ internal static class BookingSeed
             PaymentStatus? payment,
             decimal? refundShare = null,
             int? rating = null,
-            string? comment = null)
+            string? comment = null,
+            int? openedHoursAgo = null)
         {
             var listing = accommodations[accommodation];
             var checkIn = now.Date.AddDays(checkInOffset);
             var checkOut = checkIn.AddDays(nights);
-            var created = Created(checkIn, now);
+            var created = Opened(checkIn, now, status, openedHoursAgo);
             var total = listing.PricePerNight * nights;
             var charged = total + listing.CleaningFee;
 
@@ -136,11 +137,12 @@ internal static class BookingSeed
             PaymentStatus? payment,
             decimal? refundShare = null,
             int? rating = null,
-            string? comment = null)
+            string? comment = null,
+            int? openedHoursAgo = null)
         {
             var listing = experiences[experience];
             var term = Slot(experience, slot);
-            var created = Created(term.StartTime, now);
+            var created = Opened(term.StartTime, now, status, openedHoursAgo);
             var price = listing.PricePerPerson;
             var charged = price * guestCount;
 
@@ -194,9 +196,12 @@ internal static class BookingSeed
             "villa-terrace-stay", "tarik.mujic", "neum-stone-villa", 34, 4, 7,
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
 
+        // Opened hours rather than weeks ago, so the hold on it is still running
+        // when the database is first seeded and the sweep leaves it alone.
         yield return Stay(
             "studio-pending-stay", "ivana.matic", "sarajevo-studio", 12, 3, 2,
-            ReservationStatusCode.Pending, PaymentStatus.Pending);
+            ReservationStatusCode.Pending, PaymentStatus.Pending,
+            openedHoursAgo: 3);
 
         yield return Stay(
             "konjic-refunded-stay", "denis.softic", "konjic-apartment", 45, 4, 3,
@@ -237,7 +242,8 @@ internal static class BookingSeed
 
         yield return Term(
             "coffee-pending-term", "emir.kovac", "sarajevo-coffee-burek", 2, 4,
-            ReservationStatusCode.Pending, PaymentStatus.Pending);
+            ReservationStatusCode.Pending, PaymentStatus.Pending,
+            openedHoursAgo: 9);
 
         yield return Term(
             "kayak-confirmed-term", "ivana.matic", "bihac-kayak", 2, 2,
@@ -263,8 +269,38 @@ internal static class BookingSeed
             ReservationStatusCode.Confirmed, PaymentStatus.Succeeded);
     }
 
-    private static DateTime Created(DateTime start, DateTime now)
+    // A booking is normally opened three weeks before the thing it books, which
+    // puts every hold in the past and lets the sweep close the ones that were
+    // never paid for. A booking that has to still be holding its place names how
+    // long ago it was made instead, because the deadline is counted from there.
+    private static DateTime Opened(
+        DateTime start,
+        DateTime now,
+        ReservationStatusCode status,
+        int? openedHoursAgo)
     {
+        if (status == ReservationStatusCode.Pending)
+        {
+            var hours = openedHoursAgo
+                ?? throw new InvalidOperationException(
+                    "A pending seeded reservation must name when its live hold opened.");
+
+            if (hours < 0 || hours >= PaymentDeadlineHours)
+            {
+                throw new InvalidOperationException(
+                    $"A pending seeded reservation must have opened between 0 and "
+                    + $"{PaymentDeadlineHours - 1} hours ago.");
+            }
+
+            return now.AddHours(-hours);
+        }
+
+        if (openedHoursAgo is not null)
+        {
+            throw new InvalidOperationException(
+                "Only a pending seeded reservation can override when its hold opened.");
+        }
+
         var created = start.AddDays(-21);
 
         return created < now ? created : now.AddDays(-4);

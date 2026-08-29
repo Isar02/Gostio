@@ -89,7 +89,7 @@ internal static class BookingSeed
             int guestCount,
             ReservationStatusCode status,
             PaymentStatus? payment,
-            decimal? refund = null,
+            decimal? refundShare = null,
             int? rating = null,
             string? comment = null)
         {
@@ -98,6 +98,7 @@ internal static class BookingSeed
             var checkOut = checkIn.AddDays(nights);
             var created = Created(checkIn, now);
             var total = listing.PricePerNight * nights;
+            var charged = total + listing.CleaningFee;
 
             return new SeededBooking(
                 new Reservation
@@ -111,14 +112,14 @@ internal static class BookingSeed
                     ExpiresAt = created.AddHours(PaymentDeadlineHours),
                     AccommodationTotal = total,
                     CleaningFee = listing.CleaningFee,
-                    TotalPrice = total + listing.CleaningFee,
+                    TotalPrice = charged,
                     CreatedAt = created,
                 },
                 listing.Host,
                 status,
                 checkOut.AddHours(11),
                 payment,
-                refund,
+                RefundAmount(charged, refundShare),
                 rating,
                 comment);
         }
@@ -130,7 +131,7 @@ internal static class BookingSeed
             int guestCount,
             ReservationStatusCode status,
             PaymentStatus? payment,
-            decimal? refund = null,
+            decimal? refundShare = null,
             int? rating = null,
             string? comment = null)
         {
@@ -138,6 +139,7 @@ internal static class BookingSeed
             var term = Slot(experience, slot);
             var created = Created(term.StartTime, now);
             var price = listing.PricePerPerson;
+            var charged = price * guestCount;
 
             return new SeededBooking(
                 new Reservation
@@ -148,14 +150,14 @@ internal static class BookingSeed
                     ReservationStatusId = (int)status,
                     ExpiresAt = created.AddHours(PaymentDeadlineHours),
                     PricePerPerson = price,
-                    TotalPrice = price * guestCount,
+                    TotalPrice = charged,
                     CreatedAt = created,
                 },
                 listing.Host,
                 status,
                 term.StartTime.AddMinutes(term.DurationMinutes),
                 payment,
-                refund,
+                RefundAmount(charged, refundShare),
                 rating,
                 comment);
         }
@@ -196,7 +198,7 @@ internal static class BookingSeed
         yield return Stay(
             "denis.softic", 8, 45, 4, 3,
             ReservationStatusCode.Cancelled, PaymentStatus.Succeeded,
-            refund: 440m);
+            refundShare: 1m);
 
         yield return Stay(
             "maja.popovic", 3, 18, 4, 4,
@@ -247,7 +249,7 @@ internal static class BookingSeed
         yield return Term(
             "maja.popovic", 6, 2, 2,
             ReservationStatusCode.Cancelled, PaymentStatus.Succeeded,
-            refund: 60m);
+            refundShare: 0.5m);
 
         yield return Term(
             "guest", 0, 3, 2,
@@ -364,6 +366,9 @@ internal static class BookingSeed
                 : null,
         };
     }
+
+    private static decimal? RefundAmount(decimal charged, decimal? refundShare) =>
+        refundShare is { } share ? Math.Round(charged * share, 2) : null;
 
     private static Refund? RefundFor(SeededBooking booking, Payment payment, int sequence)
     {

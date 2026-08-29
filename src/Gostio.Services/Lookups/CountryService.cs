@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
+using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
+using Gostio.Model.Validation;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 
@@ -61,6 +63,16 @@ internal sealed class CountryService(GostioDbContext db, ILookupCache cache)
     {
         var name = request.Name.Trim();
         var isoCode = request.IsoCode.Trim().ToUpperInvariant();
+
+        // Every city hangs off this row, so a changed code would carry all of
+        // them out of the country rather than move one of them.
+        if (country.IsoCode == HomeCountry.IsoCode && isoCode != HomeCountry.IsoCode)
+        {
+            throw new ValidationException(
+                nameof(request.IsoCode),
+                $"{HomeCountry.Name} is the country this platform carries, so its code "
+                    + "cannot change.");
+        }
 
         await RequireUniqueAsync(
             candidate => candidate.Name == name,

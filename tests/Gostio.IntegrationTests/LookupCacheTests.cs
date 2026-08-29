@@ -1,4 +1,5 @@
 using Gostio.Model.Requests;
+using Gostio.Model.Validation;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Lookups;
 using Microsoft.EntityFrameworkCore;
@@ -95,18 +96,18 @@ public class LookupCacheTests(DatabaseFixture fixture)
         await using var services = fixture.BuildServices(null, counter);
 
         var cities = services.GetRequiredService<ICityService>();
-        var country = await NewCountryAsync(services, "Slovakia", "SK");
+        var country = await fixture.EnsureHomeCountryAsync();
 
-        await cities.CreateAsync(City("Kosice", country), CancellationToken.None);
+        await cities.CreateAsync(City("Gradačac", country), CancellationToken.None);
         await cities.SearchAsync(new CitySearchRequest(), CancellationToken.None);
 
         var warm = counter.Reads;
 
         var page = await cities.SearchAsync(
-            new CitySearchRequest { Name = "Kosice" }, CancellationToken.None);
+            new CitySearchRequest { Name = "Gradačac" }, CancellationToken.None);
 
         Assert.True(counter.Reads > warm);
-        Assert.Equal(["Kosice"], page.Items.Select(item => item.Name));
+        Assert.Equal(["Gradačac"], page.Items.Select(item => item.Name));
     }
 
     [Fact]
@@ -117,9 +118,9 @@ public class LookupCacheTests(DatabaseFixture fixture)
         await using var services = fixture.BuildServices(null, counter);
 
         var cities = services.GetRequiredService<ICityService>();
-        var country = await NewCountryAsync(services, "Hungary", "HU");
+        var country = await fixture.EnsureHomeCountryAsync();
 
-        await cities.CreateAsync(City("Pecs", country), CancellationToken.None);
+        await cities.CreateAsync(City("Gračanica", country), CancellationToken.None);
         await cities.SearchAsync(new CitySearchRequest(), CancellationToken.None);
 
         var warm = counter.Reads;
@@ -128,7 +129,8 @@ public class LookupCacheTests(DatabaseFixture fixture)
             new CitySearchRequest { CountryId = country }, CancellationToken.None);
 
         Assert.True(counter.Reads > warm);
-        Assert.Equal(["Pecs"], page.Items.Select(item => item.Name));
+        Assert.NotEmpty(page.Items);
+        Assert.All(page.Items, city => Assert.Equal(country, city.CountryId));
     }
 
     [Fact]
@@ -223,7 +225,8 @@ public class LookupCacheTests(DatabaseFixture fixture)
     }
 
     // A city answers with a column of its country, so the write that corrects
-    // the stale rows is not a write to the table they are in.
+    // the stale rows is not a write to the table they are in. The rename is put
+    // back, because other tests read the name.
     [Fact]
     public async Task ARenamedCountryChangesTheNameEveryCityReports()
     {
@@ -232,26 +235,38 @@ public class LookupCacheTests(DatabaseFixture fixture)
         var countries = services.GetRequiredService<ICountryService>();
         var cities = services.GetRequiredService<ICityService>();
 
-        var country = await countries.CreateAsync(Country("Latvia", "LV"), CancellationToken.None);
+        var country = await fixture.EnsureHomeCountryAsync();
 
-        await cities.CreateAsync(City("Liepaja", country.Id), CancellationToken.None);
+        await cities.CreateAsync(City("Bihać", country), CancellationToken.None);
 
         var before = await cities.SearchAsync(
             new CitySearchRequest { PageSize = 100 }, CancellationToken.None);
 
         Assert.Contains(
             before.Items,
-            city => city.Name == "Liepaja" && city.CountryName == "Latvia");
+            city => city.Name == "Bihać" && city.CountryName == HomeCountry.Name);
 
-        await countries.UpdateAsync(
-            country.Id, Country("Republic of Latvia", "LV"), CancellationToken.None);
+        try
+        {
+            await countries.UpdateAsync(
+                country,
+                Country("Renamed in place", HomeCountry.IsoCode),
+                CancellationToken.None);
 
-        var after = await cities.SearchAsync(
-            new CitySearchRequest { PageSize = 100 }, CancellationToken.None);
+            var after = await cities.SearchAsync(
+                new CitySearchRequest { PageSize = 100 }, CancellationToken.None);
 
-        Assert.Contains(
-            after.Items,
-            city => city.Name == "Liepaja" && city.CountryName == "Republic of Latvia");
+            Assert.Contains(
+                after.Items,
+                city => city.Name == "Bihać" && city.CountryName == "Renamed in place");
+        }
+        finally
+        {
+            await countries.UpdateAsync(
+                country,
+                Country(HomeCountry.Name, HomeCountry.IsoCode),
+                CancellationToken.None);
+        }
     }
 
     // The load is held open while a write lands, which is the one ordering the
@@ -409,18 +424,6 @@ public class LookupCacheTests(DatabaseFixture fixture)
         Assert.Equal(["after the write"], next);
         Assert.Equal(["after the write"], again);
         Assert.Equal(1, Volatile.Read(ref loads));
-    }
-
-    private static async Task<int> NewCountryAsync(
-        IServiceProvider services,
-        string name,
-        string isoCode)
-    {
-        var created = await services
-            .GetRequiredService<ICountryService>()
-            .CreateAsync(Country(name, isoCode), CancellationToken.None);
-
-        return created.Id;
     }
 
     private static async Task<IReadOnlyList<string>> WholeAsync(IAmenityService amenities)

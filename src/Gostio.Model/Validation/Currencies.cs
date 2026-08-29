@@ -17,6 +17,9 @@ public static class Currencies
     private static readonly Dictionary<string, decimal> SmallestCharges =
         new(StringComparer.OrdinalIgnoreCase)
         {
+            // A mark charge converts into the account's settlement currency and has
+            // to clear that one's floor rather than a quoted mark minimum. It clears
+            // 0.50 EUR by a single cent, so rates can invalidate this one entry.
             ["bam"] = 1.00m,
             ["chf"] = 0.50m,
             ["eur"] = 0.50m,

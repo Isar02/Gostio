@@ -18,7 +18,7 @@ public static class AppSettingsLoader
     private const int MaximumSweepBatch = 1000;
     private const int DefaultRefundSweepSeconds = 120;
     private const int DefaultRefundSweepBatch = 50;
-    private const string DefaultCurrency = "eur";
+    private const string DefaultCurrency = "bam";
     private const int DefaultLookupCacheSeconds = 600;
     private const int MinimumLookupCacheSeconds = 5;
     private const int MaximumLookupCacheSeconds = 60 * 60 * 24;

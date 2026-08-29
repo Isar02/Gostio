@@ -1,3 +1,4 @@
+using Gostio.Model.Validation;
 using Gostio.Services.Authentication;
 using Gostio.Services.Chat;
 using Gostio.Services.Configuration;
@@ -312,26 +313,36 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return role.Id;
     }
 
-    public async Task<int> EnsureCityAsync(string name)
+    public async Task<int> EnsureHomeCountryAsync()
     {
         await using var db = CreateContext();
 
-        var country = await db.Countries.FirstOrDefaultAsync(row => row.IsoCode == "BA");
+        var country = await db.Countries.FirstOrDefaultAsync(
+            row => row.IsoCode == HomeCountry.IsoCode);
 
         if (country is null)
         {
-            country = new Country { Name = "Bosnia and Herzegovina", IsoCode = "BA" };
+            country = new Country { Name = HomeCountry.Name, IsoCode = HomeCountry.IsoCode };
 
             db.Countries.Add(country);
             await db.SaveChangesAsync();
         }
 
+        return country.Id;
+    }
+
+    public async Task<int> EnsureCityAsync(string name)
+    {
+        var countryId = await EnsureHomeCountryAsync();
+
+        await using var db = CreateContext();
+
         var city = await db.Cities.FirstOrDefaultAsync(
-            row => row.CountryId == country.Id && row.Name == name);
+            row => row.CountryId == countryId && row.Name == name);
 
         if (city is null)
         {
-            city = new City { Name = name, CountryId = country.Id };
+            city = new City { Name = name, CountryId = countryId };
 
             db.Cities.Add(city);
             await db.SaveChangesAsync();

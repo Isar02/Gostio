@@ -387,6 +387,32 @@ internal static class EngagementSeed
         yield return Ran("maja.popovic", SearchTarget.Accommodations, "lake", "Jajce", 4, null, 260m);
         yield return Ran("maja.popovic", SearchTarget.Experiences, "wine", "Mostar", 2, null, 180m);
         yield return Ran("maja.popovic", SearchTarget.Experiences, null, "Mostar", 2, null, null);
+
+        yield return Ran("guest", SearchTarget.Accommodations, "stone house", "Mostar", 5, 150m, 320m);
+        yield return Ran("guest", SearchTarget.Experiences, "hammam", "Trebinje", 2, null, 140m);
+
+        yield return Ran("mobile", SearchTarget.Accommodations, "cottage", "Travnik", 6, null, 300m);
+        yield return Ran("mobile", SearchTarget.Accommodations, null, "Livno", 5, 100m, 240m);
+        yield return Ran("mobile", SearchTarget.Experiences, "cheese", "Travnik", 3, null, 150m);
+
+        yield return Ran("emir.kovac", SearchTarget.Accommodations, "chalet", "Kupres", 7, 200m, 400m);
+        yield return Ran("emir.kovac", SearchTarget.Experiences, "horses", "Livno", 4, null, 120m);
+
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, "villa", "Trebinje", 8, 400m, 700m);
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Mostar", 5, null, 300m);
+        yield return Ran("sara.jukic", SearchTarget.Experiences, null, "Trebinje", 2, null, null);
+
+        yield return Ran("tarik.mujic", SearchTarget.Accommodations, "river", "Mostar", 3, null, 200m);
+        yield return Ran("tarik.mujic", SearchTarget.Experiences, null, "Banja Luka", 5, null, 90m);
+
+        yield return Ran("ivana.matic", SearchTarget.Accommodations, "villa", "Stolac", 6, 300m, 500m);
+        yield return Ran("ivana.matic", SearchTarget.Experiences, "spa", "Fojnica", 2, null, 200m);
+
+        yield return Ran("denis.softic", SearchTarget.Accommodations, "workspace", "Zenica", 2, null, 160m);
+        yield return Ran("denis.softic", SearchTarget.Experiences, "boat", "Višegrad", 3, null, 100m);
+
+        yield return Ran("maja.popovic", SearchTarget.Accommodations, null, "Fojnica", 2, null, 180m);
+        yield return Ran("maja.popovic", SearchTarget.Experiences, "horse", "Kupres", 2, null, 140m);
     }
 
     private static IEnumerable<Favorite> Favorites(
@@ -429,5 +455,22 @@ internal static class EngagementSeed
         yield return Saved("maja.popovic", "jajce-cottage", null);
         yield return Saved("denis.softic", "konjic-apartment", null);
         yield return Saved("denis.softic", null, "jajce-waterfall-hike");
+
+        yield return Saved("guest", "mostar-old-bridge-house", null);
+        yield return Saved("guest", null, "blagaj-dervish-house");
+        yield return Saved("mobile", "livno-field-house", null);
+        yield return Saved("mobile", null, "travnik-cheese-farm");
+        yield return Saved("emir.kovac", "kupres-ski-chalet", null);
+        yield return Saved("emir.kovac", null, "livno-wild-horses");
+        yield return Saved("sara.jukic", "trebinje-vineyard-villa", null);
+        yield return Saved("sara.jukic", null, "trebinje-hammam");
+        yield return Saved("tarik.mujic", "mostar-riverside-apartment", null);
+        yield return Saved("tarik.mujic", null, "banjaluka-nightlife");
+        yield return Saved("ivana.matic", "stolac-bregava-villa", null);
+        yield return Saved("ivana.matic", null, "fojnica-thermal-baths");
+        yield return Saved("denis.softic", "zenica-central-flat", null);
+        yield return Saved("denis.softic", null, "visegrad-drina-boat");
+        yield return Saved("maja.popovic", "travnik-vlasic-cottage", null);
+        yield return Saved("maja.popovic", null, "kupres-horse-ride");
     }
 }

@@ -173,20 +173,20 @@ internal static class ListingSeed
 
         yield return Listing(
             "marko.perisic",
-            "Old stone villa inside the Dubrovnik walls",
-            "A three-storey villa in the old town, with a walled garden, a roof terrace "
-            + "and the cathedral bell for an alarm clock.",
-            "Villa", "Seaside", "Dubrovnik", "Ulica od Puča 15",
-            42.6407m, 18.1077m, 7, 4, 3, 320m, 70m,
+            "Stone villa on the hill above Neum",
+            "A three-storey villa in the pines above the town, with a walled garden, a "
+            + "roof terrace and steps down to a bay the road does not reach.",
+            "Villa", "Seaside", "Neum", "Kralja Tomislava 58",
+            42.9281m, 17.5996m, 7, 4, 3, 320m, 70m,
             ["Wi-Fi", "Air conditioning", "Kitchen", "Balcony", "Washing machine", "TV"]);
 
         yield return Listing(
             "lejla.begic",
-            "Bay-view apartment in Kotor",
-            "A small apartment above the marina, with a balcony facing the bay and the "
-            + "fortress path starting at the end of the street.",
-            "Apartment", "Seaside", "Kotor", "Šuranj 3",
-            42.4247m, 18.7712m, 3, 1, 1, 105m, 20m,
+            "Apartment above the Neretva in Konjic",
+            "A small apartment on the upper bank, with a balcony over the green water "
+            + "and the old bridge two streets away.",
+            "Apartment", "Countryside", "Konjic", "Varda 9",
+            43.6541m, 17.9583m, 3, 1, 1, 105m, 20m,
             ["Wi-Fi", "Air conditioning", "Kitchen", "Balcony", "TV"]);
 
         yield return Listing(
@@ -309,11 +309,11 @@ internal static class ListingSeed
 
         yield return Listing(
             "lejla.begic",
-            "Kotor bay by kayak at sunrise",
-            "Out before the cruise ships, along the shore to Our Lady of the Rocks and "
-            + "back with breakfast on the water.",
-            "Adventure", "Kotor", "Kayak shed, Dobrota waterfront",
-            42.4404m, 18.7690m, 210, 55m, 10, [-35, -9, 7, 17, 31]);
+            "The Una by kayak at sunrise",
+            "Out before the town wakes, down the still water past the captain's tower "
+            + "and back with breakfast on the bank.",
+            "Adventure", "Bihać", "Kayak landing, Una riverside promenade",
+            44.8231m, 15.8629m, 210, 55m, 10, [-35, -9, 7, 17, 31]);
 
         yield return Listing(
             "nikola.savic",

@@ -98,9 +98,9 @@ internal static class EngagementSeed
         yield return AboutBooking(
             3,
             bookings.Bookings[3].Reservation.CreatedAt.AddHours(2),
-            "Is there parking near the villa, or should we leave the car outside the walls?",
-            "Outside the walls is the only option in the old town. I will send you the "
-                + "closest garage and the walk from it.",
+            "Is there parking at the villa, or should we leave the car down in the town?",
+            "There is room for two cars inside the gate. The road up is narrow but "
+                + "paved the whole way, so an ordinary car manages it.",
             "Perfect, that is what we assumed.",
             "See you in three weeks.");
 
@@ -137,7 +137,7 @@ internal static class EngagementSeed
             users.ByUsername["ivana.matic"],
             users.ByUsername["lejla.begic"],
             now.AddDays(-9),
-            "Is the Kotor apartment free for the first week of November?",
+            "Is the Konjic apartment free for the first week of November?",
             "It is, and the price drops after the season ends. Send me the dates and I "
                 + "will hold it for a day.");
 
@@ -359,17 +359,17 @@ internal static class EngagementSeed
         yield return Ran("guest", SearchTarget.Accommodations, "villa", "Trebinje", 6, 150m, 300m);
 
         yield return Ran("mobile", SearchTarget.Accommodations, "sea view", "Neum", 4, 60m, 140m);
-        yield return Ran("mobile", SearchTarget.Accommodations, null, "Kotor", 3, null, 130m);
-        yield return Ran("mobile", SearchTarget.Accommodations, "apartment", "Budva", 4, null, null);
+        yield return Ran("mobile", SearchTarget.Accommodations, null, "Konjic", 3, null, 130m);
+        yield return Ran("mobile", SearchTarget.Accommodations, "apartment", "Trebinje", 4, null, null);
         yield return Ran("mobile", SearchTarget.Experiences, "rafting", "Mostar", 3, null, 90m);
-        yield return Ran("mobile", SearchTarget.Experiences, "kayak", "Kotor", 2, null, null);
+        yield return Ran("mobile", SearchTarget.Experiences, "kayak", "Bihać", 2, null, null);
 
         yield return Ran("emir.kovac", SearchTarget.Accommodations, "stone house", "Mostar", 5, null, 160m);
         yield return Ran("emir.kovac", SearchTarget.Accommodations, null, "Mostar", 5, 80m, 200m);
         yield return Ran("emir.kovac", SearchTarget.Experiences, "coffee", "Sarajevo", 4, null, 60m);
 
-        yield return Ran("sara.jukic", SearchTarget.Accommodations, "dubrovnik old town", "Dubrovnik", 6, 200m, 400m);
-        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Split", 6, null, 350m);
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, "stone villa", "Neum", 6, 200m, 400m);
+        yield return Ran("sara.jukic", SearchTarget.Accommodations, null, "Trebinje", 6, null, 350m);
         yield return Ran("sara.jukic", SearchTarget.Experiences, "wine", "Mostar", 2, null, 120m);
 
         yield return Ran("tarik.mujic", SearchTarget.Accommodations, "pool", "Trebinje", 7, 200m, 320m);
@@ -377,10 +377,10 @@ internal static class EngagementSeed
         yield return Ran("tarik.mujic", SearchTarget.Experiences, "waterfall", "Jajce", 2, null, null);
 
         yield return Ran("ivana.matic", SearchTarget.Accommodations, "studio", "Sarajevo", 2, null, 70m);
-        yield return Ran("ivana.matic", SearchTarget.Accommodations, null, "Kotor", 2, 60m, 140m);
-        yield return Ran("ivana.matic", SearchTarget.Experiences, "sunrise", "Kotor", 2, null, 80m);
+        yield return Ran("ivana.matic", SearchTarget.Accommodations, null, "Konjic", 2, 60m, 140m);
+        yield return Ran("ivana.matic", SearchTarget.Experiences, "sunrise", "Bihać", 2, null, 80m);
 
-        yield return Ran("denis.softic", SearchTarget.Accommodations, "bay", "Kotor", 3, null, 150m);
+        yield return Ran("denis.softic", SearchTarget.Accommodations, "river", "Konjic", 3, null, 150m);
         yield return Ran("denis.softic", SearchTarget.Experiences, "hike", "Jajce", 3, null, null);
 
         yield return Ran("maja.popovic", SearchTarget.Accommodations, "lake", "Jajce", 4, null, 130m);

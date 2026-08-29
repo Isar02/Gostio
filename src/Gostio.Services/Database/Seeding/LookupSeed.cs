@@ -1,4 +1,5 @@
 using Gostio.Model.Authorization;
+using Gostio.Model.Validation;
 using Gostio.Services.Database.Entities;
 
 namespace Gostio.Services.Database.Seeding;
@@ -20,42 +21,41 @@ internal static class LookupSeed
     {
         var roles = ByName<Role>(RoleNames.All);
 
-        var countries = ByName(
-            new[]
-            {
-                new Country { Name = "Bosnia and Herzegovina", IsoCode = "BA" },
-                new Country { Name = "Croatia", IsoCode = "HR" },
-                new Country { Name = "Montenegro", IsoCode = "ME" },
-                new Country { Name = "Serbia", IsoCode = "RS" },
-                new Country { Name = "Slovenia", IsoCode = "SI" }
-            },
-            country => country.Name);
-
-        City InCountry(string name, string country) =>
-            new() { Name = name, Country = countries[country] };
-
-        const string Bosnia = "Bosnia and Herzegovina";
+        var country = new Country { Name = HomeCountry.Name, IsoCode = HomeCountry.IsoCode };
 
         var cities = ByName(
             new[]
             {
-                InCountry("Sarajevo", Bosnia),
-                InCountry("Mostar", Bosnia),
-                InCountry("Banja Luka", Bosnia),
-                InCountry("Tuzla", Bosnia),
-                InCountry("Trebinje", Bosnia),
-                InCountry("Jajce", Bosnia),
-                InCountry("Bihać", Bosnia),
-                InCountry("Neum", Bosnia),
-                InCountry("Dubrovnik", "Croatia"),
-                InCountry("Split", "Croatia"),
-                InCountry("Zagreb", "Croatia"),
-                InCountry("Kotor", "Montenegro"),
-                InCountry("Budva", "Montenegro"),
-                InCountry("Belgrade", "Serbia"),
-                InCountry("Novi Sad", "Serbia"),
-                InCountry("Ljubljana", "Slovenia")
-            },
+                "Banja Luka",
+                "Bihać",
+                "Bijeljina",
+                "Blagaj",
+                "Bosanska Krupa",
+                "Bosanski Petrovac",
+                "Bužim",
+                "Cazin",
+                "Doboj",
+                "Fojnica",
+                "Jajce",
+                "Ključ",
+                "Konjic",
+                "Kupres",
+                "Livno",
+                "Ljubuški",
+                "Mostar",
+                "Neum",
+                "Počitelj",
+                "Prijedor",
+                "Sanski Most",
+                "Sarajevo",
+                "Stolac",
+                "Travnik",
+                "Trebinje",
+                "Tuzla",
+                "Velika Kladuša",
+                "Višegrad",
+                "Zenica"
+            }.Select(name => new City { Name = name, Country = country }),
             city => city.Name);
 
         var accommodationTypes = ByName<AccommodationType>(
@@ -91,7 +91,7 @@ internal static class LookupSeed
         ]);
 
         db.AddRange(roles.Values);
-        db.AddRange(countries.Values);
+        db.Add(country);
         db.AddRange(cities.Values);
         db.AddRange(accommodationTypes.Values);
         db.AddRange(accommodationCategories.Values);

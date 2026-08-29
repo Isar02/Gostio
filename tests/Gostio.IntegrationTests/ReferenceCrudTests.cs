@@ -1,6 +1,7 @@
 using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Gostio.Model.Validation;
 using Gostio.Services.Lookups;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,20 +58,33 @@ public class ReferenceCrudTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task TheCountryTheCitiesAreInDoesNotChangeItsCode()
+    {
+        await using var services = fixture.BuildServices();
+
+        var countries = services.GetRequiredService<ICountryService>();
+        var country = await fixture.EnsureHomeCountryAsync();
+
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => countries.UpdateAsync(
+                country, Country(HomeCountry.Name, "ZZ"), CancellationToken.None));
+
+        Assert.Contains(nameof(CountryUpsertRequest.IsoCode), refused.Errors.Keys);
+    }
+
+    [Fact]
     public async Task ACityAnswersWithTheCountryItIsIn()
     {
         await using var services = fixture.BuildServices();
 
-        var country = await services
-            .GetRequiredService<ICountryService>()
-            .CreateAsync(Country("Austria", "AT"), CancellationToken.None);
+        var country = await fixture.EnsureHomeCountryAsync();
 
         var city = await services
             .GetRequiredService<ICityService>()
-            .CreateAsync(City("Salzburg", country.Id), CancellationToken.None);
+            .CreateAsync(City("Odžak", country), CancellationToken.None);
 
-        Assert.Equal(country.Id, city.CountryId);
-        Assert.Equal("Austria", city.CountryName);
+        Assert.Equal(country, city.CountryId);
+        Assert.Equal(HomeCountry.Name, city.CountryName);
     }
 
     [Fact]
@@ -88,40 +102,56 @@ public class ReferenceCrudTests(DatabaseFixture fixture)
 
     // The unique index is on the pair, and so is the check in front of it.
     [Fact]
-    public async Task ACityNameIsFreeInOneCountryAndTakenInAnother()
+    public async Task ACityNameIsTakenOnlyOnceInTheCountry()
     {
         await using var services = fixture.BuildServices();
 
-        var countries = services.GetRequiredService<ICountryService>();
         var cities = services.GetRequiredService<ICityService>();
+        var country = await fixture.EnsureHomeCountryAsync();
 
-        var first = await countries.CreateAsync(Country("Ireland", "IE"), CancellationToken.None);
-        var second = await countries.CreateAsync(Country("Estonia", "EE"), CancellationToken.None);
+        await cities.CreateAsync(City("Maglaj", country), CancellationToken.None);
 
-        await cities.CreateAsync(City("Valga", first.Id), CancellationToken.None);
-        await cities.CreateAsync(City("Valga", second.Id), CancellationToken.None);
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => cities.CreateAsync(City("Maglaj", country), CancellationToken.None));
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => cities.CreateAsync(City("Valga", second.Id), CancellationToken.None));
+        Assert.Contains(nameof(CityUpsertRequest.Name), refused.Errors.Keys);
     }
 
     [Fact]
-    public async Task ACitySearchNarrowsToOneCountry()
+    public async Task ACityOutsideTheOneCountryIsRefusedUnderItsOwnField()
     {
         await using var services = fixture.BuildServices();
 
-        var countries = services.GetRequiredService<ICountryService>();
+        var abroad = await services
+            .GetRequiredService<ICountryService>()
+            .CreateAsync(Country("Austria", "AT"), CancellationToken.None);
+
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => services
+                .GetRequiredService<ICityService>()
+                .CreateAsync(City("Salzburg", abroad.Id), CancellationToken.None));
+
+        Assert.Contains(nameof(CityUpsertRequest.CountryId), refused.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task ACityIsNotMovedOutOfTheCountryByAnUpdate()
+    {
+        await using var services = fixture.BuildServices();
+
         var cities = services.GetRequiredService<ICityService>();
 
-        var country = await countries.CreateAsync(Country("Denmark", "DK"), CancellationToken.None);
+        var abroad = await services
+            .GetRequiredService<ICountryService>()
+            .CreateAsync(Country("Slovakia", "SK"), CancellationToken.None);
 
-        await cities.CreateAsync(City("Aarhus", country.Id), CancellationToken.None);
-        await cities.CreateAsync(City("Odense", country.Id), CancellationToken.None);
+        var city = await cities.CreateAsync(
+            City("Tešanj", await fixture.EnsureHomeCountryAsync()), CancellationToken.None);
 
-        var page = await cities.SearchAsync(
-            new CitySearchRequest { CountryId = country.Id }, CancellationToken.None);
+        var refused = await Assert.ThrowsAsync<ValidationException>(
+            () => cities.UpdateAsync(city.Id, City(city.Name, abroad.Id), CancellationToken.None));
 
-        Assert.Equal(["Aarhus", "Odense"], page.Items.Select(item => item.Name));
+        Assert.Contains(nameof(CityUpsertRequest.CountryId), refused.Errors.Keys);
     }
 
     [Fact]
@@ -130,15 +160,14 @@ public class ReferenceCrudTests(DatabaseFixture fixture)
         await using var services = fixture.BuildServices();
 
         var countries = services.GetRequiredService<ICountryService>();
-
-        var country = await countries.CreateAsync(Country("Finland", "FI"), CancellationToken.None);
+        var country = await fixture.EnsureHomeCountryAsync();
 
         await services
             .GetRequiredService<ICityService>()
-            .CreateAsync(City("Turku", country.Id), CancellationToken.None);
+            .CreateAsync(City("Srebrenik", country), CancellationToken.None);
 
         await Assert.ThrowsAsync<BusinessException>(
-            () => countries.DeleteAsync(country.Id, CancellationToken.None));
+            () => countries.DeleteAsync(country, CancellationToken.None));
     }
 
     [Fact]

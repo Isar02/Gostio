@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
+using Gostio.Model.Validation;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -68,9 +69,21 @@ internal sealed class CityService(GostioDbContext db, ILookupCache cache)
 
         // Checked here rather than left to the foreign key, which cannot put a
         // message under the field that caused it.
-        if (!await Db.Countries.AnyAsync(country => country.Id == countryId, cancellationToken))
+        var isoCode = await Db.Countries
+            .Where(country => country.Id == countryId)
+            .Select(country => country.IsoCode)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (isoCode is null)
         {
             throw new ValidationException(nameof(request.CountryId), "No country has this id.");
+        }
+
+        if (isoCode != HomeCountry.IsoCode)
+        {
+            throw new ValidationException(
+                nameof(request.CountryId),
+                $"This platform carries cities in {HomeCountry.Name} only.");
         }
 
         await RequireUniqueAsync(

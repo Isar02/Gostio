@@ -10,12 +10,13 @@ class NotificationsRepository {
   Future<int> unreadCount() async =>
       _unread(await _client.get('/notifications/unread-count'));
 
-  Future<PagedResult<AppNotification>> recent({
+  Future<PagedResult<AppNotification>> search({
+    int page = 1,
     int pageSize = PagedResult.defaultPageSize,
   }) async {
     final JsonMap body = await _client.get(
       '/notifications',
-      query: <String, dynamic>{'page': 1, 'pageSize': pageSize},
+      query: <String, dynamic>{'page': page, 'pageSize': pageSize},
     );
 
     return PagedResult<AppNotification>.fromJson(

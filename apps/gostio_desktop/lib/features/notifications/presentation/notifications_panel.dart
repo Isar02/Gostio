@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/tone.dart';
 import '../../../core/widgets/app_notice.dart';
+import '../../../core/widgets/pagination_footer.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../data/app_notification.dart';
 import 'notifications_notifier.dart';
@@ -30,6 +31,13 @@ class NotificationsPanel extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: AppSizes.panelHeight),
             child: _Body(notifications: notifications),
           ),
+          if (notifications.items.isNotEmpty)
+            PaginationFooter(
+              page: notifications.page,
+              pageSize: notifications.pageSize,
+              totalCount: notifications.totalCount,
+              onPageChanged: notifications.openPage,
+            ),
         ],
       ),
     );

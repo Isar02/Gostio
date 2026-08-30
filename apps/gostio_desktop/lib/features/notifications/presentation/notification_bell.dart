@@ -30,7 +30,7 @@ class NotificationBell extends StatelessWidget {
                 menu.close();
               } else {
                 menu.open();
-                unawaited(context.read<NotificationsNotifier>().load());
+                unawaited(context.read<NotificationsNotifier>().openPage(1));
               }
             },
             icon: Stack(

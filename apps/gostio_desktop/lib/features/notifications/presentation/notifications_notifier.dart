@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_exception.dart';
 import '../data/app_notification.dart';
 import '../data/notifications_repository.dart';
@@ -19,6 +20,8 @@ class NotificationsNotifier extends ChangeNotifier {
   late final Timer _poll;
 
   int _unread = 0;
+  int _page = 1;
+  int _totalCount = 0;
   int _countRequest = 0;
   bool _isLoading = false;
   bool _isDisposed = false;
@@ -27,11 +30,23 @@ class NotificationsNotifier extends ChangeNotifier {
 
   int get unread => _unread;
 
+  int get page => _page;
+
+  int get pageSize => PagedResult.defaultPageSize;
+
+  int get totalCount => _totalCount;
+
   bool get isLoading => _isLoading;
 
   String? get failureMessage => _failure?.message;
 
   List<AppNotification> get items => _items;
+
+  Future<void> openPage(int page) {
+    _page = page;
+
+    return load();
+  }
 
   Future<void> load() async {
     _isLoading = true;
@@ -42,7 +57,13 @@ class NotificationsNotifier extends ChangeNotifier {
     final Future<void> counting = _refreshUnread();
 
     try {
-      _items = (await _repository.recent()).items;
+      final PagedResult<AppNotification> page = await _repository.search(
+        page: _page,
+        pageSize: pageSize,
+      );
+
+      _items = page.items;
+      _totalCount = page.totalCount;
     } on ApiException catch (failure) {
       _failure = failure;
     }
@@ -59,6 +80,7 @@ class NotificationsNotifier extends ChangeNotifier {
     }
 
     _failure = null;
+
     try {
       final AppNotification read = await _repository.markRead(notification.id);
       _items = <AppNotification>[
@@ -76,6 +98,7 @@ class NotificationsNotifier extends ChangeNotifier {
 
   Future<void> markAllRead() async {
     _failure = null;
+
     try {
       await _repository.markAllRead();
       await load();

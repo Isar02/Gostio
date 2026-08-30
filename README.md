@@ -11,8 +11,8 @@ Gostio consists of a working backend and two planned clients:
 | Application | Audience | Location |
 | --- | --- | --- |
 | REST API and background worker | both clients | `src/` |
-| Desktop client | administrators and hosts | `clients/gostio_desktop` |
-| Mobile client | guests | `clients/gostio_mobile` |
+| Desktop client | administrators and hosts | `apps/gostio_desktop` |
+| Mobile client | guests | `apps/gostio_mobile` |
 
 ## Test accounts
 
@@ -95,7 +95,7 @@ src/
 tests/
   Gostio.Tests        unit and API tests
   Gostio.IntegrationTests   endpoint tests against SQL Server
-clients/              desktop and mobile clients
+apps/                 desktop and mobile clients
 ```
 
 ## Technology

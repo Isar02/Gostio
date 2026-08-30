@@ -17,7 +17,7 @@
 **/.vscode/
 **/.idea/
 
-ui/
+apps/
 **/build/
 **/.dart_tool/
 

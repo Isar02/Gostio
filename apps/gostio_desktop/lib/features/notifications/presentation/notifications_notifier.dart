@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_exception.dart';
 import '../data/app_notification.dart';
 import '../data/notifications_repository.dart';
 
 class NotificationsNotifier extends ChangeNotifier {
   NotificationsNotifier(this._repository) {
-    unawaited(_countUnread());
-    _poll = Timer.periodic(pollInterval, (Timer _) => _countUnread());
+    unawaited(_refreshUnread());
+    _poll = Timer.periodic(pollInterval, (Timer _) => _refreshUnread());
   }
 
   static const Duration pollInterval = Duration(seconds: 30);
@@ -20,7 +19,7 @@ class NotificationsNotifier extends ChangeNotifier {
   late final Timer _poll;
 
   int _unread = 0;
-  bool _isCounting = false;
+  int _countRequest = 0;
   bool _isLoading = false;
   bool _isDisposed = false;
   ApiException? _failure;
@@ -39,17 +38,16 @@ class NotificationsNotifier extends ChangeNotifier {
     _failure = null;
     _publish();
 
-    try {
-      final (PagedResult<AppNotification> page, int unread) = await (
-        _repository.recent(),
-        _repository.unreadCount(),
-      ).wait;
+    // The page and the count do not depend on each other.
+    final Future<void> counting = _refreshUnread();
 
-      _items = page.items;
-      _unread = unread;
+    try {
+      _items = (await _repository.recent()).items;
     } on ApiException catch (failure) {
       _failure = failure;
     }
+
+    await counting;
 
     _isLoading = false;
     _publish();
@@ -67,7 +65,8 @@ class NotificationsNotifier extends ChangeNotifier {
         for (final AppNotification item in _items)
           item.id == read.id ? read : item,
       ];
-      _unread = _unread > 0 ? _unread - 1 : 0;
+
+      await _refreshUnread();
     } on ApiException catch (failure) {
       _failure = failure;
     }
@@ -78,7 +77,7 @@ class NotificationsNotifier extends ChangeNotifier {
   Future<void> markAllRead() async {
     _failure = null;
     try {
-      _unread = await _repository.markAllRead();
+      await _repository.markAllRead();
       await load();
     } on ApiException catch (failure) {
       _failure = failure;
@@ -86,24 +85,22 @@ class NotificationsNotifier extends ChangeNotifier {
     }
   }
 
-  // The count is polled, so its failures are silent: the session already
-  // answers a dead token, and anything else is answered by the next tick.
-  Future<void> _countUnread() async {
-    if (_isCounting) {
-      return;
-    }
+  // The one place the count is written, and only the newest read may write it.
+  // The poll, a page load and a row marked read all ask for it, so an answer
+  // still in flight when a later one is issued is stale by the time it lands.
+  // A failed read says nothing: the session already answers a dead token, and
+  // anything else is answered by the next tick.
+  Future<void> _refreshUnread() async {
+    final int request = ++_countRequest;
 
-    _isCounting = true;
     try {
       final int unread = await _repository.unreadCount();
-      if (unread != _unread) {
+      if (request == _countRequest && unread != _unread) {
         _unread = unread;
         _publish();
       }
     } on ApiException {
-      // Nothing to say.
-    } finally {
-      _isCounting = false;
+      return;
     }
   }
 

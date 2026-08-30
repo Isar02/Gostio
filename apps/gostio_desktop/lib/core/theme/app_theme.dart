@@ -59,6 +59,20 @@ abstract final class AppTheme {
         ),
         textStyle: text.bodyMedium,
       ),
+      menuTheme: const MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll<Color>(AppColors.surface),
+          surfaceTintColor: WidgetStatePropertyAll<Color>(Colors.transparent),
+          elevation: WidgetStatePropertyAll<double>(0),
+          padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(EdgeInsets.zero),
+          shape: WidgetStatePropertyAll<OutlinedBorder>(
+            RoundedRectangleBorder(
+              borderRadius: AppRadii.large,
+              side: BorderSide(color: AppColors.border),
+            ),
+          ),
+        ),
+      ),
       tooltipTheme: TooltipThemeData(
         decoration: const BoxDecoration(
           color: AppColors.ink,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/models/user.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
+import '../../features/notifications/presentation/notification_bell.dart';
 import 'account_menu.dart';
 import 'workspace.dart';
 import 'workspace_switch.dart';
@@ -37,6 +38,8 @@ class ShellTopBar extends StatelessWidget {
             WorkspaceSwitch(workspace: workspace),
             const SizedBox(width: AppSpacing.md),
           ],
+          const NotificationBell(),
+          const SizedBox(width: AppSpacing.sm),
           AccountMenu(account: account),
         ],
       ),

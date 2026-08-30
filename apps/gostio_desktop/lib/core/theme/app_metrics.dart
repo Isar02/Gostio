@@ -23,6 +23,8 @@ abstract final class AppSizes {
   static const double focusRing = 1.5;
   static const double stroke = 2;
 
+  static const double dot = 8;
+  static const double badge = 16;
   static const double iconSmall = 16;
   static const double icon = 18;
   static const double spinner = 20;
@@ -39,5 +41,6 @@ abstract final class AppSizes {
 
   static const double filterField = 200;
   static const double panel = 380;
+  static const double panelHeight = 420;
   static const double readingColumn = 520;
 }

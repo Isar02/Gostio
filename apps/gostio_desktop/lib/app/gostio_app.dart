@@ -8,6 +8,7 @@ import '../core/session/session.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
+import '../features/notifications/data/notifications_repository.dart';
 import 'shell/shell_scaffold.dart';
 
 class GostioApp extends StatelessWidget {
@@ -30,6 +31,10 @@ class GostioApp extends StatelessWidget {
         Provider<AuthRepository>(
           create: (BuildContext context) =>
               AuthRepository(context.read<ApiClient>()),
+        ),
+        Provider<NotificationsRepository>(
+          create: (BuildContext context) =>
+              NotificationsRepository(context.read<ApiClient>()),
         ),
       ],
       child: MaterialApp(

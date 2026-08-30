@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 import '../core/config/app_settings.dart';
 import '../core/network/api_client.dart';
@@ -7,7 +8,7 @@ import '../core/session/session.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
-import 'signed_in_screen.dart';
+import 'shell/shell_scaffold.dart';
 
 class GostioApp extends StatelessWidget {
   const GostioApp({required this.settings, super.key});
@@ -17,7 +18,7 @@ class GostioApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
+      providers: <SingleChildWidget>[
         Provider<ApiClient>(
           create: (BuildContext context) =>
               ApiClient(baseUrl: settings.apiBaseUrl),
@@ -37,9 +38,7 @@ class GostioApp extends StatelessWidget {
         theme: AppTheme.light,
         home: Consumer<Session>(
           builder: (BuildContext context, Session session, Widget? child) =>
-              session.isSignedIn
-              ? const SignedInScreen()
-              : const SignInScreen(),
+              session.isSignedIn ? const ShellScaffold() : const SignInScreen(),
         ),
       ),
     );

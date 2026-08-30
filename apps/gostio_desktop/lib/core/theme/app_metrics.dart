@@ -26,12 +26,16 @@ abstract final class AppSizes {
   static const double iconSmall = 16;
   static const double icon = 18;
   static const double spinner = 20;
+  static const double avatar = 32;
 
   static const double control = 36;
   static const double tableHeaderRow = 40;
   static const double tableRow = 44;
   static const double footerRow = 48;
   static const double numericColumn = 120;
+
+  static const double topBar = 56;
+  static const double navigation = 248;
 
   static const double filterField = 200;
   static const double panel = 380;

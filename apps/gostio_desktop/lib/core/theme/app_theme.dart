@@ -49,6 +49,16 @@ abstract final class AppTheme {
           side: BorderSide(color: AppColors.border),
         ),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadii.medium,
+          side: BorderSide(color: AppColors.border),
+        ),
+        textStyle: text.bodyMedium,
+      ),
       tooltipTheme: TooltipThemeData(
         decoration: const BoxDecoration(
           color: AppColors.ink,

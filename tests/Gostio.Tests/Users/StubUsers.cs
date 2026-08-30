@@ -18,6 +18,8 @@ internal sealed class StubUsers : IUserService
 
     public bool MineWasNamed { get; private set; }
 
+    public int? LastPasswordOwner { get; private set; }
+
     public Task<PagedResult<UserResponse>> SearchAsync(
         UserSearchRequest search,
         CancellationToken cancellationToken) =>
@@ -95,6 +97,16 @@ internal sealed class StubUsers : IUserService
         int id,
         UserStateRequest request,
         CancellationToken cancellationToken) => Task.FromResult(Row(id));
+
+    public Task SetPasswordAsync(
+        int id,
+        NewPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        LastPasswordOwner = id;
+
+        return Task.CompletedTask;
+    }
 
     public Task DeleteAsync(int id, CancellationToken cancellationToken) =>
         Task.CompletedTask;

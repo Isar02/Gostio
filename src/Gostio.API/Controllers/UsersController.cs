@@ -97,6 +97,18 @@ public sealed class UsersController(IUserService users) : ControllerBase
         users.SetStateAsync(id, request, cancellationToken);
 
     [Authorize(Roles = RoleNames.Administrator)]
+    [HttpPut("{id:int}/password")]
+    public async Task<IActionResult> SetPassword(
+        int id,
+        NewPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await users.SetPasswordAsync(id, request, cancellationToken);
+
+        return NoContent();
+    }
+
+    [Authorize(Roles = RoleNames.Administrator)]
     [RequestSizeLimit(UploadLimits.Multipart)]
     [HttpPut("{id:int}/image")]
     public async Task<UserResponse> SetImage(

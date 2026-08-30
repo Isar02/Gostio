@@ -14,11 +14,13 @@ namespace Gostio.Tests.Users;
 // them opens a list of people to anybody holding a token.
 public sealed class UsersControllerTests : IAsyncLifetime
 {
+    private readonly StubUsers users = new();
+
     private ApiHost host = null!;
 
     public async Task InitializeAsync() =>
         host = await ApiHost.StartAsync(
-            services => services.AddSingleton<IUserService, StubUsers>());
+            services => services.AddSingleton<IUserService>(users));
 
     public async Task DisposeAsync() => await host.DisposeAsync();
 
@@ -29,6 +31,7 @@ public sealed class UsersControllerTests : IAsyncLifetime
     [InlineData("PUT", "/api/users/5")]
     [InlineData("PUT", "/api/users/5/roles")]
     [InlineData("PUT", "/api/users/5/state")]
+    [InlineData("PUT", "/api/users/5/password")]
     [InlineData("PUT", "/api/users/5/image")]
     [InlineData("DELETE", "/api/users/5/image")]
     [InlineData("DELETE", "/api/users/5")]
@@ -47,6 +50,7 @@ public sealed class UsersControllerTests : IAsyncLifetime
     [InlineData("PUT", "/api/users/5", HttpStatusCode.OK)]
     [InlineData("PUT", "/api/users/5/roles", HttpStatusCode.OK)]
     [InlineData("PUT", "/api/users/5/state", HttpStatusCode.OK)]
+    [InlineData("PUT", "/api/users/5/password", HttpStatusCode.NoContent)]
     [InlineData("PUT", "/api/users/5/image", HttpStatusCode.OK)]
     [InlineData("DELETE", "/api/users/5/image", HttpStatusCode.NoContent)]
     [InlineData("DELETE", "/api/users/5", HttpStatusCode.NoContent)]
@@ -108,6 +112,32 @@ public sealed class UsersControllerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ThePasswordIsSetOnTheAccountTheRouteNames()
+    {
+        await host.SendAsync(
+            HttpMethod.Put,
+            "/api/users/5/password",
+            RoleNames.Administrator,
+            BodyFor("/api/users/5/password"));
+
+        Assert.Equal(5, users.LastPasswordOwner);
+    }
+
+    // The one route under an id that writes a credential, so the role it is
+    // closed to is written out beyond the guest the theory above covers.
+    [Fact]
+    public async Task AHostSetsNobodysPassword()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Put,
+            "/api/users/5/password",
+            RoleNames.Host,
+            BodyFor("/api/users/5/password"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task NoneOfItIsReachableWithoutAToken()
     {
         var response = await host.SendAsync(HttpMethod.Get, "/api/users/5");
@@ -144,6 +174,11 @@ public sealed class UsersControllerTests : IAsyncLifetime
             Roles = [RoleNames.Guest],
         },
         "/api/users/5/roles" => new UserRolesRequest { Roles = [RoleNames.Guest] },
+        "/api/users/5/password" => new NewPasswordRequest
+        {
+            NewPassword = "a-long-enough-password",
+            ConfirmNewPassword = "a-long-enough-password",
+        },
         "/api/users/5/state" => new UserStateRequest { IsActive = false },
         "/api/users/5" or "/api/users/me" => new UserUpdateRequest
         {

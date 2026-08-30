@@ -133,9 +133,15 @@ internal sealed class ReportWorkspace(DatabaseFixture fixture)
             await fixture.EnsureAccommodationTypeAsync($"Type of {label}"),
             await fixture.EnsureAccommodationCategoryAsync($"Category of {label}"));
 
-    public async Task<int> AnAccommodationAsync(ReportedPlace place, bool published = true)
+    public Task<int> AHostAsync(params string[] roles) =>
+        fixture.AddUserAsync(Password, roles.Length == 0 ? [RoleNames.Host] : roles);
+
+    public async Task<int> AnAccommodationAsync(
+        ReportedPlace place,
+        bool published = true,
+        int? owner = null)
     {
-        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
+        var host = owner ?? await AHostAsync();
 
         await using var db = fixture.CreateContext();
 
@@ -169,9 +175,13 @@ internal sealed class ReportWorkspace(DatabaseFixture fixture)
     public async Task<int> AnExperienceCategoryAsync(string label) =>
         await fixture.EnsureExperienceCategoryAsync($"Category of {label}");
 
-    public async Task<int> AnExperienceAsync(int cityId, int categoryId, bool published = true)
+    public async Task<int> AnExperienceAsync(
+        int cityId,
+        int categoryId,
+        bool published = true,
+        int? owner = null)
     {
-        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
+        var host = owner ?? await AHostAsync();
 
         await using var db = fixture.CreateContext();
 
@@ -281,4 +291,33 @@ internal sealed class ReportWorkspace(DatabaseFixture fixture)
         return await services.GetRequiredService<IReportService>().RevenueAsync(
             new ReportRangeRequest { From = from, To = to }, default);
     }
+
+    public async Task<RevenueReportResponse> MyRevenueAsync(
+        int caller,
+        DateOnly? from,
+        DateOnly? to,
+        params string[] roles)
+    {
+        await using var services = Of(caller, roles);
+
+        return await services.GetRequiredService<IReportService>().MyRevenueAsync(
+            new ReportRangeRequest { From = from, To = to }, default);
+    }
+
+    public async Task<ListingReportResponse> MyListingsAsync(
+        int caller,
+        DateOnly? from,
+        DateOnly? to,
+        SearchTarget target,
+        params string[] roles)
+    {
+        await using var services = Of(caller, roles);
+
+        return await services.GetRequiredService<IReportService>().MyListingsAsync(
+            new ListingReportRequest { From = from, To = to, Target = target }, default);
+    }
+
+    private ServiceProvider Of(int caller, params string[] roles) =>
+        fixture.BuildServices(ListingWorkspace.Caller(
+            caller, roles.Length == 0 ? [RoleNames.Host] : roles));
 }

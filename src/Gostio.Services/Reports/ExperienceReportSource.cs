@@ -7,9 +7,10 @@ namespace Gostio.Services.Reports;
 internal sealed class ExperienceReportSource(GostioDbContext db) : IListingReportSource
 {
     public async Task<IReadOnlyList<ListingTally>> PublishedAsync(
+        ReportScope scope,
         CancellationToken cancellationToken) =>
-        await db.Experiences
-            .AsNoTracking()
+        await scope
+            .Narrow(db.Experiences.AsNoTracking(), host => listing => listing.HostId == host)
             .GroupBy(listing => new
             {
                 listing.CityId,
@@ -29,13 +30,16 @@ internal sealed class ExperienceReportSource(GostioDbContext db) : IListingRepor
     // and what a booking took out of it is the party it seated.
     public async Task<IReadOnlyList<BookingTally>> BookingsAsync(
         ReportRange range,
+        ReportScope scope,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        return await db.Reservations
-            .AsNoTracking()
+        return await scope
+            .Narrow(
+                db.Reservations.AsNoTracking(),
+                host => booking => booking.ExperienceSlot!.Experience.HostId == host)
             .Where(booking => booking.ExperienceSlotId != null)
             .Where(booking => booking.CreatedAt >= from && booking.CreatedAt < until)
             .Where(ReportQueries.IsSold)
@@ -54,13 +58,17 @@ internal sealed class ExperienceReportSource(GostioDbContext db) : IListingRepor
 
     public async Task<IReadOnlyList<ChargeTally>> ChargesAsync(
         ReportRange range,
+        ReportScope scope,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        return await db.Payments
-            .AsNoTracking()
+        return await scope
+            .Narrow(
+                db.Payments.AsNoTracking(),
+                host => payment =>
+                    payment.Reservation.ExperienceSlot!.Experience.HostId == host)
             .Where(payment => payment.Status == PaymentStatus.Succeeded)
             .Where(payment => payment.Reservation.ExperienceSlotId != null)
             .Where(payment =>
@@ -81,13 +89,17 @@ internal sealed class ExperienceReportSource(GostioDbContext db) : IListingRepor
 
     public async Task<IReadOnlyList<ReviewTally>> ReviewsAsync(
         ReportRange range,
+        ReportScope scope,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        return await db.Reviews
-            .AsNoTracking()
+        return await scope
+            .Narrow(
+                db.Reviews.AsNoTracking(),
+                host => review =>
+                    review.Reservation.ExperienceSlot!.Experience.HostId == host)
             .Where(review => review.Reservation.ExperienceSlotId != null)
             .Where(review =>
                 review.Reservation.CreatedAt >= from && review.Reservation.CreatedAt < until)

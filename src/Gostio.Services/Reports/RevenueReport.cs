@@ -9,28 +9,51 @@ internal sealed class RevenueReport(GostioDbContext db)
 {
     public async Task<RevenueReportResponse> BuildAsync(
         ReportRange range,
+        ReportScope scope,
         string whenNothingSettled,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        var created = await CountByMonthAsync(
-            db.Reservations
+        // The history row rather than the reservation: a booking carries the
+        // status it holds now and not the moment it reached it.
+        var moves = db.ReservationStatusHistory
+            .AsNoTracking()
+            .Where(move => move.NewStatusId == (int)ReservationStatusCode.Completed)
+            .Where(move => move.ChangedAt >= from && move.ChangedAt < until);
+
+        var charges = db.Payments
+            .AsNoTracking()
+            .Where(payment => payment.Status == PaymentStatus.Succeeded)
+            .Where(payment => payment.ProcessedAt >= from && payment.ProcessedAt < until);
+
+        var refunds = db.Refunds
+            .AsNoTracking()
+            .Where(refund => refund.Status == RefundStatus.Succeeded)
+            .Where(refund => refund.ProcessedAt >= from && refund.ProcessedAt < until);
+
+        if (scope.HostId is int hostId)
+        {
+            var hosted = db.Reservations
                 .AsNoTracking()
+                .Where(ReservationQueries.IsHostedBy(hostId))
+                .Select(booking => booking.Id);
+
+            moves = moves.Where(move => hosted.Contains(move.ReservationId));
+            charges = charges.Where(payment => hosted.Contains(payment.ReservationId));
+            refunds = refunds.Where(refund => hosted.Contains(refund.Payment.ReservationId));
+        }
+
+        var created = await CountByMonthAsync(
+            scope
+                .Narrow(db.Reservations.AsNoTracking(), ReservationQueries.IsHostedBy)
                 .Where(booking => booking.CreatedAt >= from && booking.CreatedAt < until)
                 .Select(booking => booking.CreatedAt),
             cancellationToken);
 
-        // The history row rather than the reservation: a booking carries the
-        // status it holds now and not the moment it reached it.
         var completed = await CountByMonthAsync(
-            db.ReservationStatusHistory
-                .AsNoTracking()
-                .Where(move => move.NewStatusId == (int)ReservationStatusCode.Completed)
-                .Where(move => move.ChangedAt >= from && move.ChangedAt < until)
-                .Select(move => move.ChangedAt),
-            cancellationToken);
+            moves.Select(move => move.ChangedAt), cancellationToken);
 
         // Grouped on the table and never on a projection of it: the provider
         // inlines a projected row into the key and then cannot translate it. The
@@ -38,10 +61,7 @@ internal sealed class RevenueReport(GostioDbContext db)
         // that carry the money — asked as a query of its own it would read a
         // different snapshot, and money settling in a second currency between
         // the two would be added up without anything catching it.
-        var chargedRows = await db.Payments
-            .AsNoTracking()
-            .Where(payment => payment.Status == PaymentStatus.Succeeded)
-            .Where(payment => payment.ProcessedAt >= from && payment.ProcessedAt < until)
+        var chargedRows = await charges
             .GroupBy(payment => new
             {
                 payment.ProcessedAt!.Value.Year,
@@ -55,10 +75,7 @@ internal sealed class RevenueReport(GostioDbContext db)
                 month.Sum(payment => payment.Amount)))
             .ToListAsync(cancellationToken);
 
-        var refundedRows = await db.Refunds
-            .AsNoTracking()
-            .Where(refund => refund.Status == RefundStatus.Succeeded)
-            .Where(refund => refund.ProcessedAt >= from && refund.ProcessedAt < until)
+        var refundedRows = await refunds
             .GroupBy(refund => new
             {
                 refund.ProcessedAt!.Value.Year,

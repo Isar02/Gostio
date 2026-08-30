@@ -11,6 +11,8 @@ internal sealed class StubReports : IReportService
 
     public ListingReportRequest? LastListings { get; private set; }
 
+    public bool AskedForMine { get; private set; }
+
     public Task<RevenueReportResponse> RevenueAsync(
         ReportRangeRequest request,
         CancellationToken cancellationToken)
@@ -32,6 +34,24 @@ internal sealed class StubReports : IReportService
                 Net = 0m,
             },
         });
+    }
+
+    public Task<RevenueReportResponse> MyRevenueAsync(
+        ReportRangeRequest request,
+        CancellationToken cancellationToken)
+    {
+        AskedForMine = true;
+
+        return RevenueAsync(request, cancellationToken);
+    }
+
+    public Task<ListingReportResponse> MyListingsAsync(
+        ListingReportRequest request,
+        CancellationToken cancellationToken)
+    {
+        AskedForMine = true;
+
+        return ListingsAsync(request, cancellationToken);
     }
 
     public Task<ListingReportResponse> ListingsAsync(

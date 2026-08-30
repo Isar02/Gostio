@@ -1,6 +1,8 @@
 using Gostio.Model.Authorization;
 using Gostio.Model.Enums;
+using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
+using Gostio.Services.Reservations;
 
 namespace Gostio.IntegrationTests;
 
@@ -12,6 +14,12 @@ public class ReservationListTests(DatabaseFixture fixture)
     private static DateOnly Soon => DateOnly.FromDateTime(DateTime.UtcNow.AddDays(60));
 
     private static DateTime Later => DateTime.UtcNow.AddDays(20);
+
+    private static DateOnly TermDay => DateOnly.FromDateTime(DateTime.UtcNow).AddDays(20);
+
+    // Mid-morning where the guest is standing, so the day the term belongs to
+    // does not move with the hour the suite happens to run at.
+    private static DateTime TermStart => StayTimes.StartOfDay(TermDay).AddHours(10);
 
     [Fact]
     public async Task AGuestSeesWhatTheyBookedAndNothingElse()
@@ -248,5 +256,137 @@ public class ReservationListTests(DatabaseFixture fixture)
         Assert.Equal([first.Id], page.Items.Select(item => item.Id));
         Assert.Equal(2, page.TotalCount);
         Assert.Equal(2, page.TotalPages);
+    }
+
+    [Fact]
+    public async Task TheWindowKeepsAStayThatOccupiesANightInIt()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+
+        // Ends on the day the window opens, so it occupies no night in it.
+        await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        var inside = await workspace.BookStayAsync(guest, listing, Soon.AddDays(2), nights: 2);
+
+        // Begins the day after the window closes.
+        await workspace.BookStayAsync(guest, listing, Soon.AddDays(4), nights: 2);
+
+        var page = await workspace.ListAsync(
+            guest,
+            RoleNames.Guest,
+            new ReservationSearchRequest { From = Soon.AddDays(2), To = Soon.AddDays(3) });
+
+        Assert.Equal([inside.Id], page.Items.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task TheWindowReachesATermByTheDayItStartsOn()
+    {
+        var (host, slot) = await workspace.ATermAsync(capacity: 10, startsAt: TermStart);
+        var later = await workspace.AnotherTermAsync(host, slot, TermStart.AddDays(3));
+        var guest = await workspace.AGuestAsync();
+
+        var wanted = await workspace.BookTermAsync(guest, slot, guestCount: 2);
+
+        await workspace.BookTermAsync(guest, later, guestCount: 2);
+
+        var page = await workspace.ListAsync(
+            guest,
+            RoleNames.Guest,
+            new ReservationSearchRequest { From = TermDay, To = TermDay });
+
+        Assert.Equal([wanted.Id], page.Items.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task TheListNarrowsToWhatArrivesOnADay()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+
+        var arriving = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        await workspace.BookStayAsync(guest, listing, Soon.AddDays(2), nights: 2);
+
+        var page = await workspace.ListAsync(
+            guest, RoleNames.Guest, new ReservationSearchRequest { ArrivesOn = Soon });
+
+        Assert.Equal([arriving.Id], page.Items.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task TheDayAStayEndsIsADepartureAndNotAnArrival()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+
+        var leaving = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+        var coming = await workspace.BookStayAsync(guest, listing, Soon.AddDays(2), nights: 2);
+
+        var departures = await workspace.ListAsync(
+            guest, RoleNames.Guest, new ReservationSearchRequest { DepartsOn = Soon.AddDays(2) });
+
+        var arrivals = await workspace.ListAsync(
+            guest, RoleNames.Guest, new ReservationSearchRequest { ArrivesOn = Soon.AddDays(2) });
+
+        Assert.Equal([leaving.Id], departures.Items.Select(item => item.Id));
+        Assert.Equal([coming.Id], arrivals.Items.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task ADayOfArrivalsAndDeparturesIsPagedLikeEveryOtherList()
+    {
+        var guest = await workspace.AGuestAsync();
+        var booked = new List<int>();
+
+        foreach (var _ in Enumerable.Range(0, 3))
+        {
+            var (_, listing) = await workspace.AListingAsync();
+
+            booked.Add((await workspace.BookStayAsync(guest, listing, Soon, nights: 2)).Id);
+        }
+
+        var arrivals = await workspace.ListAsync(
+            guest,
+            RoleNames.Guest,
+            new ReservationSearchRequest { ArrivesOn = Soon, Page = 2, PageSize = 2 });
+
+        var departures = await workspace.ListAsync(
+            guest,
+            RoleNames.Guest,
+            new ReservationSearchRequest { DepartsOn = Soon.AddDays(2), Page = 2, PageSize = 2 });
+
+        Assert.Equal([booked[0]], arrivals.Items.Select(item => item.Id));
+        Assert.Equal([booked[0]], departures.Items.Select(item => item.Id));
+        Assert.Equal(3, arrivals.TotalCount);
+        Assert.Equal(2, arrivals.TotalPages);
+    }
+
+    [Fact]
+    public async Task AWindowThatRunsToTheLastRepresentableDayIsAnswered()
+    {
+        var (_, slot) = await workspace.ATermAsync(capacity: 10, startsAt: TermStart);
+        var guest = await workspace.AGuestAsync();
+
+        var booked = await workspace.BookTermAsync(guest, slot, guestCount: 2);
+
+        var page = await workspace.ListAsync(
+            guest,
+            RoleNames.Guest,
+            new ReservationSearchRequest { From = TermDay, To = DateOnly.MaxValue });
+
+        Assert.Equal([booked.Id], page.Items.Select(item => item.Id));
+    }
+
+    [Fact]
+    public async Task AWindowThatEndsBeforeItStartsIsRefused()
+    {
+        var guest = await workspace.AGuestAsync();
+
+        await Assert.ThrowsAsync<ValidationException>(() => workspace.ListAsync(
+            guest,
+            RoleNames.Guest,
+            new ReservationSearchRequest { From = Soon, To = Soon.AddDays(-1) }));
     }
 }

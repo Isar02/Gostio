@@ -21,6 +21,18 @@ public class StayTimesTests
             StayTimes.BeginsAt(Winter));
 
     [Fact]
+    public void ADayBeginsAtTheCountrysMidnightAndNotTheServersInSummer() =>
+        Assert.Equal(
+            new DateTime(2026, 7, 14, 22, 0, 0, DateTimeKind.Utc),
+            StayTimes.StartOfDay(Summer));
+
+    [Fact]
+    public void ADayBeginsAtTheCountrysMidnightAndNotTheServersInWinter() =>
+        Assert.Equal(
+            new DateTime(2026, 1, 14, 23, 0, 0, DateTimeKind.Utc),
+            StayTimes.StartOfDay(Winter));
+
+    [Fact]
     public void AStayHasNotBegunAMinuteBeforeCheckIn() =>
         Assert.False(
             StayTimes.HasBegun(Summer, new DateTime(2026, 7, 15, 11, 59, 0, DateTimeKind.Utc)));

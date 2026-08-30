@@ -35,13 +35,17 @@ internal sealed class ReservationService(
         CancellationToken cancellationToken) =>
         access.ReadAsync(reservationId, cancellationToken);
 
-    public Task<PagedResult<ReservationResponse>> SearchAsync(
+    public async Task<PagedResult<ReservationResponse>> SearchAsync(
         ReservationSearchRequest search,
-        CancellationToken cancellationToken) =>
-        Matching(access.Reachable(), search)
+        CancellationToken cancellationToken)
+    {
+        RequireAWindow(search);
+
+        return await Matching(access.Reachable(), search)
             .OrderByDescending(reservation => reservation.CreatedAt)
             .ThenByDescending(reservation => reservation.Id)
             .ToPagedResultAsync(search, ReservationAccess.Projection, cancellationToken);
+    }
 
     private IQueryable<Reservation> Matching(
         IQueryable<Reservation> query,
@@ -88,7 +92,36 @@ internal sealed class ReservationService(
                 : ReservationQueries.IsNotActive(now));
         }
 
+        if (search.From is DateOnly from)
+        {
+            query = query.Where(ReservationCalendar.OccupiesOnOrAfter(from));
+        }
+
+        if (search.To is DateOnly to)
+        {
+            query = query.Where(ReservationCalendar.OccupiesOnOrBefore(to));
+        }
+
+        if (search.ArrivesOn is DateOnly arrival)
+        {
+            query = query.Where(ReservationCalendar.ArrivesOn(arrival));
+        }
+
+        if (search.DepartsOn is DateOnly departure)
+        {
+            query = query.Where(ReservationCalendar.DepartsOn(departure));
+        }
+
         return query;
+    }
+
+    private static void RequireAWindow(ReservationSearchRequest search)
+    {
+        if (search.From is DateOnly from && search.To is DateOnly to && to < from)
+        {
+            throw new ValidationException(
+                nameof(search.To), "A window ends on or after the day it starts.");
+        }
     }
 
     private async Task<ReservationResponse> CreateStayAsync(

@@ -18,10 +18,13 @@ public static class StayTimes
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById(
         "Europe/Sarajevo");
 
-    // The hour is far from either daylight-saving transition, so the local
-    // moment it names exists exactly once on every date and is never ambiguous.
+    // Both hours are far from either daylight-saving transition, so the local
+    // moment each names exists exactly once on every date and is never ambiguous.
     public static DateTime BeginsAt(DateOnly checkInDate) =>
         TimeZoneInfo.ConvertTimeToUtc(checkInDate.ToDateTime(CheckIn), Zone);
+
+    public static DateTime StartOfDay(DateOnly day) =>
+        TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), Zone);
 
     public static bool HasBegun(DateOnly checkInDate, DateTime now) => BeginsAt(checkInDate) <= now;
 

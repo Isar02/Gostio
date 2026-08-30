@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Seeding\Assets\*.jpg" />
+    <EmbeddedResource Include="Database\Seeding\Assets\*.png" />
   </ItemGroup>
 
   <ItemGroup>

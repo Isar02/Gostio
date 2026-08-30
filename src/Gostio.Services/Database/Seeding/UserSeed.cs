@@ -31,6 +31,8 @@ internal static class UserSeed
 
         User Add(string username, string firstName, string lastName, int? photo, params string[] roles)
         {
+            var image = photo is null ? (SeedImage?)null : SeedImages.Profile(photo.Value);
+
             var user = new User
             {
                 FirstName = firstName,
@@ -40,8 +42,8 @@ internal static class UserSeed
                 PhoneNumber = PhoneNumbers.Normalise(
                     $"+387 6{users.Count % 10} {310 + users.Count:000} {480 + users.Count * 3:000}"),
                 PasswordHash = hash,
-                ProfileImage = photo is null ? null : SeedImages.Profile(photo.Value),
-                ProfileImageContentType = photo is null ? null : SeedImages.ContentType,
+                ProfileImage = image?.Content,
+                ProfileImageContentType = image?.ContentType,
                 CreatedAt = created.AddDays(users.Count * 9),
             };
 

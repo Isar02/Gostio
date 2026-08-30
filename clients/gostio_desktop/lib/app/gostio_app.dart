@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/config/app_settings.dart';
 import '../core/network/api_client.dart';
 import '../core/session/session.dart';
+import '../core/theme/app_theme.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import 'signed_in_screen.dart';
@@ -33,6 +34,7 @@ class GostioApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Gostio',
         debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
         home: Consumer<Session>(
           builder: (BuildContext context, Session session, Widget? child) =>
               session.isSignedIn

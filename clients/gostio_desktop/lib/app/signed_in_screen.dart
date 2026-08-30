@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/models/user.dart';
 import '../core/network/api_exception.dart';
 import '../core/session/session.dart';
+import '../core/theme/app_metrics.dart';
 import '../features/auth/data/auth_repository.dart';
 
 class SignedInScreen extends StatelessWidget {
@@ -41,11 +42,11 @@ class SignedInScreen extends StatelessWidget {
               account.fullName,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(account.username),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(account.roles.join(', ')),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             OutlinedButton(
               onPressed: () => _signOut(context),
               child: const Text('Sign out'),

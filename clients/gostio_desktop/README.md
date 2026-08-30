@@ -38,13 +38,15 @@ lib/
     models/            the shapes core itself reads, and the ones every module needs
     network/           the API client, its interceptors and its exception
     session/           the signed in account and its roles
-    theme/             the colour, type and spacing tokens
+    theme/             the colour, type, spacing and tone tokens, and the theme
     validation/        the client side mirror of the server's rules
     widgets/           the controls every screen reuses
   features/
     <feature>/
       data/            the response models and the repository over the client
       presentation/    the screens and the notifier behind them
+assets/
+  fonts/               Geist, Plus Jakarta Sans and Manrope, with their licences
 ```
 
 Dependencies point one way: `presentation` reaches `data`, `data` reaches

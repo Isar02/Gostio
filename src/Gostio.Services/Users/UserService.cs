@@ -187,6 +187,35 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
         return await ReadAsync(id, cancellationToken);
     }
 
+    public async Task SetPasswordAsync(
+        int id,
+        NewPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (currentUser.UserId == id)
+        {
+            throw new BusinessException(
+                "An administrator changes their own password by entering the current one.");
+        }
+
+        var hash = PasswordHasher.Hash(request.NewPassword);
+        DateTime? now = DateTime.UtcNow;
+
+        var written = await Set
+            .Where(user => user.Id == id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.PasswordHash, hash)
+                    .SetProperty(user => user.TokenVersion, user => user.TokenVersion + 1)
+                    .SetProperty(user => user.ModifiedAt, now),
+                cancellationToken);
+
+        if (written == 0)
+        {
+            throw Missing(id);
+        }
+    }
+
     protected override IQueryable<User> Filter(IQueryable<User> query, UserSearchRequest search)
     {
         if (Trimmed(search.Name) is string name)

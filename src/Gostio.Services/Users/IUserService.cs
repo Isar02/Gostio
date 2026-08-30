@@ -37,4 +37,9 @@ public interface IUserService
         int id,
         UserStateRequest request,
         CancellationToken cancellationToken);
+
+    Task SetPasswordAsync(
+        int id,
+        NewPasswordRequest request,
+        CancellationToken cancellationToken);
 }

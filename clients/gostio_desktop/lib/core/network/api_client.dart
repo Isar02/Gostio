@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import 'api_exception.dart';
@@ -29,15 +31,46 @@ class ApiClient {
 
   final Dio _dio;
 
-  String? token;
+  String? _token;
+  int _tokenGeneration = 0;
 
   void Function()? onUnauthorized;
+
+  String? get token => _token;
+
+  int get tokenGeneration => _tokenGeneration;
+
+  set token(String? value) {
+    _token = value;
+    _tokenGeneration++;
+  }
 
   Future<JsonMap> post(String path, {Object? body}) async =>
       _asObject(await _request('POST', path, body: body));
 
   Future<void> postNoContent(String path, {Object? body}) async {
     await _request('POST', path, body: body);
+  }
+
+  Future<Uint8List> bytes(String path) async {
+    final Response<dynamic> response = await _request(
+      'GET',
+      path,
+      responseType: ResponseType.bytes,
+    );
+
+    final dynamic body = response.data;
+    if (body is Uint8List) {
+      return body;
+    }
+    if (body is List<int>) {
+      return Uint8List.fromList(body);
+    }
+
+    throw ApiException(
+      message: 'The API answered ${response.statusCode} without an image.',
+      statusCode: response.statusCode,
+    );
   }
 
   void close() => _dio.close();
@@ -48,12 +81,13 @@ class ApiClient {
     String method,
     String path, {
     Object? body,
+    ResponseType? responseType,
   }) async {
     try {
       return await _dio.request<dynamic>(
         path,
         data: body,
-        options: Options(method: method),
+        options: Options(method: method, responseType: responseType),
       );
     } on DioException catch (failure) {
       final Object? translated = failure.error;

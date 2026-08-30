@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 
 import '../authorization/role_names.dart';
 import '../models/user.dart';
@@ -44,6 +45,7 @@ class Session extends ChangeNotifier {
     _account = null;
     _lastEnding = ending;
     _client.token = null;
+    PaintingBinding.instance.imageCache.clear();
 
     notifyListeners();
   }

@@ -16,4 +16,12 @@ public sealed class ReservationSearchRequest : PagedRequest
 
     // Active here means the booking still holds its place.
     public bool? IsActive { get; set; }
+
+    public DateOnly? From { get; set; }
+
+    public DateOnly? To { get; set; }
+
+    public DateOnly? ArrivesOn { get; set; }
+
+    public DateOnly? DepartsOn { get; set; }
 }

@@ -186,7 +186,11 @@ abstract final class AppTheme {
   );
 
   static ButtonStyle _textButton(TextTheme text) => ButtonStyle(
-    foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.indigo),
+    foregroundColor: WidgetStateProperty.resolveWith<Color>(
+      (Set<WidgetState> states) => states.contains(WidgetState.disabled)
+          ? AppColors.inkFaint
+          : AppColors.indigo,
+    ),
     overlayColor: const WidgetStatePropertyAll<Color>(AppColors.selected),
     textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
     minimumSize: const WidgetStatePropertyAll<Size>(Size(0, AppSizes.control)),

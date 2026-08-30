@@ -7,9 +7,10 @@ namespace Gostio.Services.Reports;
 internal sealed class AccommodationReportSource(GostioDbContext db) : IListingReportSource
 {
     public async Task<IReadOnlyList<ListingTally>> PublishedAsync(
+        ReportScope scope,
         CancellationToken cancellationToken) =>
-        await db.Accommodations
-            .AsNoTracking()
+        await scope
+            .Narrow(db.Accommodations.AsNoTracking(), host => listing => listing.HostId == host)
             .GroupBy(listing => new
             {
                 listing.CityId,
@@ -27,13 +28,16 @@ internal sealed class AccommodationReportSource(GostioDbContext db) : IListingRe
 
     public async Task<IReadOnlyList<BookingTally>> BookingsAsync(
         ReportRange range,
+        ReportScope scope,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        return await db.Reservations
-            .AsNoTracking()
+        return await scope
+            .Narrow(
+                db.Reservations.AsNoTracking(),
+                host => booking => booking.Accommodation!.HostId == host)
             .Where(booking => booking.AccommodationId != null)
             .Where(booking => booking.CreatedAt >= from && booking.CreatedAt < until)
             .Where(ReportQueries.IsSold)
@@ -53,13 +57,16 @@ internal sealed class AccommodationReportSource(GostioDbContext db) : IListingRe
 
     public async Task<IReadOnlyList<ChargeTally>> ChargesAsync(
         ReportRange range,
+        ReportScope scope,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        return await db.Payments
-            .AsNoTracking()
+        return await scope
+            .Narrow(
+                db.Payments.AsNoTracking(),
+                host => payment => payment.Reservation.Accommodation!.HostId == host)
             .Where(payment => payment.Status == PaymentStatus.Succeeded)
             .Where(payment => payment.Reservation.AccommodationId != null)
             .Where(payment =>
@@ -80,13 +87,16 @@ internal sealed class AccommodationReportSource(GostioDbContext db) : IListingRe
 
     public async Task<IReadOnlyList<ReviewTally>> ReviewsAsync(
         ReportRange range,
+        ReportScope scope,
         CancellationToken cancellationToken)
     {
         var from = range.FromUtc;
         var until = range.UntilUtc;
 
-        return await db.Reviews
-            .AsNoTracking()
+        return await scope
+            .Narrow(
+                db.Reviews.AsNoTracking(),
+                host => review => review.Reservation.Accommodation!.HostId == host)
             .Where(review => review.Reservation.AccommodationId != null)
             .Where(review =>
                 review.Reservation.CreatedAt >= from && review.Reservation.CreatedAt < until)

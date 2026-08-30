@@ -70,13 +70,21 @@ internal sealed class ApiHost : IAsyncDisposable
         HttpMethod method,
         string path,
         string? role = null,
+        object? body = null) =>
+        SendAsync(method, path, role is null ? [] : [role], body);
+
+    public Task<HttpResponseMessage> SendAsync(
+        HttpMethod method,
+        string path,
+        string[] roles,
         object? body = null)
     {
         var request = new HttpRequestMessage(method, path);
 
-        if (role is not null)
+        if (roles.Length > 0)
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", TokenFor(role));
+            request.Headers.Authorization = new AuthenticationHeaderValue(
+                "Bearer", TokenFor(roles));
         }
 
         if (body is not null)
@@ -95,9 +103,9 @@ internal sealed class ApiHost : IAsyncDisposable
         await app.DisposeAsync();
     }
 
-    private static string TokenFor(string role) =>
+    private static string TokenFor(string[] roles) =>
         new JwtTokenService(Settings())
-            .Issue(new TokenSubject(42, "probe", "probe@example.com", 1, [role]))
+            .Issue(new TokenSubject(42, "probe", "probe@example.com", 1, roles))
             .Value;
 
     private static JwtSettings Settings() =>

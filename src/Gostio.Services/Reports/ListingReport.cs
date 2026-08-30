@@ -10,6 +10,7 @@ internal sealed class ListingReport(
     public async Task<ListingReportResponse> BuildAsync(
         ReportRange range,
         SearchTarget target,
+        ReportScope scope,
         string whenNothingSettled,
         CancellationToken cancellationToken)
     {
@@ -17,17 +18,17 @@ internal sealed class ListingReport(
             ? (IListingReportSource)accommodations
             : experiences;
 
-        var chargeRows = await source.ChargesAsync(range, cancellationToken);
+        var chargeRows = await source.ChargesAsync(range, scope, cancellationToken);
 
         // Out of the very rows that carry the money, so a second currency
         // cannot settle between deciding the label and adding the figures up.
         var currency = ReportCurrency.RequireOne(
             chargeRows.Select(charge => charge.Currency), whenNothingSettled);
 
-        var published = await source.PublishedAsync(cancellationToken);
-        var sold = Keyed(await source.BookingsAsync(range, cancellationToken));
+        var published = await source.PublishedAsync(scope, cancellationToken);
+        var sold = Keyed(await source.BookingsAsync(range, scope, cancellationToken));
         var charged = Keyed(chargeRows);
-        var reviews = await source.ReviewsAsync(range, cancellationToken);
+        var reviews = await source.ReviewsAsync(range, scope, cancellationToken);
         var rated = Keyed(reviews);
 
         var rows = published

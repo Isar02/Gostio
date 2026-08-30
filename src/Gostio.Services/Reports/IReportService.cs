@@ -12,4 +12,12 @@ public interface IReportService
     Task<ListingReportResponse> ListingsAsync(
         ListingReportRequest request,
         CancellationToken cancellationToken);
+
+    Task<RevenueReportResponse> MyRevenueAsync(
+        ReportRangeRequest request,
+        CancellationToken cancellationToken);
+
+    Task<ListingReportResponse> MyListingsAsync(
+        ListingReportRequest request,
+        CancellationToken cancellationToken);
 }

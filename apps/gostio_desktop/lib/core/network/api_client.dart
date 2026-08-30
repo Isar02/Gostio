@@ -45,6 +45,9 @@ class ApiClient {
     _tokenGeneration++;
   }
 
+  Future<JsonMap> get(String path, {JsonMap? query}) async =>
+      _asObject(await _request('GET', path, query: query));
+
   Future<JsonMap> post(String path, {Object? body}) async =>
       _asObject(await _request('POST', path, body: body));
 
@@ -81,12 +84,14 @@ class ApiClient {
     String method,
     String path, {
     Object? body,
+    JsonMap? query,
     ResponseType? responseType,
   }) async {
     try {
       return await _dio.request<dynamic>(
         path,
         data: body,
+        queryParameters: query,
         options: Options(method: method, responseType: responseType),
       );
     } on DioException catch (failure) {

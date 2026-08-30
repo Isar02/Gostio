@@ -62,11 +62,16 @@ class _Header extends StatelessWidget {
         children: <Widget>[
           Text('Notifications', style: Theme.of(context).textTheme.titleSmall),
           const Spacer(),
-          TextButton(
-            onPressed: notifications.unread == 0
-                ? null
-                : notifications.markAllRead,
-            child: const Text('Mark all read'),
+          Tooltip(
+            message: notifications.unread == 0
+                ? 'Everything here has already been read'
+                : 'Mark all ${notifications.unread} unread as read',
+            child: TextButton(
+              onPressed: notifications.unread == 0
+                  ? null
+                  : notifications.markAllRead,
+              child: const Text('Mark all read'),
+            ),
           ),
         ],
       ),

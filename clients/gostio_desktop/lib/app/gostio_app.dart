@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/config/app_settings.dart';
-import 'startup_screen.dart';
+import '../core/network/api_client.dart';
+import '../core/session/session.dart';
+import '../features/auth/data/auth_repository.dart';
+import '../features/auth/presentation/sign_in_screen.dart';
+import 'signed_in_screen.dart';
 
 class GostioApp extends StatelessWidget {
   const GostioApp({required this.settings, super.key});
@@ -10,10 +15,31 @@ class GostioApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Gostio',
-      debugShowCheckedModeBanner: false,
-      home: StartupScreen(apiBaseUrl: settings.apiBaseUrl),
+    return MultiProvider(
+      providers: [
+        Provider<ApiClient>(
+          create: (BuildContext context) =>
+              ApiClient(baseUrl: settings.apiBaseUrl),
+          dispose: (BuildContext context, ApiClient client) => client.close(),
+        ),
+        ChangeNotifierProvider<Session>(
+          create: (BuildContext context) => Session(context.read<ApiClient>()),
+        ),
+        Provider<AuthRepository>(
+          create: (BuildContext context) =>
+              AuthRepository(context.read<ApiClient>()),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Gostio',
+        debugShowCheckedModeBanner: false,
+        home: Consumer<Session>(
+          builder: (BuildContext context, Session session, Widget? child) =>
+              session.isSignedIn
+              ? const SignedInScreen()
+              : const SignInScreen(),
+        ),
+      ),
     );
   }
 }

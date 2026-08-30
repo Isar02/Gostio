@@ -20,10 +20,11 @@ call.
 ## Before a commit
 
 ```bash
+dart format --output=none --set-exit-if-changed lib
 flutter analyze --fatal-infos --fatal-warnings
 ```
 
-Nothing is committed while that reports anything.
+Nothing is committed while either reports anything.
 
 ## Layout
 
@@ -32,7 +33,9 @@ lib/
   main.dart            reads the settings and picks the application to run
   app/                 the application widget, the shell and routing
   core/
+    authorization/     the role names, matching the ones the server writes
     config/            the settings read from the environment
+    models/            the shapes core itself reads, and the ones every module needs
     network/           the API client, its interceptors and its exception
     session/           the signed in account and its roles
     theme/             the colour, type and spacing tokens
@@ -46,4 +49,5 @@ lib/
 
 Dependencies point one way: `presentation` reaches `data`, `data` reaches
 `core`, and nothing reaches back. A feature may import another feature's `data`
-and never its `presentation`.
+and never its `presentation`. `core` holds no business rules: the server owns
+them, so the session holds state and the repositories make the calls.

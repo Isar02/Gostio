@@ -1,0 +1,167 @@
+import 'package:dio/dio.dart';
+
+import 'api_exception.dart';
+
+typedef JsonMap = Map<String, dynamic>;
+
+const String _authorization = 'Authorization';
+
+String _bearer(String token) => 'Bearer $token';
+
+class ApiClient {
+  ApiClient({required Uri baseUrl})
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: '$baseUrl/api',
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 30),
+          contentType: Headers.jsonContentType,
+        ),
+      ) {
+    // The session interceptor is added before the failure one because that one
+    // rejects, which ends the chain: put it second and no 401 is ever seen.
+    _dio.interceptors.add(_TokenInterceptor(() => token));
+    _dio.interceptors.add(
+      _SessionInterceptor(() => token, _reportUnauthorized),
+    );
+    _dio.interceptors.add(_FailureInterceptor());
+  }
+
+  final Dio _dio;
+
+  String? token;
+
+  void Function()? onUnauthorized;
+
+  Future<JsonMap> post(String path, {Object? body}) async =>
+      _asObject(await _request('POST', path, body: body));
+
+  Future<void> postNoContent(String path, {Object? body}) async {
+    await _request('POST', path, body: body);
+  }
+
+  void close() => _dio.close();
+
+  void _reportUnauthorized() => onUnauthorized?.call();
+
+  Future<Response<dynamic>> _request(
+    String method,
+    String path, {
+    Object? body,
+  }) async {
+    try {
+      return await _dio.request<dynamic>(
+        path,
+        data: body,
+        options: Options(method: method),
+      );
+    } on DioException catch (failure) {
+      final Object? translated = failure.error;
+
+      throw translated is ApiException
+          ? translated
+          : ApiException(message: failure.message ?? _unexpectedMessage);
+    }
+  }
+
+  static const String _unexpectedMessage =
+      'The request could not be completed.';
+
+  static JsonMap _asObject(Response<dynamic> response) {
+    final dynamic body = response.data;
+    if (body is JsonMap) {
+      return body;
+    }
+
+    throw ApiException(
+      message:
+          'The API answered ${response.statusCode} without a body to read.',
+      statusCode: response.statusCode,
+    );
+  }
+}
+
+class _TokenInterceptor extends Interceptor {
+  _TokenInterceptor(this._token);
+
+  final String? Function() _token;
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final String? token = _token();
+    if (token != null) {
+      options.headers[_authorization] = _bearer(token);
+    }
+
+    handler.next(options);
+  }
+}
+
+class _SessionInterceptor extends Interceptor {
+  _SessionInterceptor(this._token, this._onUnauthorized);
+
+  final String? Function() _token;
+  final void Function() _onUnauthorized;
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.response?.statusCode == 401 &&
+        _carriedTheTokenInForce(err.requestOptions)) {
+      _onUnauthorized();
+    }
+
+    handler.next(err);
+  }
+
+  // The token this answer is about is the one its own request carried, not the
+  // one held now: a refused sign in carries none, and a late answer to a call
+  // made before the current sign in would otherwise end a healthy session.
+  bool _carriedTheTokenInForce(RequestOptions options) {
+    final String? token = _token();
+
+    return token != null && options.headers[_authorization] == _bearer(token);
+  }
+}
+
+class _FailureInterceptor extends Interceptor {
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    handler.reject(
+      DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: _translate(err),
+      ),
+    );
+  }
+
+  static ApiException _translate(DioException failure) {
+    final Response<dynamic>? response = failure.response;
+    final dynamic body = response?.data;
+
+    if (body is JsonMap && body.containsKey('message')) {
+      return ApiException.fromBody(response?.statusCode, body);
+    }
+
+    return ApiException(
+      message: _messageFor(failure),
+      statusCode: response?.statusCode,
+    );
+  }
+
+  static String _messageFor(DioException failure) {
+    final String address = failure.requestOptions.baseUrl;
+
+    return switch (failure.type) {
+      DioExceptionType.connectionError || DioExceptionType.connectionTimeout =>
+        'The API at $address could not be reached. Check that it is running.',
+      DioExceptionType.sendTimeout || DioExceptionType.receiveTimeout =>
+        'The API at $address did not answer in time.',
+      _ =>
+        failure.response == null
+            ? 'The API at $address could not be reached. Check that it is running.'
+            : 'The API answered ${failure.response?.statusCode} and nothing more.',
+    };
+  }
+}

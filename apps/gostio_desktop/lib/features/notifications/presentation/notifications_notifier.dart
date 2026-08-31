@@ -71,11 +71,26 @@ class NotificationsNotifier extends ChangeNotifier {
     ApiException? failure;
 
     try {
-      result = await _repository.search(
+      PagedResult<AppNotification> fetched = await _repository.search(
         page: page,
         pageSize: pageSize,
         isRead: filter.isRead,
       );
+
+      final int lastPage = PagedResult.pagesFor(
+        totalCount: fetched.totalCount,
+        pageSize: pageSize,
+      );
+      if (page > lastPage) {
+        page = lastPage;
+        fetched = await _repository.search(
+          page: page,
+          pageSize: pageSize,
+          isRead: filter.isRead,
+        );
+      }
+
+      result = fetched;
     } on ApiException catch (thrown) {
       failure = thrown;
     }

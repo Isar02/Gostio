@@ -30,6 +30,32 @@ void main() {
       expect(notifier.failureMessage, 'Search failed.');
     },
   );
+
+  test(
+    'marking the last row returns to the last page that still exists',
+    () async {
+      final _FakeNotificationsRepository repository =
+          _FakeNotificationsRepository(<AppNotification>[
+            for (int id = 1; id <= 21; id++) _notification(id),
+          ]);
+      final NotificationsNotifier notifier = NotificationsNotifier(repository);
+      addTearDown(notifier.dispose);
+
+      await notifier.show(NotificationFilter.unread);
+      await notifier.openPage(2);
+      expect(notifier.items, hasLength(1));
+
+      await notifier.markRead(notifier.items.single);
+
+      expect(notifier.page, 1);
+      expect(notifier.totalCount, 20);
+      expect(notifier.items, hasLength(20));
+      expect(
+        notifier.items.every((AppNotification item) => !item.isRead),
+        isTrue,
+      );
+    },
+  );
 }
 
 AppNotification _notification(int id, {bool isRead = false}) => AppNotification(

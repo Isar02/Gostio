@@ -61,6 +61,28 @@ class ApiClient {
   Future<JsonMap> put(String path, {Object? body}) async =>
       _asObject(await _request('PUT', path, body: body));
 
+  // The boundary is only known once the body is built, so dio writes the
+  // content type itself and the one on the client is left alone.
+  Future<JsonMap> upload(
+    String path, {
+    required String field,
+    required String name,
+    required Uint8List bytes,
+    required String contentType,
+  }) async => _asObject(
+    await _request(
+      'POST',
+      path,
+      body: FormData.fromMap(<String, dynamic>{
+        field: MultipartFile.fromBytes(
+          bytes,
+          filename: name,
+          contentType: DioMediaType.parse(contentType),
+        ),
+      }),
+    ),
+  );
+
   Future<void> delete(String path) async {
     await _request('DELETE', path);
   }

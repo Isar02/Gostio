@@ -31,6 +31,8 @@ abstract class PagedNotifier<T, TQuery> extends ScreenNotifier {
 
   String? get failureMessage => _failure?.message;
 
+  String? get failureTraceId => _failure?.traceId;
+
   List<T> get items => _items;
 
   @protected

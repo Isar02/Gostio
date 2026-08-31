@@ -47,12 +47,16 @@ class ErrorState extends StatelessWidget {
     required this.message,
     this.title = 'That did not work',
     this.onRetry,
+    this.traceId,
     super.key,
   });
 
   final String message;
   final String title;
   final VoidCallback? onRetry;
+
+  // The same id is in the server's log, so it is worth carrying out of here.
+  final String? traceId;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +67,7 @@ class ErrorState extends StatelessWidget {
       action: onRetry == null
           ? null
           : OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+      footnote: traceId,
     );
   }
 }
@@ -73,12 +78,14 @@ class _CentredMessage extends StatelessWidget {
     this.message,
     this.action,
     this.titleColour,
+    this.footnote,
   });
 
   final String title;
   final String? message;
   final Widget? action;
   final Color? titleColour;
+  final String? footnote;
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +115,13 @@ class _CentredMessage extends StatelessWidget {
               if (action case final Widget action) ...<Widget>[
                 const SizedBox(height: AppSpacing.lg),
                 action,
+              ],
+              if (footnote case final String trace) ...<Widget>[
+                const SizedBox(height: AppSpacing.lg),
+                SelectableText(
+                  'Trace $trace',
+                  style: text.labelSmall?.copyWith(color: AppColors.inkFaint),
+                ),
               ],
             ],
           ),

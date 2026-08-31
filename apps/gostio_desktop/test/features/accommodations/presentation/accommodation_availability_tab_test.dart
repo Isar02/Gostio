@@ -35,9 +35,11 @@ void main() {
       find.text('Every night this month is open at the listing price.'),
       findsOneWidget,
     );
+    expect(find.textContaining('Click a day to write over it'), findsOneWidget);
+    expect(find.text('Add entry'), findsNothing);
   });
 
-  testWidgets('the month counts its own nights and names its guests', (
+  testWidgets('a day carrying an entry opens it with what it says', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -50,6 +52,54 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('Ana Marić'), findsWidgets);
+
+    await tester.tap(find.text('15'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Blocked · '), findsOneWidget);
+    expect(find.text('Remove entry'), findsOneWidget);
+    expect(find.text('Add entry'), findsNothing);
+  });
+
+  testWidgets('a span reaching over an entry is refused before the write', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _tab(_Availability(rows: <AccommodationAvailability>[_blocked])),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('13'));
+    await tester.tap(find.text('17'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('These dates already carry an entry'),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('a span over free days offers the entry it would write', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _tab(_Availability(rows: <AccommodationAvailability>[_blocked])),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('18'));
+    await tester.tap(find.text('20'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('3 nights · '), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
   });
 }
 

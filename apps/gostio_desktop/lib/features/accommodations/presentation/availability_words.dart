@@ -9,6 +9,9 @@ abstract final class AvailabilityWords {
       ? AppDates.day(from)
       : '${AppDates.day(from)} to ${AppDates.day(to)}';
 
+  static String nights(int count) =>
+      '$count ${count == 1 ? 'night' : 'nights'}';
+
   static String entry(AccommodationAvailability entry) {
     final String days = span(entry.startDate, entry.endDate);
 

@@ -77,6 +77,41 @@ void main() {
     expect(month.blockedDays, 2);
     expect(_on(month, 2).isBlocked, isTrue);
   });
+
+  test('a span reaching over an entry is known before it is written', () {
+    final AvailabilityMonth month = _month(
+      entries: <AccommodationAvailability>[_blocked(from: 10, to: 12)],
+    );
+
+    expect(
+      month.hasAnEntryBetween(
+        from: DateTime(2026, 9, 8),
+        to: DateTime(2026, 9, 9),
+      ),
+      isFalse,
+    );
+    expect(
+      month.hasAnEntryBetween(
+        from: DateTime(2026, 9, 8),
+        to: DateTime(2026, 9, 14),
+      ),
+      isTrue,
+    );
+  });
+
+  test('the booked nights inside a span are counted for the dialog', () {
+    final AvailabilityMonth month = _month(
+      bookings: <Reservation>[_booking(arrives: 10, departs: 13)],
+    );
+
+    expect(
+      month.bookedNightsBetween(
+        from: DateTime(2026, 9, 9),
+        to: DateTime(2026, 9, 11),
+      ),
+      2,
+    );
+  });
 }
 
 const int _pending = 1;

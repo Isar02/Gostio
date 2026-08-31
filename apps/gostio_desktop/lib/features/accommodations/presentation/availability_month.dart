@@ -75,6 +75,19 @@ class AvailabilityMonth {
   int _count(bool Function(AvailabilityDay day) counts) =>
       days.where((AvailabilityDay day) => day.isInMonth && counts(day)).length;
 
+  bool hasAnEntryBetween({required DateTime from, required DateTime to}) =>
+      _between(from, to).any((AvailabilityDay day) => day.entry != null);
+
+  int bookedNightsBetween({required DateTime from, required DateTime to}) =>
+      _between(
+        from,
+        to,
+      ).where((AvailabilityDay day) => day.booking != null).length;
+
+  Iterable<AvailabilityDay> _between(DateTime from, DateTime to) => days.where(
+    (AvailabilityDay day) => !day.date.isBefore(from) && !day.date.isAfter(to),
+  );
+
   static AvailabilityDay _dayAt(
     DateTime date, {
     required DateTime month,

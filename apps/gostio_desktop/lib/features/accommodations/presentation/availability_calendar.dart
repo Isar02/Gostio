@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/formatting/app_dates.dart';
@@ -11,9 +12,22 @@ import 'availability_month.dart';
 import 'availability_words.dart';
 
 class AvailabilityCalendar extends StatelessWidget {
-  const AvailabilityCalendar({required this.shown, super.key});
+  const AvailabilityCalendar({
+    required this.shown,
+    required this.highlight,
+    required this.isHighlightRefused,
+    required this.onChoose,
+    required this.onReach,
+    super.key,
+  });
 
   final AvailabilityMonth shown;
+
+  final (DateTime, DateTime)? highlight;
+  final bool isHighlightRefused;
+
+  final ValueChanged<AvailabilityDay> onChoose;
+  final ValueChanged<AvailabilityDay> onReach;
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +43,27 @@ class AvailabilityCalendar extends StatelessWidget {
           children: <Widget>[
             _Weekdays(days: shown.weeks.first.days),
             for (final AvailabilityWeek week in shown.weeks)
-              Expanded(child: _Week(week: week)),
+              Expanded(
+                child: _Week(
+                  week: week,
+                  isRinged: _isRinged,
+                  isHighlightRefused: isHighlightRefused,
+                  onChoose: onChoose,
+                  onReach: onReach,
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  bool _isRinged(DateTime date) {
+    if (highlight case (final DateTime from, final DateTime to)) {
+      return !date.isBefore(from) && !date.isAfter(to);
+    }
+
+    return false;
   }
 }
 
@@ -66,9 +96,19 @@ class _Weekdays extends StatelessWidget {
 }
 
 class _Week extends StatelessWidget {
-  const _Week({required this.week});
+  const _Week({
+    required this.week,
+    required this.isRinged,
+    required this.isHighlightRefused,
+    required this.onChoose,
+    required this.onReach,
+  });
 
   final AvailabilityWeek week;
+  final bool Function(DateTime date) isRinged;
+  final bool isHighlightRefused;
+  final ValueChanged<AvailabilityDay> onChoose;
+  final ValueChanged<AvailabilityDay> onReach;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +117,15 @@ class _Week extends StatelessWidget {
         Row(
           children: <Widget>[
             for (final AvailabilityDay day in week.days)
-              Expanded(child: _Day(day: day)),
+              Expanded(
+                child: _Day(
+                  day: day,
+                  isRinged: isRinged(day.date),
+                  isHighlightRefused: isHighlightRefused,
+                  onChoose: () => onChoose(day),
+                  onReach: () => onReach(day),
+                ),
+              ),
           ],
         ),
         // The bars sit over the cells, and the day under one has to stay
@@ -169,67 +217,114 @@ class _Bar extends StatelessWidget {
       : bar.booking.guestName;
 }
 
-class _Day extends StatelessWidget {
-  const _Day({required this.day});
+class _Day extends StatefulWidget {
+  const _Day({
+    required this.day,
+    required this.isRinged,
+    required this.isHighlightRefused,
+    required this.onChoose,
+    required this.onReach,
+  });
 
   final AvailabilityDay day;
+  final bool isRinged;
+  final bool isHighlightRefused;
+  final VoidCallback onChoose;
+  final VoidCallback onReach;
+
+  @override
+  State<_Day> createState() => _DayState();
+}
+
+class _DayState extends State<_Day> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return _Told(
-      day: day,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(
-            right: BorderSide(
-              color: AppColors.border,
-              width: AppSizes.hairline,
-            ),
-            bottom: BorderSide(
-              color: AppColors.border,
-              width: AppSizes.hairline,
-            ),
-          ),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            ColoredBox(color: _ground),
-            if (day.isBlocked) const CustomPaint(painter: _Hatching()),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.xs),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _Number(day: day),
-                  const Spacer(),
-                  if (day.priceOverride case final double price
-                      when day.isRepriced)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.xs),
-                      child: Text(
-                        AppNumbers.money(price),
-                        style: Theme.of(context).textTheme.labelSmall
-                            ?.copyWith(color: AppColors.indigo),
-                      ),
-                    ),
-                ],
+    final AvailabilityDay day = widget.day;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (PointerEnterEvent event) {
+        setState(() => _isHovered = true);
+        widget.onReach();
+      },
+      onExit: (PointerExitEvent event) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onChoose,
+        child: _Told(
+          day: day,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                right: const BorderSide(
+                  color: AppColors.border,
+                  width: AppSizes.hairline,
+                ),
+                bottom: const BorderSide(
+                  color: AppColors.border,
+                  width: AppSizes.hairline,
+                ),
+                top: BorderSide(color: _ring, width: AppSizes.focusRing),
+                left: BorderSide(color: _ring, width: AppSizes.focusRing),
               ),
             ),
-          ],
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                ColoredBox(color: _ground),
+                if (day.isBlocked) const CustomPaint(painter: _Hatching()),
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _Number(day: day),
+                      const Spacer(),
+                      if (day.priceOverride case final double price
+                          when day.isRepriced)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.xs),
+                          child: Text(
+                            AppNumbers.money(price),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: AppColors.indigo),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
+  Color get _ring {
+    if (!widget.isRinged) {
+      return Colors.transparent;
+    }
+
+    return widget.isHighlightRefused ? AppColors.danger : AppColors.indigo;
+  }
+
   Color get _ground {
-    if (!day.isInMonth) {
+    if (widget.isRinged) {
+      return widget.isHighlightRefused
+          ? AppColors.dangerGround
+          : AppColors.selected;
+    }
+
+    if (!widget.day.isInMonth) {
       return AppColors.hover;
     }
 
-    return switch (day) {
-      _ when day.isBlocked => AppColors.neutralGround,
-      _ when day.isRepriced => AppColors.infoGround,
+    return switch (widget.day) {
+      _ when widget.day.isBlocked => AppColors.neutralGround,
+      _ when widget.day.isRepriced => AppColors.infoGround,
+      _ when _isHovered => AppColors.hover,
       _ => AppColors.surface,
     };
   }

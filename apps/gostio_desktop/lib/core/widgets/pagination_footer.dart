@@ -46,13 +46,15 @@ class PaginationFooter extends StatelessWidget {
                 : '$_firstOnPage–$_lastOnPage of $totalCount',
             style: counts,
           ),
+          const SizedBox(width: AppSpacing.sm),
+          Text('· $pageSize per page', style: counts),
           const Spacer(),
           IconButton(
             onPressed: page > 1 ? () => onPageChanged(page - 1) : null,
             icon: const Icon(Icons.chevron_left),
             tooltip: 'Previous page',
           ),
-          Text('$page of $_totalPages', style: counts),
+          Text('Page $page of $_totalPages', style: counts),
           IconButton(
             onPressed: page < _totalPages
                 ? () => onPageChanged(page + 1)

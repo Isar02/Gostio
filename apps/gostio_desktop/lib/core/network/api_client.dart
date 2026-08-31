@@ -18,6 +18,9 @@ class ApiClient {
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 30),
           contentType: Headers.jsonContentType,
+          // The API binds a list from a repeated name, which is not the
+          // bracketed form dio reaches for on its own.
+          listFormat: ListFormat.multi,
         ),
       ) {
     // The session interceptor is added before the failure one because that one
@@ -53,6 +56,13 @@ class ApiClient {
 
   Future<void> postNoContent(String path, {Object? body}) async {
     await _request('POST', path, body: body);
+  }
+
+  Future<JsonMap> put(String path, {Object? body}) async =>
+      _asObject(await _request('PUT', path, body: body));
+
+  Future<void> delete(String path) async {
+    await _request('DELETE', path);
   }
 
   Future<Uint8List> bytes(String path) async {

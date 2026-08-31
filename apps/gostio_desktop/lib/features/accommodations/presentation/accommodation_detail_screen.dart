@@ -15,6 +15,7 @@ import '../data/accommodation.dart';
 import '../data/accommodations_repository.dart';
 import 'accommodation_detail_notifier.dart';
 import 'accommodation_form.dart';
+import 'accommodation_photos_tab.dart';
 import 'listing_status.dart';
 
 class AccommodationDetailScreen extends StatelessWidget {
@@ -105,7 +106,14 @@ class _Detail extends StatelessWidget {
                   onDeleted: (Accommodation deleted) =>
                       _leave(context, deleted, '${deleted.title} was deleted.'),
                 ),
-                for (final _Hanging tab in _tabs.skip(1))
+                if (notifier.accommodationId case final int id)
+                  AccommodationPhotosTab(
+                    accommodationId: id,
+                    onCoverMayChange: notifier.coverMayChange,
+                  )
+                else
+                  _NotHereYet(tab: _tabs[1], isCreating: notifier.isCreating),
+                for (final _Hanging tab in _tabs.skip(2))
                   _NotHereYet(tab: tab, isCreating: notifier.isCreating),
               ],
             ),
@@ -161,9 +169,11 @@ class _Header extends StatelessWidget {
       child: Row(
         children: <Widget>[
           IconButton(
-            onPressed: () =>
-                Navigator.of(context)
-                    .pop(notifier.hasCreated ? notifier.accommodation : null),
+            onPressed: () => Navigator.of(context).pop(
+              notifier.hasCreated || notifier.coverMayHaveChanged
+                  ? notifier.accommodation
+                  : null,
+            ),
             icon: const Icon(Icons.arrow_back),
             tooltip: 'Back to the list',
           ),

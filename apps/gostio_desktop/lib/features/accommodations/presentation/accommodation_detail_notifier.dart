@@ -31,6 +31,7 @@ class AccommodationDetailNotifier extends ScreenNotifier {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _coverMayHaveChanged = false;
   int _bookings = 0;
   Accommodation? _accommodation;
   AccommodationFormOptions _options = AccommodationFormOptions.none;
@@ -44,9 +45,14 @@ class AccommodationDetailNotifier extends ScreenNotifier {
 
   bool get isBooked => _bookings > 0;
 
-  // A create that has been written stays on the form, so the list underneath
-  // still has to be told when the screen is finally left.
   bool get hasCreated => isCreating && _accommodation != null;
+
+  bool get coverMayHaveChanged => _coverMayHaveChanged;
+
+  void coverMayChange() {
+    _coverMayHaveChanged = true;
+    publish();
+  }
 
   Accommodation? get accommodation => _accommodation;
 

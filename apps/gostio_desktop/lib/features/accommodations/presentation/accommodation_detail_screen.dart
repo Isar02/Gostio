@@ -13,6 +13,7 @@ import '../../reservations/data/reservations_repository.dart';
 import '../../users/data/users_repository.dart';
 import '../data/accommodation.dart';
 import '../data/accommodations_repository.dart';
+import 'accommodation_availability_tab.dart';
 import 'accommodation_detail_notifier.dart';
 import 'accommodation_form.dart';
 import 'accommodation_photos_tab.dart';
@@ -113,8 +114,15 @@ class _Detail extends StatelessWidget {
                   )
                 else
                   _NotHereYet(tab: _tabs[1], isCreating: notifier.isCreating),
-                for (final _Hanging tab in _tabs.skip(2))
-                  _NotHereYet(tab: tab, isCreating: notifier.isCreating),
+                if (notifier.accommodation case final Accommodation listing
+                    when !notifier.isCreating)
+                  AccommodationAvailabilityTab(
+                    accommodationId: listing.id,
+                    nightlyPrice: listing.pricePerNight,
+                  )
+                else
+                  _NotHereYet(tab: _tabs[2], isCreating: notifier.isCreating),
+                _NotHereYet(tab: _tabs[3], isCreating: notifier.isCreating),
               ],
             ),
           ),

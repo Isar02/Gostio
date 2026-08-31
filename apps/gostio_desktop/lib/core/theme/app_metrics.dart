@@ -50,6 +50,8 @@ abstract final class AppSizes {
   static const double photoTileHeight = 126;
   static const double photoCover = 360;
   static const double photoCoverHeight = 270;
+  static const double calendarBar = 18;
+  static const double calendarDay = 22;
   static const double panel = 380;
   static const double panelHeight = 420;
   static const double readingColumn = 520;

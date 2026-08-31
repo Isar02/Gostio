@@ -49,4 +49,6 @@ abstract final class AppSizes {
   static const double panel = 380;
   static const double panelHeight = 420;
   static const double readingColumn = 520;
+  static const double mapDialog = 640;
+  static const double mapDialogHeight = 460;
 }

@@ -20,7 +20,8 @@ class SectionHost extends StatelessWidget {
       key: ValueKey<(WorkspaceMode, AppSection)>((mode, section)),
       onGenerateRoute: (RouteSettings settings) => MaterialPageRoute<void>(
         settings: settings,
-        builder: (BuildContext context) => SectionScreen(section: section),
+        builder: (BuildContext context) =>
+            SectionScreen(mode: mode, section: section),
       ),
     );
   }

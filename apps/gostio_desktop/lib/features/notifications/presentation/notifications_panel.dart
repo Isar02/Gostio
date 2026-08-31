@@ -101,10 +101,10 @@ class _Filter extends StatelessWidget {
         child: FilterField(
           label: 'Show',
           child: AppDropdown<NotificationFilter>(
-            value: notifications.filter,
+            value: notifications.query,
             values: NotificationFilter.values,
             labels: (NotificationFilter filter) => filter.label,
-            onChanged: notifications.show,
+            onChanged: notifications.apply,
           ),
         ),
       ),
@@ -132,8 +132,8 @@ class _Body extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: failure == null
-            ? _emptyState(notifications.filter)
-            : ErrorState(message: failure, onRetry: notifications.load),
+            ? _emptyState(notifications.query)
+            : ErrorState(message: failure, onRetry: notifications.reload),
       );
     }
 

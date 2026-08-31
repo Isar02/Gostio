@@ -18,11 +18,11 @@ void main() {
       final NotificationsNotifier notifier = NotificationsNotifier(repository);
       addTearDown(notifier.dispose);
 
-      await notifier.load();
+      await notifier.reload();
       repository.failNextSearch = true;
-      await notifier.show(NotificationFilter.unread);
+      await notifier.apply(NotificationFilter.unread);
 
-      expect(notifier.filter, NotificationFilter.all);
+      expect(notifier.query, NotificationFilter.all);
       expect(notifier.items.map((AppNotification item) => item.id), <int>[
         1,
         2,
@@ -41,7 +41,7 @@ void main() {
       final NotificationsNotifier notifier = NotificationsNotifier(repository);
       addTearDown(notifier.dispose);
 
-      await notifier.show(NotificationFilter.unread);
+      await notifier.apply(NotificationFilter.unread);
       await notifier.openPage(2);
       expect(notifier.items, hasLength(1));
 

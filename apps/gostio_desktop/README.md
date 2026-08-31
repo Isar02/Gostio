@@ -20,7 +20,7 @@ call.
 ## Before a commit
 
 ```bash
-dart format --output=none --set-exit-if-changed lib
+dart format --output=none --set-exit-if-changed lib test
 flutter test
 flutter analyze --fatal-infos --fatal-warnings
 ```
@@ -36,8 +36,10 @@ lib/
   core/
     authorization/     the role names, matching the ones the server writes
     config/            the settings read from the environment
+    formatting/        the one place a date or a figure is printed
     models/            the shapes core itself reads, and the ones every module needs
     network/           the API client, its interceptors and its exception
+    paging/            the list state every screen with a table reuses
     session/           the signed in account and its roles
     theme/             the colour, type, spacing and tone tokens, and the theme
     validation/        the client side mirror of the server's rules

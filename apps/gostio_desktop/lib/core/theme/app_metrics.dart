@@ -32,14 +32,20 @@ abstract final class AppSizes {
 
   static const double control = 36;
   static const double tableHeaderRow = 40;
-  static const double tableRow = 44;
+  static const double tableRow = 24;
   static const double footerRow = 48;
+  static const double thumbnail = 20;
+  static const double thumbnailColumn = 56;
+  static const double compactColumn = 88;
+  static const double statusColumn = 112;
+  static const double dateColumn = 112;
   static const double numericColumn = 120;
 
   static const double topBar = 56;
   static const double navigation = 248;
 
   static const double filterField = 200;
+  static const double filterFieldNarrow = 120;
   static const double panel = 380;
   static const double panelHeight = 420;
   static const double readingColumn = 520;

@@ -18,7 +18,7 @@ class ApiImage extends StatelessWidget {
     super.key,
   });
 
-  final String path;
+  final String? path;
   final double? width;
   final double? height;
   final BoxFit fit;
@@ -26,10 +26,21 @@ class ApiImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (path == null) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: _Placeholder(
+          width: width,
+          height: height,
+          icon: Icons.image_outlined,
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: borderRadius,
       child: Image(
-        image: ApiImageProvider(context.read<ApiClient>(), path),
+        image: ApiImageProvider(context.read<ApiClient>(), path!),
         width: width,
         height: height,
         fit: fit,

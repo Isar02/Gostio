@@ -83,6 +83,9 @@ class ApiClient {
     ),
   );
 
+  Future<List<dynamic>> putList(String path, {Object? body}) async =>
+      _asArray(await _request('PUT', path, body: body));
+
   Future<void> delete(String path) async {
     await _request('DELETE', path);
   }
@@ -137,6 +140,19 @@ class ApiClient {
 
   static const String _unexpectedMessage =
       'The request could not be completed.';
+
+  static List<dynamic> _asArray(Response<dynamic> response) {
+    final dynamic body = response.data;
+    if (body is List) {
+      return body;
+    }
+
+    throw ApiException(
+      message:
+          'The API answered ${response.statusCode} without a list to read.',
+      statusCode: response.statusCode,
+    );
+  }
 
   static JsonMap _asObject(Response<dynamic> response) {
     final dynamic body = response.data;

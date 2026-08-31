@@ -6,6 +6,7 @@ import '../core/config/app_settings.dart';
 import '../core/network/api_client.dart';
 import '../core/session/session.dart';
 import '../core/theme/app_theme.dart';
+import '../features/accommodations/data/accommodation_amenities_repository.dart';
 import '../features/accommodations/data/accommodation_availability_repository.dart';
 import '../features/accommodations/data/accommodation_photos_repository.dart';
 import '../features/accommodations/data/accommodations_repository.dart';
@@ -49,6 +50,10 @@ class GostioApp extends StatelessWidget {
         Provider<AccommodationsRepository>(
           create: (BuildContext context) =>
               AccommodationsRepository(context.read<ApiClient>()),
+        ),
+        Provider<AccommodationAmenitiesRepository>(
+          create: (BuildContext context) =>
+              AccommodationAmenitiesRepository(context.read<ApiClient>()),
         ),
         Provider<AccommodationAvailabilityRepository>(
           create: (BuildContext context) =>

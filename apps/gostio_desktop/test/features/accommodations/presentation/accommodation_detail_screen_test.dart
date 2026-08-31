@@ -4,6 +4,7 @@ import 'package:gostio_desktop/core/models/paged_result.dart';
 import 'package:gostio_desktop/core/models/user.dart';
 import 'package:gostio_desktop/core/network/api_exception.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
+import 'package:gostio_desktop/features/accommodations/data/accommodation_amenities_repository.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_availability.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_availability_repository.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.dart';
@@ -53,11 +54,12 @@ void main() {
   // The form empties for the next listing rather than closing, so a screen
   // that opened a calendar over the one just created would carry it into the
   // one after that: the tabs stay shut until a listing is opened from the list.
-  testWidgets('a listing created from the empty form opens no calendar', (
+  testWidgets('a listing created from the empty form opens no tab of its own', (
     WidgetTester tester,
   ) async {
     final _Availability availability = _Availability();
-    await tester.pumpWidget(_screen(_Repositories(), availability));
+    final _Offerings offerings = _Offerings();
+    await tester.pumpWidget(_screen(_Repositories(), availability, offerings));
     await tester.pumpAndSettle();
 
     await tester
@@ -74,6 +76,15 @@ void main() {
       findsOneWidget,
     );
     expect(availability.windows, isEmpty);
+
+    await tester.tap(find.text('Amenities'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('before amenities can be managed'),
+      findsOneWidget,
+    );
+    expect(offerings.reads, isZero);
   });
 }
 
@@ -92,6 +103,21 @@ const AccommodationDraft _draft = AccommodationDraft(
   pricePerNight: 180.5,
   cleaningFee: 25,
 );
+
+class _Offerings implements AccommodationAmenitiesRepository {
+  int reads = 0;
+
+  @override
+  Future<List<LookupItem>> forAccommodation(int accommodationId) async {
+    reads++;
+
+    return const <LookupItem>[];
+  }
+
+  @override
+  Future<List<LookupItem>> set(int accommodationId, List<int> amenityIds) =>
+      throw UnimplementedError();
+}
 
 class _Availability implements AccommodationAvailabilityRepository {
   final List<DateTime> windows = <DateTime>[];
@@ -121,6 +147,7 @@ class _Availability implements AccommodationAvailabilityRepository {
 Widget _screen(
   _Repositories repositories, [
   AccommodationAvailabilityRepository? availability,
+  AccommodationAmenitiesRepository? offerings,
 ]) => MultiProvider(
   providers: <SingleChildWidget>[
     Provider<AccommodationsRepository>.value(value: repositories),
@@ -129,6 +156,8 @@ Widget _screen(
     Provider<ReservationsRepository>.value(value: repositories),
     if (availability case final AccommodationAvailabilityRepository rows)
       Provider<AccommodationAvailabilityRepository>.value(value: rows),
+    if (offerings case final AccommodationAmenitiesRepository held)
+      Provider<AccommodationAmenitiesRepository>.value(value: held),
   ],
   child: const MaterialApp(
     home: Scaffold(body: AccommodationDetailScreen(asAdministrator: false)),

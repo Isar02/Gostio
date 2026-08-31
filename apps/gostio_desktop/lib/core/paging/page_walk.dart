@@ -1,0 +1,32 @@
+import '../models/paged_result.dart';
+import '../network/api_client.dart';
+
+// A dropdown is filled from the whole table rather than from its first page.
+// The API caps a page at a hundred rows, so the pages are walked until the
+// count the server answered is covered.
+Future<List<T>> readEveryPage<T>(
+  ApiClient client,
+  String path, {
+  required T Function(JsonMap item) read,
+  JsonMap? query,
+}) async {
+  const int pageSize = 100;
+  final List<T> items = <T>[];
+
+  for (int page = 1; ; page++) {
+    final JsonMap body = await client.get(
+      path,
+      query: <String, dynamic>{...?query, 'page': page, 'pageSize': pageSize},
+    );
+    final PagedResult<T> fetched = PagedResult<T>.fromJson(
+      body,
+      (Object? item) => read(item! as JsonMap),
+    );
+
+    items.addAll(fetched.items);
+
+    if (fetched.items.isEmpty || items.length >= fetched.totalCount) {
+      return items;
+    }
+  }
+}

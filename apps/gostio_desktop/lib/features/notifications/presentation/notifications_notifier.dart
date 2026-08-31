@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_exception.dart';
 import '../data/app_notification.dart';
-import '../data/notification_filter.dart';
 import '../data/notifications_repository.dart';
+import 'notification_filter.dart';
 
 class NotificationsNotifier extends ChangeNotifier {
   NotificationsNotifier(this._repository) {

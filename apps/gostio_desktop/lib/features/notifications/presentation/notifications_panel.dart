@@ -11,7 +11,7 @@ import '../../../core/widgets/filter_bar.dart';
 import '../../../core/widgets/pagination_footer.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../data/app_notification.dart';
-import '../data/notification_filter.dart';
+import 'notification_filter.dart';
 import 'notifications_notifier.dart';
 
 class NotificationsPanel extends StatelessWidget {

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_exception.dart';
 import '../data/app_notification.dart';
+import '../data/notification_filter.dart';
 import '../data/notifications_repository.dart';
 
 class NotificationsNotifier extends ChangeNotifier {
@@ -26,6 +27,7 @@ class NotificationsNotifier extends ChangeNotifier {
   int _pageRequest = 0;
   bool _isLoading = false;
   bool _isDisposed = false;
+  NotificationFilter _filter = NotificationFilter.all;
   ApiException? _failure;
   List<AppNotification> _items = const <AppNotification>[];
 
@@ -39,6 +41,8 @@ class NotificationsNotifier extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
+  NotificationFilter get filter => _filter;
+
   String? get failureMessage => _failure?.message;
 
   List<AppNotification> get items => _items;
@@ -47,6 +51,13 @@ class NotificationsNotifier extends ChangeNotifier {
     _page = page;
 
     return load();
+  }
+
+  // A different filter is a different list, so it starts at its first page.
+  Future<void> show(NotificationFilter filter) {
+    _filter = filter;
+
+    return openPage(1);
   }
 
   // The one place the rows are written, and only the newest load may write
@@ -68,7 +79,11 @@ class NotificationsNotifier extends ChangeNotifier {
     ApiException? failure;
 
     try {
-      result = await _repository.search(page: page, pageSize: pageSize);
+      result = await _repository.search(
+        page: page,
+        pageSize: pageSize,
+        isRead: _filter.isRead,
+      );
     } on ApiException catch (thrown) {
       failure = thrown;
     }

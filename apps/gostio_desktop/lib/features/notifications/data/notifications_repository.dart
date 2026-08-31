@@ -13,10 +13,15 @@ class NotificationsRepository {
   Future<PagedResult<AppNotification>> search({
     int page = 1,
     int pageSize = PagedResult.defaultPageSize,
+    bool? isRead,
   }) async {
     final JsonMap body = await _client.get(
       '/notifications',
-      query: <String, dynamic>{'page': page, 'pageSize': pageSize},
+      query: <String, dynamic>{
+        'page': page,
+        'pageSize': pageSize,
+        'isRead': ?isRead,
+      },
     );
 
     return PagedResult<AppNotification>.fromJson(

@@ -5,10 +5,13 @@ import '../../../core/formatting/app_dates.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/tone.dart';
+import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_notice.dart';
+import '../../../core/widgets/filter_bar.dart';
 import '../../../core/widgets/pagination_footer.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../data/app_notification.dart';
+import '../data/notification_filter.dart';
 import 'notifications_notifier.dart';
 
 class NotificationsPanel extends StatelessWidget {
@@ -26,12 +29,12 @@ class NotificationsPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           _Header(notifications: notifications),
+          _Filter(notifications: notifications),
           const Divider(),
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: AppSizes.panelHeight),
             child: _Body(notifications: notifications),
           ),
-          // An empty page still has a way back to the one before it.
           PaginationFooter(
             page: notifications.page,
             pageSize: notifications.pageSize,
@@ -79,6 +82,36 @@ class _Header extends StatelessWidget {
   }
 }
 
+class _Filter extends StatelessWidget {
+  const _Filter({required this.notifications});
+
+  final NotificationsNotifier notifications;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FilterField(
+          label: 'Show',
+          child: AppDropdown<NotificationFilter>(
+            value: notifications.filter,
+            values: NotificationFilter.values,
+            labels: (NotificationFilter filter) => filter.label,
+            onChanged: notifications.show,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Body extends StatelessWidget {
   const _Body({required this.notifications});
 
@@ -99,10 +132,7 @@ class _Body extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: failure == null
-            ? const EmptyState(
-                title: 'Nothing yet',
-                message: 'Bookings, payments and refunds are announced here.',
-              )
+            ? _emptyState(notifications.filter)
             : ErrorState(message: failure, onRetry: notifications.load),
       );
     }
@@ -134,6 +164,17 @@ class _Body extends StatelessWidget {
     );
   }
 }
+
+EmptyState _emptyState(NotificationFilter filter) => switch (filter) {
+  NotificationFilter.all => const EmptyState(
+    title: 'Nothing yet',
+    message: 'Bookings, payments and refunds are announced here.',
+  ),
+  _ => EmptyState(
+    title: 'Nothing here',
+    message: 'No notification is ${filter.label.toLowerCase()}.',
+  ),
+};
 
 class _Row extends StatelessWidget {
   const _Row({required this.notification, required this.onRead});

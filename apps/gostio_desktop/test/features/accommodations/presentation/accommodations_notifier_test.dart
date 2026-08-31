@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_desktop/core/models/paged_result.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
+import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodations_repository.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodations_notifier.dart';
@@ -57,6 +58,25 @@ class _FakeAccommodationsRepository implements AccommodationsRepository {
   final List<int?> hostIds = <int?>[];
   final List<int> pages = <int>[];
   final List<AccommodationQuery> queries = <AccommodationQuery>[];
+
+  // The list is what this double is for; reaching anything else is the test
+  // asking the wrong question.
+  @override
+  Future<Accommodation> get(int id) => throw UnimplementedError();
+
+  @override
+  Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Accommodation> update(
+    int id,
+    AccommodationDraft draft, {
+    required bool isActive,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> delete(int id) => throw UnimplementedError();
 
   @override
   Future<PagedResult<Accommodation>> search({

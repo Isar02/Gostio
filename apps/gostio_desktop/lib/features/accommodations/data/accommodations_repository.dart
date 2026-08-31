@@ -1,6 +1,7 @@
 import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_client.dart';
 import 'accommodation.dart';
+import 'accommodation_draft.dart';
 import 'accommodation_query.dart';
 
 class AccommodationsRepository {
@@ -29,4 +30,28 @@ class AccommodationsRepository {
       (Object? item) => Accommodation.fromJson(item! as JsonMap),
     );
   }
+
+  Future<Accommodation> get(int id) async =>
+      Accommodation.fromJson(await _client.get('/accommodations/$id'));
+
+  Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) async =>
+      Accommodation.fromJson(
+        await _client.post(
+          '/accommodations',
+          body: draft.toCreate(hostId: hostId),
+        ),
+      );
+
+  Future<Accommodation> update(
+    int id,
+    AccommodationDraft draft, {
+    required bool isActive,
+  }) async => Accommodation.fromJson(
+    await _client.put(
+      '/accommodations/$id',
+      body: draft.toUpdate(isActive: isActive),
+    ),
+  );
+
+  Future<void> delete(int id) => _client.delete('/accommodations/$id');
 }

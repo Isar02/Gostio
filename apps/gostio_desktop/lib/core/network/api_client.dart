@@ -58,6 +58,13 @@ class ApiClient {
     await _request('POST', path, body: body);
   }
 
+  Future<JsonMap> put(String path, {Object? body}) async =>
+      _asObject(await _request('PUT', path, body: body));
+
+  Future<void> delete(String path) async {
+    await _request('DELETE', path);
+  }
+
   Future<Uint8List> bytes(String path) async {
     final Response<dynamic> response = await _request(
       'GET',

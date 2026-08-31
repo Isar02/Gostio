@@ -21,10 +21,11 @@ call.
 
 ```bash
 dart format --output=none --set-exit-if-changed lib
+flutter test
 flutter analyze --fatal-infos --fatal-warnings
 ```
 
-Nothing is committed while either reports anything.
+Nothing is committed while any of them reports anything.
 
 ## Layout
 

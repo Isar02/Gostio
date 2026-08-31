@@ -47,22 +47,18 @@ class NotificationsNotifier extends ChangeNotifier {
 
   List<AppNotification> get items => _items;
 
-  Future<void> openPage(int page) {
-    _page = page;
+  Future<void> openPage(int page) => _load(page: page, filter: _filter);
 
-    return load();
-  }
+  Future<void> show(NotificationFilter filter) =>
+      _load(page: 1, filter: filter);
 
-  // A different filter is a different list, so it starts at its first page.
-  Future<void> show(NotificationFilter filter) {
-    _filter = filter;
+  Future<void> load() => _load(page: _page, filter: _filter);
 
-    return openPage(1);
-  }
-
-  Future<void> load() async {
+  Future<void> _load({
+    required int page,
+    required NotificationFilter filter,
+  }) async {
     final int request = ++_pageRequest;
-    final int page = _page;
 
     _isLoading = true;
     _failure = null;
@@ -78,7 +74,7 @@ class NotificationsNotifier extends ChangeNotifier {
       result = await _repository.search(
         page: page,
         pageSize: pageSize,
-        isRead: _filter.isRead,
+        isRead: filter.isRead,
       );
     } on ApiException catch (thrown) {
       failure = thrown;
@@ -91,6 +87,8 @@ class NotificationsNotifier extends ChangeNotifier {
     }
 
     if (result != null) {
+      _page = page;
+      _filter = filter;
       _items = result.items;
       _totalCount = result.totalCount;
     }

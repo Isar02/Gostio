@@ -2,19 +2,19 @@ import 'package:flutter/foundation.dart';
 
 import '../models/paged_result.dart';
 import '../network/api_exception.dart';
+import '../state/screen_notifier.dart';
 
 // The state behind a list: one page of rows, the query they were fetched
 // under, and the failure of the last attempt. Only the newest load may write,
 // and it writes the page, the query and the rows together, so a request that
 // is overtaken or refused leaves the previous view whole.
-abstract class PagedNotifier<T, TQuery> extends ChangeNotifier {
+abstract class PagedNotifier<T, TQuery> extends ScreenNotifier {
   PagedNotifier(this._query);
 
   int _page = 1;
   int _totalCount = 0;
   int _request = 0;
   bool _isLoading = false;
-  bool _isDisposed = false;
   TQuery _query;
   ApiException? _failure;
   List<T> _items = List<T>.empty();
@@ -102,20 +102,5 @@ abstract class PagedNotifier<T, TQuery> extends ChangeNotifier {
     }
 
     await reload();
-  }
-
-  // A call in flight outlives the screen that started it.
-  @protected
-  void publish() {
-    if (!_isDisposed) {
-      notifyListeners();
-    }
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-
-    super.dispose();
   }
 }

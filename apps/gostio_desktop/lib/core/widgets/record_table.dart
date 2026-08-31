@@ -47,7 +47,7 @@ class RecordTable<T> extends StatelessWidget {
   const RecordTable({
     required this.columns,
     required this.rows,
-    this.onRowTap,
+    this.onRowOpen,
     this.empty,
     this.footer,
     super.key,
@@ -55,7 +55,7 @@ class RecordTable<T> extends StatelessWidget {
 
   final List<TableColumn<T>> columns;
   final List<T> rows;
-  final void Function(T row)? onRowTap;
+  final void Function(T row)? onRowOpen;
   final Widget? empty;
   final Widget? footer;
 
@@ -80,7 +80,7 @@ class RecordTable<T> extends StatelessWidget {
                     itemBuilder: (BuildContext context, int index) => _Row<T>(
                       columns: columns,
                       row: rows[index],
-                      onTap: onRowTap,
+                      onOpen: onRowOpen,
                     ),
                   ),
           ),
@@ -120,11 +120,11 @@ class _Header<T> extends StatelessWidget {
 }
 
 class _Row<T> extends StatelessWidget {
-  const _Row({required this.columns, required this.row, this.onTap});
+  const _Row({required this.columns, required this.row, this.onOpen});
 
   final List<TableColumn<T>> columns;
   final T row;
-  final void Function(T row)? onTap;
+  final void Function(T row)? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +132,9 @@ class _Row<T> extends StatelessWidget {
         Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
 
     return InkWell(
-      onTap: onTap == null ? null : () => onTap!(row),
+      // A row opens on a double click, which is what a desktop table does and
+      // what keeps a single click free to mean nothing but a stop on the way.
+      onDoubleTap: onOpen == null ? null : () => onOpen!(row),
       hoverColor: AppColors.hover,
       child: Container(
         decoration: const BoxDecoration(

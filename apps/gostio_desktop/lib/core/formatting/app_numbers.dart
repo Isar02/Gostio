@@ -14,6 +14,16 @@ abstract final class AppNumbers {
   static String typed(num value) =>
       value == value.roundToDouble() ? '${value.toInt()}' : '$value';
 
+  static String size(int bytes) => switch (bytes) {
+    < _kilobyte => '$bytes B',
+    < _megabyte => '${_size.format(bytes / _kilobyte)} KB',
+    _ => '${_size.format(bytes / _megabyte)} MB',
+  };
+
+  static const int _kilobyte = 1024;
+  static const int _megabyte = 1024 * 1024;
+
   static final NumberFormat _amount = NumberFormat('#,##0.00');
   static final NumberFormat _rating = NumberFormat('0.0');
+  static final NumberFormat _size = NumberFormat('#,##0.#');
 }

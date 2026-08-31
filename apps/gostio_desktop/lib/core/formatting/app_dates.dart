@@ -5,10 +5,20 @@ import 'package:intl/intl.dart';
 abstract final class AppDates {
   static final DateFormat _date = DateFormat('d MMM y');
   static final DateFormat _dateTime = DateFormat('d MMM y, HH:mm');
+  static final DateFormat _month = DateFormat('MMMM y');
+  static final DateFormat _weekday = DateFormat('EEE');
 
   static String date(DateTime value) => _date.format(value.toLocal());
 
   static String dateTime(DateTime value) => _dateTime.format(value.toLocal());
+
+  // A calendar day is the date it names rather than a moment somewhere else,
+  // so these three print it where the two above convert first.
+  static String day(DateTime value) => _date.format(value);
+
+  static String month(DateTime value) => _month.format(value);
+
+  static String weekday(DateTime value) => _weekday.format(value);
 
   // Read against now rather than printed as a date the reader has to subtract.
   static String age(DateTime value) {

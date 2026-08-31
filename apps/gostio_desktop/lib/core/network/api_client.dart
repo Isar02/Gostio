@@ -61,6 +61,31 @@ class ApiClient {
   Future<JsonMap> put(String path, {Object? body}) async =>
       _asObject(await _request('PUT', path, body: body));
 
+  // The boundary is only known once the body is built, so dio writes the
+  // content type itself and the one on the client is left alone.
+  Future<JsonMap> upload(
+    String path, {
+    required String field,
+    required String name,
+    required Uint8List bytes,
+    required String contentType,
+  }) async => _asObject(
+    await _request(
+      'POST',
+      path,
+      body: FormData.fromMap(<String, dynamic>{
+        field: MultipartFile.fromBytes(
+          bytes,
+          filename: name,
+          contentType: DioMediaType.parse(contentType),
+        ),
+      }),
+    ),
+  );
+
+  Future<List<dynamic>> putList(String path, {Object? body}) async =>
+      _asArray(await _request('PUT', path, body: body));
+
   Future<void> delete(String path) async {
     await _request('DELETE', path);
   }
@@ -115,6 +140,19 @@ class ApiClient {
 
   static const String _unexpectedMessage =
       'The request could not be completed.';
+
+  static List<dynamic> _asArray(Response<dynamic> response) {
+    final dynamic body = response.data;
+    if (body is List) {
+      return body;
+    }
+
+    throw ApiException(
+      message:
+          'The API answered ${response.statusCode} without a list to read.',
+      statusCode: response.statusCode,
+    );
+  }
 
   static JsonMap _asObject(Response<dynamic> response) {
     final dynamic body = response.data;

@@ -12,6 +12,7 @@ import 'package:gostio_desktop/features/accommodations/presentation/accommodatio
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_form.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
+import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:gostio_desktop/features/users/data/users_repository.dart';
 
@@ -214,6 +215,13 @@ class _Repositories
 
   @override
   Future<int> countForAccommodation(int accommodationId) async => 0;
+
+  @override
+  Future<List<Reservation>> forAccommodationWindow(
+    int accommodationId, {
+    required DateTime from,
+    required DateTime to,
+  }) => throw UnimplementedError();
 
   @override
   Future<PagedResult<Accommodation>> search({

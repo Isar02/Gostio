@@ -6,6 +6,8 @@ class AppDropdown<T> extends StatelessWidget {
     required this.values,
     required this.labels,
     required this.onChanged,
+    this.label,
+    this.errorText,
     super.key,
   });
 
@@ -13,10 +15,14 @@ class AppDropdown<T> extends StatelessWidget {
   final List<T> values;
   final String Function(T value) labels;
   final ValueChanged<T> onChanged;
+  final String? label;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
     return _DropdownField<T>(
+      label: label,
+      errorText: errorText,
       value: value,
       items: <DropdownMenuItem<T>>[
         for (final T option in values)
@@ -40,6 +46,8 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
     required this.labels,
     required this.onChanged,
     this.anyLabel = 'Any',
+    this.label,
+    this.errorText,
     super.key,
   });
 
@@ -48,10 +56,14 @@ class AppOptionalDropdown<T extends Object> extends StatelessWidget {
   final String Function(T value) labels;
   final ValueChanged<T?> onChanged;
   final String anyLabel;
+  final String? label;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
     return _DropdownField<T?>(
+      label: label,
+      errorText: errorText,
       value: value,
       items: <DropdownMenuItem<T?>>[
         DropdownMenuItem<T?>(child: Text(anyLabel)),
@@ -68,16 +80,24 @@ class _DropdownField<T> extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.label,
+    this.errorText,
   });
 
   final T value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
+  final String? label;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
     return InputDecorator(
-      decoration: const InputDecoration(),
+      decoration: InputDecoration(
+        labelText: label,
+        errorText: errorText,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+      ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,

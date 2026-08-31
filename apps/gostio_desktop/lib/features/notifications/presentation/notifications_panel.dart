@@ -31,13 +31,13 @@ class NotificationsPanel extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: AppSizes.panelHeight),
             child: _Body(notifications: notifications),
           ),
-          if (notifications.items.isNotEmpty)
-            PaginationFooter(
-              page: notifications.page,
-              pageSize: notifications.pageSize,
-              totalCount: notifications.totalCount,
-              onPageChanged: notifications.openPage,
-            ),
+          // An empty page still has a way back to the one before it.
+          PaginationFooter(
+            page: notifications.page,
+            pageSize: notifications.pageSize,
+            totalCount: notifications.totalCount,
+            onPageChanged: notifications.openPage,
+          ),
         ],
       ),
     );

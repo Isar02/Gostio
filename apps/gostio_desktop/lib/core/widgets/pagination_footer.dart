@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/paged_result.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 
@@ -18,7 +19,7 @@ class PaginationFooter extends StatelessWidget {
   final ValueChanged<int> onPageChanged;
 
   int get _totalPages =>
-      totalCount == 0 ? 1 : (totalCount + pageSize - 1) ~/ pageSize;
+      PagedResult.pagesFor(totalCount: totalCount, pageSize: pageSize);
 
   int get _firstOnPage => (page - 1) * pageSize + 1;
 

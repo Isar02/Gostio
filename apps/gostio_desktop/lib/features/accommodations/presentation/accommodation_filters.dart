@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/formatting/app_numbers.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/validation/input_formats.dart';
 import '../../../core/widgets/app_dropdown.dart';
@@ -17,6 +18,7 @@ class AccommodationFilters extends StatefulWidget {
     required this.applied,
     required this.isLoading,
     required this.onChanged,
+    this.trailing,
     super.key,
   });
 
@@ -28,6 +30,7 @@ class AccommodationFilters extends StatefulWidget {
 
   final bool isLoading;
   final ValueChanged<AccommodationQuery> onChanged;
+  final Widget? trailing;
 
   @override
   State<AccommodationFilters> createState() => _AccommodationFiltersState();
@@ -65,9 +68,9 @@ class _AccommodationFiltersState extends State<AccommodationFilters> {
 
   void _adopt(AccommodationQuery query) {
     _title.text = query.title ?? '';
-    _minPrice.text = _typed(query.minPrice);
-    _maxPrice.text = _typed(query.maxPrice);
-    _minGuests.text = _typed(query.minGuests);
+    _minPrice.text = _written(query.minPrice);
+    _maxPrice.text = _written(query.maxPrice);
+    _minGuests.text = _written(query.minGuests);
     _city = _itemFor(widget.options.cities, query.cityId);
     _type = _itemFor(widget.options.types, query.accommodationTypeId);
     _category = _itemFor(
@@ -103,11 +106,8 @@ class _AccommodationFiltersState extends State<AccommodationFilters> {
     widget.onChanged(_announced);
   }
 
-  static String _typed(num? value) => switch (value) {
-    null => '',
-    _ when value == value.roundToDouble() => '${value.toInt()}',
-    _ => '$value',
-  };
+  static String _written(num? value) =>
+      value == null ? '' : AppNumbers.typed(value);
 
   static LookupItem? _itemFor(List<LookupItem> values, int? id) {
     for (final LookupItem value in values) {
@@ -155,6 +155,7 @@ class _AccommodationFiltersState extends State<AccommodationFilters> {
 
     return FilterBar(
       onClear: _clear,
+      trailing: widget.trailing,
       filters: <Widget>[
         FilterField(
           label: 'Title',

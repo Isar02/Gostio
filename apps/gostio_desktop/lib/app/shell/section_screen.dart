@@ -17,6 +17,7 @@ class SectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (section) {
       AppSection.accommodations => AccommodationsScreen(
+        asAdministrator: mode == WorkspaceMode.administrator,
         hostId: _hostId(context),
       ),
       _ => EmptyState(

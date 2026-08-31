@@ -11,6 +11,8 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/reference/data/reference_repository.dart';
+import '../features/reservations/data/reservations_repository.dart';
+import '../features/users/data/users_repository.dart';
 import 'shell/shell_scaffold.dart';
 
 class GostioApp extends StatelessWidget {
@@ -45,6 +47,14 @@ class GostioApp extends StatelessWidget {
         Provider<AccommodationsRepository>(
           create: (BuildContext context) =>
               AccommodationsRepository(context.read<ApiClient>()),
+        ),
+        Provider<UsersRepository>(
+          create: (BuildContext context) =>
+              UsersRepository(context.read<ApiClient>()),
+        ),
+        Provider<ReservationsRepository>(
+          create: (BuildContext context) =>
+              ReservationsRepository(context.read<ApiClient>()),
         ),
       ],
       child: MaterialApp(

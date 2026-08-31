@@ -16,14 +16,20 @@ import '../../../core/widgets/status_chip.dart';
 import '../../reference/data/reference_repository.dart';
 import '../data/accommodation.dart';
 import '../data/accommodations_repository.dart';
+import 'accommodation_detail_screen.dart';
 import 'accommodation_filter_options.dart';
 import 'accommodation_filters.dart';
 import 'accommodations_notifier.dart';
 import 'listing_status.dart';
 
 class AccommodationsScreen extends StatefulWidget {
-  const AccommodationsScreen({this.hostId, super.key});
+  const AccommodationsScreen({
+    required this.asAdministrator,
+    this.hostId,
+    super.key,
+  });
 
+  final bool asAdministrator;
   final int? hostId;
 
   @override
@@ -53,15 +59,16 @@ class _AccommodationsScreenState extends State<AccommodationsScreen> {
 
         return accommodations;
       },
-      child: _Body(options: _options),
+      child: _Body(options: _options, asAdministrator: widget.asAdministrator),
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.options});
+  const _Body({required this.options, required this.asAdministrator});
 
   final Future<AccommodationFilterOptions> options;
+  final bool asAdministrator;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +86,7 @@ class _Body extends StatelessWidget {
             builder: (
               BuildContext context,
               AsyncSnapshot<AccommodationFilterOptions> snapshot,
-            ) => _filters(snapshot, accommodations),
+            ) => _filters(context, snapshot, accommodations),
           ),
           if (failure != null && accommodations.items.isNotEmpty) ...<Widget>[
             const SizedBox(height: AppSpacing.md),
@@ -96,6 +103,8 @@ class _Body extends StatelessWidget {
             child: RecordTable<Accommodation>(
               columns: _columns,
               rows: accommodations.items,
+              onRowOpen: (Accommodation row) =>
+                  _open(context, accommodations, id: row.id),
               empty: _Nothing(accommodations: accommodations),
               footer: PaginationFooter(
                 page: accommodations.page,
@@ -113,6 +122,7 @@ class _Body extends StatelessWidget {
   // A filter list that did not arrive leaves its dropdown holding nothing,
   // which is worth saying rather than showing as an empty menu.
   Widget _filters(
+    BuildContext context,
     AsyncSnapshot<AccommodationFilterOptions> snapshot,
     AccommodationsNotifier accommodations,
   ) {
@@ -121,6 +131,11 @@ class _Body extends StatelessWidget {
       applied: accommodations.query,
       isLoading: accommodations.isLoading,
       onChanged: accommodations.apply,
+      trailing: FilledButton.icon(
+        onPressed: () => _open(context, accommodations),
+        icon: const Icon(Icons.add, size: AppSizes.iconSmall),
+        label: const Text('New listing'),
+      ),
     );
 
     if (snapshot.error case final Object failure) {
@@ -135,6 +150,28 @@ class _Body extends StatelessWidget {
     }
 
     return filters;
+  }
+
+  // The detail is pushed over the list rather than beside it, and the list
+  // reloads only when it hands back the row it wrote.
+  Future<void> _open(
+    BuildContext context,
+    AccommodationsNotifier accommodations, {
+    int? id,
+  }) async {
+    final Accommodation? changed = await Navigator.of(context)
+        .push<Accommodation>(
+          MaterialPageRoute<Accommodation>(
+            builder: (BuildContext context) => AccommodationDetailScreen(
+              asAdministrator: asAdministrator,
+              accommodationId: id,
+            ),
+          ),
+        );
+
+    if (changed != null) {
+      await accommodations.reload();
+    }
   }
 }
 

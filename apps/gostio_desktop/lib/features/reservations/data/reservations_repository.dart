@@ -1,5 +1,8 @@
 import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/paging/page_walk.dart';
+import '../../../core/time/calendar_days.dart';
+import 'reservation.dart';
 
 class ReservationsRepository {
   const ReservationsRepository(this._client);
@@ -23,4 +26,21 @@ class ReservationsRepository {
       (Object? item) => item,
     ).totalCount;
   }
+
+  // The window matches on the days a booking takes up rather than on the ones
+  // it was written on, so a stay reaching past either edge comes back too.
+  Future<List<Reservation>> forAccommodationWindow(
+    int accommodationId, {
+    required DateTime from,
+    required DateTime to,
+  }) => readEveryPage<Reservation>(
+    _client,
+    '/reservations',
+    read: Reservation.fromJson,
+    query: <String, dynamic>{
+      'accommodationId': accommodationId,
+      'from': CalendarDays.write(from),
+      'to': CalendarDays.write(to),
+    },
+  );
 }

@@ -60,10 +60,6 @@ class NotificationsNotifier extends ChangeNotifier {
     return openPage(1);
   }
 
-  // The one place the rows are written, and only the newest load may write
-  // them: a slower answer to an earlier page would otherwise draw rows the
-  // footer no longer describes, or undo a row marked read while it was in
-  // flight. Everything that changes a row reloads through here.
   Future<void> load() async {
     final int request = ++_pageRequest;
     final int page = _page;
@@ -109,12 +105,12 @@ class NotificationsNotifier extends ChangeNotifier {
       return;
     }
 
-    await _act(() => _repository.markRead(notification.id));
+    await _performAndReload(() => _repository.markRead(notification.id));
   }
 
-  Future<void> markAllRead() => _act(_repository.markAllRead);
+  Future<void> markAllRead() => _performAndReload(_repository.markAllRead);
 
-  Future<void> _act(Future<void> Function() action) async {
+  Future<void> _performAndReload(Future<void> Function() action) async {
     _failure = null;
 
     try {
@@ -129,11 +125,8 @@ class NotificationsNotifier extends ChangeNotifier {
     await load();
   }
 
-  // The one place the count is written, and only the newest read may write it.
-  // The poll, a page load and a row marked read all ask for it, so an answer
-  // still in flight when a later one is issued is stale by the time it lands.
-  // A failed read says nothing: the session already answers a dead token, and
-  // anything else is answered by the next tick.
+  // Several callers ask for the count, so only the newest read may write it:
+  // an answer still in flight when a later one is issued is stale when it lands.
   Future<void> _refreshUnread() async {
     final int request = ++_countRequest;
 

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// A value the caller owns rather than a form field holding its own: the
-// selection lives in a notifier, and the control only draws what it is given.
 class AppDropdown<T> extends StatelessWidget {
   const AppDropdown({
     required this.value,

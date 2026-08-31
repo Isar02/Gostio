@@ -30,8 +30,6 @@ class NotificationsRepository {
     );
   }
 
-  // Neither of these reads what the endpoint answers with. The caller reloads
-  // the page it is showing, and that reload is what draws the new state.
   Future<void> markRead(int id) async {
     await _client.post('/notifications/$id/read');
   }

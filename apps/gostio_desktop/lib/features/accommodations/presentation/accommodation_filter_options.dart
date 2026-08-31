@@ -20,26 +20,25 @@ class AccommodationFilterOptions {
   );
 
   // None of the four depends on the others, so they are asked for together.
+  // Future.wait rather than a record's, which reports the failures wrapped in
+  // one of its own and would hide the sentence the API wrote.
   static Future<AccommodationFilterOptions> load(
     ReferenceRepository reference,
   ) async {
-    final (
-      List<LookupItem> cities,
-      List<LookupItem> types,
-      List<LookupItem> categories,
-      List<LookupItem> amenities,
-    ) = await (
-      reference.cities(),
-      reference.accommodationTypes(),
-      reference.accommodationCategories(),
-      reference.amenities(),
-    ).wait;
+    final List<List<LookupItem>> tables = await Future.wait(
+      <Future<List<LookupItem>>>[
+        reference.cities(),
+        reference.accommodationTypes(),
+        reference.accommodationCategories(),
+        reference.amenities(),
+      ],
+    );
 
     return AccommodationFilterOptions(
-      cities: cities,
-      types: types,
-      categories: categories,
-      amenities: amenities,
+      cities: tables[0],
+      types: tables[1],
+      categories: tables[2],
+      amenities: tables[3],
     );
   }
 

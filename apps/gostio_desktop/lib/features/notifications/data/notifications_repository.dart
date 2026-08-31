@@ -25,11 +25,12 @@ class NotificationsRepository {
     );
   }
 
-  Future<AppNotification> markRead(int id) async =>
-      AppNotification.fromJson(await _client.post('/notifications/$id/read'));
+  // Neither of these reads what the endpoint answers with. The caller reloads
+  // the page it is showing, and that reload is what draws the new state.
+  Future<void> markRead(int id) async {
+    await _client.post('/notifications/$id/read');
+  }
 
-  // The count the endpoint answers with is not read: the caller reloads the
-  // page it is showing, and that reload asks for the count anyway.
   Future<void> markAllRead() async {
     await _client.post('/notifications/read');
   }

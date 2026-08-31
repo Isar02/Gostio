@@ -23,6 +23,7 @@ class NotificationsNotifier extends ChangeNotifier {
   int _page = 1;
   int _totalCount = 0;
   int _countRequest = 0;
+  int _pageRequest = 0;
   bool _isLoading = false;
   bool _isDisposed = false;
   ApiException? _failure;
@@ -48,7 +49,14 @@ class NotificationsNotifier extends ChangeNotifier {
     return load();
   }
 
+  // The one place the rows are written, and only the newest load may write
+  // them: a slower answer to an earlier page would otherwise draw rows the
+  // footer no longer describes, or undo a row marked read while it was in
+  // flight. Everything that changes a row reloads through here.
   Future<void> load() async {
+    final int request = ++_pageRequest;
+    final int page = _page;
+
     _isLoading = true;
     _failure = null;
     _publish();
@@ -56,20 +64,27 @@ class NotificationsNotifier extends ChangeNotifier {
     // The page and the count do not depend on each other.
     final Future<void> counting = _refreshUnread();
 
-    try {
-      final PagedResult<AppNotification> page = await _repository.search(
-        page: _page,
-        pageSize: pageSize,
-      );
+    PagedResult<AppNotification>? result;
+    ApiException? failure;
 
-      _items = page.items;
-      _totalCount = page.totalCount;
-    } on ApiException catch (failure) {
-      _failure = failure;
+    try {
+      result = await _repository.search(page: page, pageSize: pageSize);
+    } on ApiException catch (thrown) {
+      failure = thrown;
     }
 
     await counting;
 
+    if (request != _pageRequest) {
+      return;
+    }
+
+    if (result != null) {
+      _items = result.items;
+      _totalCount = result.totalCount;
+    }
+
+    _failure = failure;
     _isLoading = false;
     _publish();
   }
@@ -79,33 +94,24 @@ class NotificationsNotifier extends ChangeNotifier {
       return;
     }
 
-    _failure = null;
-
-    try {
-      final AppNotification read = await _repository.markRead(notification.id);
-      _items = <AppNotification>[
-        for (final AppNotification item in _items)
-          item.id == read.id ? read : item,
-      ];
-
-      await _refreshUnread();
-    } on ApiException catch (failure) {
-      _failure = failure;
-    }
-
-    _publish();
+    await _act(() => _repository.markRead(notification.id));
   }
 
-  Future<void> markAllRead() async {
+  Future<void> markAllRead() => _act(_repository.markAllRead);
+
+  Future<void> _act(Future<void> Function() action) async {
     _failure = null;
 
     try {
-      await _repository.markAllRead();
-      await load();
+      await action();
     } on ApiException catch (failure) {
       _failure = failure;
       _publish();
+
+      return;
     }
+
+    await load();
   }
 
   // The one place the count is written, and only the newest read may write it.

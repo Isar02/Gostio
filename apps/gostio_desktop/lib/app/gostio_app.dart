@@ -11,6 +11,7 @@ import '../features/accommodations/data/accommodation_availability_repository.da
 import '../features/accommodations/data/accommodations_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
+import '../features/experiences/data/experience_slots_repository.dart';
 import '../features/experiences/data/experiences_repository.dart';
 import '../features/listings/data/listing_photos_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
@@ -63,6 +64,10 @@ class GostioApp extends StatelessWidget {
         Provider<ExperiencesRepository>(
           create: (BuildContext context) =>
               ExperiencesRepository(context.read<ApiClient>()),
+        ),
+        Provider<ExperienceSlotsRepository>(
+          create: (BuildContext context) =>
+              ExperienceSlotsRepository(context.read<ApiClient>()),
         ),
         Provider<ListingPhotosRepository>(
           create: (BuildContext context) =>

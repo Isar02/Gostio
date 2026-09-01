@@ -198,6 +198,9 @@ class _Repositories
         ReferenceRepository,
         UsersRepository,
         ReservationsRepository {
+  @override
+  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
+
   _Repositories({this.failing = false, this.empty = false});
 
   final bool failing;

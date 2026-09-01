@@ -35,6 +35,9 @@ class _FailingReference implements ReferenceRepository {
   Future<List<LookupItem>> amenities() async => const <LookupItem>[];
 
   @override
+  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
+
+  @override
   Future<List<LookupItem>> countries() async => const <LookupItem>[];
 
   @override

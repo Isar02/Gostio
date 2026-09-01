@@ -16,6 +16,9 @@ class ReferenceRepository {
   Future<List<LookupItem>> accommodationCategories() =>
       _all('/accommodation-categories');
 
+  Future<List<LookupItem>> experienceCategories() =>
+      _all('/experience-categories');
+
   Future<List<LookupItem>> amenities() => _all('/amenities');
 
   Future<LookupItem> addCity({

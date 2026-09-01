@@ -150,6 +150,9 @@ class _Repositories
         ReferenceRepository,
         UsersRepository,
         ReservationsRepository {
+  @override
+  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
+
   _Repositories({this.gate});
 
   // Held open so a test can leave the screen while the write is in flight.

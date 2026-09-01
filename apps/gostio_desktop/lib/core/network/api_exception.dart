@@ -31,6 +31,8 @@ class ApiException implements Exception {
 
   bool get isUnauthorized => statusCode == 401;
 
+  bool get faultsAField => errors.isNotEmpty;
+
   // The API keys these by the property it bound, which is PascalCase, while a
   // caller naturally asks for the field it put in the request body.
   List<String> messagesFor(String field) {

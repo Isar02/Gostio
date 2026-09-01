@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/session/session.dart';
 import '../../core/widgets/screen_states.dart';
 import '../../features/accommodations/presentation/accommodations_screen.dart';
+import '../../features/experiences/presentation/experiences_screen.dart';
 import 'app_section.dart';
 import 'workspace_mode.dart';
 
@@ -17,6 +18,10 @@ class SectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (section) {
       AppSection.accommodations => AccommodationsScreen(
+        asAdministrator: mode == WorkspaceMode.administrator,
+        hostId: _hostId(context),
+      ),
+      AppSection.experiences => ExperiencesScreen(
         asAdministrator: mode == WorkspaceMode.administrator,
         hostId: _hostId(context),
       ),

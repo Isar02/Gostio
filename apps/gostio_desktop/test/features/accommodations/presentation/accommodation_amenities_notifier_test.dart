@@ -189,6 +189,9 @@ class _Reference implements ReferenceRepository {
   Future<List<LookupItem>> amenities() async => _vocabulary;
 
   @override
+  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
+
+  @override
   Future<List<LookupItem>> cities() => throw UnimplementedError();
 
   @override

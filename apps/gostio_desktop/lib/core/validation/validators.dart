@@ -54,6 +54,13 @@ abstract final class Validators {
     longest: addressMaximum,
   );
 
+  static String? meetingPoint(String? value) => _written(
+    value,
+    missing: 'Enter a meeting point.',
+    noun: 'A meeting point',
+    longest: addressMaximum,
+  );
+
   static String? cityName(String? value) => _written(
     value,
     missing: 'Enter a name.',
@@ -67,6 +74,18 @@ abstract final class Validators {
     smallest: 1,
   );
 
+  static String? capacity(String? value) => _counted(
+    value,
+    outside: 'A slot takes at least one person.',
+    smallest: 1,
+  );
+
+  static String? duration(String? value) => _counted(
+    value,
+    outside: 'An experience lasts at least a minute.',
+    smallest: 1,
+  );
+
   static String? bedrooms(String? value) =>
       _counted(value, outside: 'A bedroom count is zero or more.');
 
@@ -77,6 +96,9 @@ abstract final class Validators {
       _amount(value, noun: 'A nightly price', smallest: smallestAmount);
 
   static String? fee(String? value) => _amount(value, noun: 'A cleaning fee');
+
+  static String? pricePerPerson(String? value) =>
+      _amount(value, noun: 'A price per person', smallest: smallestAmount);
 
   static String? _written(
     String? value, {

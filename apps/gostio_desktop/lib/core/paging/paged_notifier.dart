@@ -87,8 +87,15 @@ abstract class PagedNotifier<T, TQuery> extends ScreenNotifier {
 
     _failure = failure;
     _isLoading = false;
+    onLoaded(landed: result != null);
     publish();
   }
+
+  // Called once this request's answer has been written, and never for one that
+  // was overtaken, so a subclass holding state of its own writes it under the
+  // same publish rather than a rebuild later.
+  @protected
+  void onLoaded({required bool landed}) {}
 
   @protected
   Future<void> performAndReload(Future<void> Function() action) async {

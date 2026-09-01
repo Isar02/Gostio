@@ -54,5 +54,15 @@ assets/
 
 Dependencies point one way: `presentation` reaches `data`, `data` reaches
 `core`, and nothing reaches back. A feature may import another feature's `data`
-and never its `presentation`. `core` holds no business rules: the server owns
-them, so the session holds state and the repositories make the calls.
+freely. It may import what another feature *draws* only from `listings` and
+`reference`, the two that publish widgets for other features to compose — the
+photographs and the status of any listing, the city a form picks — and from no
+other. `core` holds no business rules: the server owns them, so the session
+holds state and the repositories make the calls.
+
+`test/architecture/layering_test.dart` holds four of those directions — core
+reaching a feature or the application, a feature reaching the application, a
+data layer reaching a presentation one, and a feature reaching what a feature
+outside the shared two draws — over every import and export in `lib`, and the
+suite fails when one is crossed. Adding a feature to the shared list there is a
+decision about the shape of the client rather than a way past a failing test.

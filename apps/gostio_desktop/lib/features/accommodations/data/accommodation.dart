@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../listings/data/listing_address.dart';
+
 part 'accommodation.g.dart';
 
 @JsonSerializable(createToJson: false)
@@ -64,5 +66,8 @@ class Accommodation {
   // No list carries bytes, so a row names the picture and the widget fetches it.
   String? get coverPath => coverPhotoId == null
       ? null
-      : '/accommodations/$id/photos/$coverPhotoId/content';
+      : ListingAddress(
+          ListingKind.accommodation,
+          id,
+        ).photoContent(coverPhotoId!);
 }

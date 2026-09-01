@@ -5,9 +5,9 @@ import '../../../core/theme/app_metrics.dart';
 import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_notice.dart';
-import '../../reference/data/lookup_item.dart';
+import '../data/lookup_item.dart';
 
-// A city can be added without leaving the listing that needed it. The route
+// A city can be added without leaving the form that needed it. The route
 // behind this is the administrator's, so a host is never offered it.
 class AddCityDialog extends StatefulWidget {
   const AddCityDialog({required this.countries, required this.add, super.key});

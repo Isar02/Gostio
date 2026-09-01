@@ -13,11 +13,12 @@ import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../core/widgets/map_point_field.dart';
 import '../../reference/data/lookup_item.dart';
+import '../../reference/presentation/add_city_dialog.dart';
+import '../../reference/presentation/city_field.dart';
 import '../data/accommodation.dart';
 import '../data/accommodation_draft.dart';
 import 'accommodation_detail_notifier.dart';
 import 'accommodation_form_options.dart';
-import 'add_city_dialog.dart';
 
 class AccommodationForm extends StatefulWidget {
   const AccommodationForm({
@@ -208,9 +209,9 @@ class _AccommodationFormState extends State<AccommodationForm> {
         ),
         const SizedBox(height: AppSpacing.lg),
       ],
-      _CityField(
+      CityField(
         city: _city,
-        options: notifier.options,
+        cities: notifier.options.cities,
         errorText: _faults['city'] ?? notifier.messageFor('cityId'),
         canAdd: notifier.asAdministrator,
         onChanged: (LookupItem? city) => setState(() => _city = city),
@@ -440,54 +441,6 @@ class _AccommodationFormState extends State<AccommodationForm> {
     }
 
     return null;
-  }
-}
-
-class _CityField extends StatelessWidget {
-  const _CityField({
-    required this.city,
-    required this.options,
-    required this.errorText,
-    required this.canAdd,
-    required this.onChanged,
-    required this.onAdd,
-  });
-
-  final LookupItem? city;
-  final AccommodationFormOptions options;
-  final String? errorText;
-  final bool canAdd;
-  final ValueChanged<LookupItem?> onChanged;
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final Widget field = AppOptionalDropdown<LookupItem>(
-      label: 'City',
-      anyLabel: 'Choose a city',
-      errorText: errorText,
-      value: city,
-      values: options.cities,
-      labels: (LookupItem city) => city.name,
-      onChanged: onChanged,
-    );
-
-    if (!canAdd) {
-      return field;
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(child: field),
-        const SizedBox(width: AppSpacing.sm),
-        IconButton(
-          onPressed: onAdd,
-          icon: const Icon(Icons.add),
-          tooltip: 'Add a city',
-        ),
-      ],
-    );
   }
 }
 

@@ -4,14 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_desktop/core/models/image_upload.dart';
 import 'package:gostio_desktop/core/network/api_exception.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_photo.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_photos_repository.dart';
-import 'package:gostio_desktop/features/accommodations/presentation/accommodation_photos_notifier.dart';
+import 'package:gostio_desktop/features/listings/data/listing_address.dart';
+import 'package:gostio_desktop/features/listings/data/listing_photo.dart';
+import 'package:gostio_desktop/features/listings/data/listing_photos_repository.dart';
+import 'package:gostio_desktop/features/listings/presentation/listing_photos_notifier.dart';
 
 void main() {
   test('a file the server would refuse never reaches it', () async {
     final _Photos photos = _Photos();
-    final AccommodationPhotosNotifier notifier = _notifier(photos);
+    final ListingPhotosNotifier notifier = _notifier(photos);
     await notifier.load();
 
     await notifier.add(<ImageUpload>[
@@ -30,7 +31,7 @@ void main() {
     'what landed before a refusal is read back rather than dropped',
     () async {
       final _Photos photos = _Photos();
-      final AccommodationPhotosNotifier notifier = _notifier(photos);
+      final ListingPhotosNotifier notifier = _notifier(photos);
       await notifier.load();
 
       await notifier.add(<ImageUpload>[
@@ -53,7 +54,7 @@ void main() {
         },
         traceId: '4b19aa',
       );
-    final AccommodationPhotosNotifier notifier = _notifier(photos);
+    final ListingPhotosNotifier notifier = _notifier(photos);
     await notifier.load();
 
     await notifier.add(<ImageUpload>[
@@ -69,7 +70,7 @@ void main() {
     () async {
       int told = 0;
       final _Photos photos = _Photos();
-      final AccommodationPhotosNotifier notifier = _notifier(
+      final ListingPhotosNotifier notifier = _notifier(
         photos,
         onCoverMayChange: () => told++,
       );
@@ -90,7 +91,7 @@ void main() {
       int told = 0;
       final Completer<void> writeGate = Completer<void>();
       final _Photos photos = _Photos()..writeGate = writeGate;
-      final AccommodationPhotosNotifier notifier = _notifier(
+      final ListingPhotosNotifier notifier = _notifier(
         photos,
         onCoverMayChange: () => told++,
       );
@@ -112,9 +113,9 @@ void main() {
       int told = 0;
       final Completer<void> writeGate = Completer<void>();
       final _Photos photos = _Photos()
-        ..rows = <AccommodationPhoto>[]
+        ..rows = <ListingPhoto>[]
         ..writeGate = writeGate;
-      final AccommodationPhotosNotifier notifier = _notifier(
+      final ListingPhotosNotifier notifier = _notifier(
         photos,
         onCoverMayChange: () => told++,
       );
@@ -133,7 +134,7 @@ void main() {
 
   test('the file being uploaded is never counted past the batch', () async {
     final _Photos photos = _Photos();
-    late final AccommodationPhotosNotifier notifier;
+    late final ListingPhotosNotifier notifier;
     notifier = _notifier(photos);
     await notifier.load();
 
@@ -153,7 +154,7 @@ void main() {
     () async {
       int told = 0;
       final _Photos photos = _Photos();
-      final AccommodationPhotosNotifier notifier = _notifier(
+      final ListingPhotosNotifier notifier = _notifier(
         photos,
         onCoverMayChange: () => told++,
       );
@@ -174,7 +175,7 @@ void main() {
   test('a change that leaves the same cover in place tells nobody', () async {
     int told = 0;
     final _Photos photos = _Photos();
-    final AccommodationPhotosNotifier notifier = _notifier(
+    final ListingPhotosNotifier notifier = _notifier(
       photos,
       onCoverMayChange: () => told++,
     );
@@ -187,16 +188,16 @@ void main() {
   });
 }
 
-AccommodationPhotosNotifier _notifier(
+ListingPhotosNotifier _notifier(
   _Photos photos, {
   VoidCallback? onCoverMayChange,
-}) => AccommodationPhotosNotifier(
+}) => ListingPhotosNotifier(
   photos,
-  accommodationId: 7,
+  listing: _listing,
   onCoverMayChange: onCoverMayChange ?? () {},
 );
 
-class _Photos implements AccommodationPhotosRepository {
+class _Photos implements ListingPhotosRepository {
   final List<String> uploaded = <String>[];
   final List<int> counted = <int>[];
 
@@ -208,13 +209,10 @@ class _Photos implements AccommodationPhotosRepository {
 
   Completer<void>? writeGate;
 
-  List<AccommodationPhoto> rows = <AccommodationPhoto>[
-    _photo(1, isCover: true),
-    _photo(2),
-  ];
+  List<ListingPhoto> rows = <ListingPhoto>[_photo(1, isCover: true), _photo(2)];
 
   @override
-  Future<List<AccommodationPhoto>> forAccommodation(int accommodationId) async {
+  Future<List<ListingPhoto>> forListing(ListingAddress listing) async {
     if (onRead case final int Function() reading) {
       counted.add(reading());
     }
@@ -227,10 +225,7 @@ class _Photos implements AccommodationPhotosRepository {
   }
 
   @override
-  Future<AccommodationPhoto> upload(
-    int accommodationId,
-    ImageUpload image,
-  ) async {
+  Future<ListingPhoto> upload(ListingAddress listing, ImageUpload image) async {
     if (refusal case final ApiException refused) {
       throw refused;
     }
@@ -239,33 +234,33 @@ class _Photos implements AccommodationPhotosRepository {
 
     uploaded.add(image.name);
 
-    final AccommodationPhoto added = _photo(rows.length + 1);
-    rows = <AccommodationPhoto>[...rows, added];
+    final ListingPhoto added = _photo(rows.length + 1);
+    rows = <ListingPhoto>[...rows, added];
 
     return added;
   }
 
   @override
-  Future<AccommodationPhoto> setCover(int accommodationId, int photoId) async {
+  Future<ListingPhoto> setCover(ListingAddress listing, int photoId) async {
     await writeGate?.future;
 
-    rows = <AccommodationPhoto>[
-      for (final AccommodationPhoto row in rows)
+    rows = <ListingPhoto>[
+      for (final ListingPhoto row in rows)
         _photo(row.id, isCover: row.id == photoId),
     ];
 
-    return rows.firstWhere((AccommodationPhoto row) => row.id == photoId);
+    return rows.firstWhere((ListingPhoto row) => row.id == photoId);
   }
 
   @override
-  Future<void> delete(int accommodationId, int photoId) async {
+  Future<void> delete(ListingAddress listing, int photoId) async {
     rows = rows
-        .where((AccommodationPhoto row) => row.id != photoId)
+        .where((ListingPhoto row) => row.id != photoId)
         .toList(growable: false);
   }
 }
 
-AccommodationPhoto _photo(int id, {bool isCover = false}) => AccommodationPhoto(
+ListingPhoto _photo(int id, {bool isCover = false}) => ListingPhoto(
   id: id,
   listingId: 7,
   contentType: 'image/jpeg',
@@ -278,3 +273,5 @@ AccommodationPhoto _photo(int id, {bool isCover = false}) => AccommodationPhoto(
 final Uint8List _jpeg = Uint8List.fromList(<int>[0xFF, 0xD8, 0xFF, 0xE0]);
 
 final Uint8List _notAnImage = Uint8List.fromList(<int>[0x25, 0x50, 0x44, 0x46]);
+
+const ListingAddress _listing = ListingAddress(ListingKind.accommodation, 7);

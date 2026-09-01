@@ -7,10 +7,10 @@ import '../../../core/validation/input_formats.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
 import '../../../core/widgets/multi_select_field.dart';
+import '../../listings/presentation/listing_status.dart';
 import '../../reference/data/lookup_item.dart';
 import '../data/accommodation_query.dart';
 import 'accommodation_filter_options.dart';
-import 'listing_status.dart';
 
 class AccommodationFilters extends StatefulWidget {
   const AccommodationFilters({

@@ -12,6 +12,9 @@ class ReservationsRepository {
   Future<int> countForAccommodation(int accommodationId) =>
       _count(<String, dynamic>{'accommodationId': accommodationId});
 
+  Future<int> countForExperience(int experienceId) =>
+      _count(<String, dynamic>{'experienceId': experienceId});
+
   // Every reservation against the term, cancelled ones included: what stops a
   // term being deleted is the foreign key, which a cancellation does not undo.
   Future<int> countForSlot(int slotId) =>

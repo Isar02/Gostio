@@ -149,6 +149,10 @@ class _Reservations implements ReservationsRepository {
       throw UnimplementedError();
 
   @override
+  Future<int> countForExperience(int experienceId) =>
+      throw UnimplementedError();
+
+  @override
   Future<List<Reservation>> forAccommodationWindow(
     int accommodationId, {
     required DateTime from,

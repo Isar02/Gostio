@@ -152,6 +152,9 @@ class _Repositories
         ReservationsRepository {
   @override
   Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
+
+  @override
+  Future<int> countForExperience(int experienceId) async => 0;
   @override
   Future<int> countForSlot(int slotId) async => 0;
 

@@ -181,6 +181,9 @@ class _Availability implements AccommodationAvailabilityRepository {
 }
 
 class _Reservations implements ReservationsRepository {
+  @override
+  Future<int> countForSlot(int slotId) async => 0;
+
   const _Reservations(this.rows);
 
   final List<Reservation> rows;

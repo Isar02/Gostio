@@ -9,16 +9,20 @@ class ReservationsRepository {
 
   final ApiClient _client;
 
+  Future<int> countForAccommodation(int accommodationId) =>
+      _count(<String, dynamic>{'accommodationId': accommodationId});
+
+  // Every reservation against the term, cancelled ones included: what stops a
+  // term being deleted is the foreign key, which a cancellation does not undo.
+  Future<int> countForSlot(int slotId) =>
+      _count(<String, dynamic>{'experienceSlotId': slotId});
+
   // Only the count is wanted, so the smallest page the API allows is asked for
   // and the rows it answers with are thrown away.
-  Future<int> countForAccommodation(int accommodationId) async {
+  Future<int> _count(JsonMap matching) async {
     final JsonMap body = await _client.get(
       '/reservations',
-      query: <String, dynamic>{
-        'accommodationId': accommodationId,
-        'page': 1,
-        'pageSize': 1,
-      },
+      query: <String, dynamic>{...matching, 'page': 1, 'pageSize': 1},
     );
 
     return PagedResult<Object?>.fromJson(

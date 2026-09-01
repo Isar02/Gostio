@@ -67,6 +67,12 @@ abstract final class Validators {
     smallest: 1,
   );
 
+  static String? capacity(String? value) => _counted(
+    value,
+    outside: 'A slot takes at least one person.',
+    smallest: 1,
+  );
+
   static String? bedrooms(String? value) =>
       _counted(value, outside: 'A bedroom count is zero or more.');
 

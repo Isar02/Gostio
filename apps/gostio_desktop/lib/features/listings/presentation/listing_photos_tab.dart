@@ -17,27 +17,28 @@ import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../data/accommodation_photo.dart';
-import '../data/accommodation_photos_repository.dart';
-import 'accommodation_photos_notifier.dart';
+import '../data/listing_address.dart';
+import '../data/listing_photo.dart';
+import '../data/listing_photos_repository.dart';
+import 'listing_photos_notifier.dart';
 
-class AccommodationPhotosTab extends StatelessWidget {
-  const AccommodationPhotosTab({
-    required this.accommodationId,
+class ListingPhotosTab extends StatelessWidget {
+  const ListingPhotosTab({
+    required this.listing,
     required this.onCoverMayChange,
     super.key,
   });
 
-  final int accommodationId;
+  final ListingAddress listing;
   final VoidCallback onCoverMayChange;
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<AccommodationPhotosNotifier>(
+    return ChangeNotifierProvider<ListingPhotosNotifier>(
       create: (BuildContext context) {
-        final AccommodationPhotosNotifier photos = AccommodationPhotosNotifier(
-          context.read<AccommodationPhotosRepository>(),
-          accommodationId: accommodationId,
+        final ListingPhotosNotifier photos = ListingPhotosNotifier(
+          context.read<ListingPhotosRepository>(),
+          listing: listing,
           onCoverMayChange: onCoverMayChange,
         );
         unawaited(photos.load());
@@ -54,8 +55,7 @@ class _Gallery extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AccommodationPhotosNotifier photos = context
-        .watch<AccommodationPhotosNotifier>();
+    final ListingPhotosNotifier photos = context.watch<ListingPhotosNotifier>();
 
     if (photos.isLoading) {
       return const LoadingState(message: 'Reading the photographs');
@@ -100,7 +100,7 @@ class _Gallery extends StatelessWidget {
 class _Summary extends StatelessWidget {
   const _Summary({required this.photos});
 
-  final AccommodationPhotosNotifier photos;
+  final ListingPhotosNotifier photos;
 
   @override
   Widget build(BuildContext context) {
@@ -137,14 +137,14 @@ class _Summary extends StatelessWidget {
 class _Wall extends StatelessWidget {
   const _Wall({required this.photos});
 
-  final AccommodationPhotosNotifier photos;
+  final ListingPhotosNotifier photos;
 
   @override
   Widget build(BuildContext context) {
-    AccommodationPhoto? cover;
-    final List<AccommodationPhoto> rest = <AccommodationPhoto>[];
+    ListingPhoto? cover;
+    final List<ListingPhoto> rest = <ListingPhoto>[];
 
-    for (final AccommodationPhoto photo in photos.items) {
+    for (final ListingPhoto photo in photos.items) {
       if (photo.isCover && cover == null) {
         cover = photo;
       } else {
@@ -156,7 +156,7 @@ class _Wall extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (cover case final AccommodationPhoto leading) ...<Widget>[
+          if (cover case final ListingPhoto leading) ...<Widget>[
             _Tile(
               photo: leading,
               photos: photos,
@@ -170,7 +170,7 @@ class _Wall extends StatelessWidget {
               spacing: AppSpacing.lg,
               runSpacing: AppSpacing.lg,
               children: <Widget>[
-                for (final AccommodationPhoto photo in rest)
+                for (final ListingPhoto photo in rest)
                   _Tile(
                     photo: photo,
                     photos: photos,
@@ -195,8 +195,8 @@ class _Tile extends StatefulWidget {
     required this.height,
   });
 
-  final AccommodationPhoto photo;
-  final AccommodationPhotosNotifier photos;
+  final ListingPhoto photo;
+  final ListingPhotosNotifier photos;
   final double width;
   final double height;
 
@@ -209,7 +209,7 @@ class _TileState extends State<_Tile> {
 
   @override
   Widget build(BuildContext context) {
-    final AccommodationPhoto photo = widget.photo;
+    final ListingPhoto photo = widget.photo;
     final bool isBusy = widget.photos.busyPhotoId == photo.id;
 
     return Column(
@@ -238,7 +238,7 @@ class _TileState extends State<_Tile> {
                     duration: _rise,
                     curve: Curves.easeOutCubic,
                     child: ApiImage(
-                      path: photo.contentPath,
+                      path: widget.photos.listing.photoContent(photo.id),
                       borderRadius: BorderRadius.zero,
                     ),
                   ),
@@ -287,7 +287,7 @@ class _TileState extends State<_Tile> {
       widget.photo.isCover ? AppSizes.focusRing : AppSizes.hairline;
 
   Future<void> _confirmDelete() async {
-    final AccommodationPhoto photo = widget.photo;
+    final ListingPhoto photo = widget.photo;
 
     final bool agreed = await ConfirmationDialog.ask(
       context,
@@ -444,7 +444,7 @@ class _Arriving extends StatelessWidget {
   }
 }
 
-Future<void> _add(AccommodationPhotosNotifier photos) async {
+Future<void> _add(ListingPhotosNotifier photos) async {
   final List<PlatformFile> chosen = await FilePicker.pickFiles(
     dialogTitle: 'Choose photographs',
     type: FileType.custom,

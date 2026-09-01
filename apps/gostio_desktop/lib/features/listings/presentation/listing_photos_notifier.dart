@@ -3,19 +3,20 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/image_upload.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/state/screen_notifier.dart';
-import '../data/accommodation_photo.dart';
-import '../data/accommodation_photos_repository.dart';
+import '../data/listing_address.dart';
+import '../data/listing_photo.dart';
+import '../data/listing_photos_repository.dart';
 
-class AccommodationPhotosNotifier extends ScreenNotifier {
-  AccommodationPhotosNotifier(
+class ListingPhotosNotifier extends ScreenNotifier {
+  ListingPhotosNotifier(
     this._photos, {
-    required this.accommodationId,
+    required this.listing,
     required this.onCoverMayChange,
   });
 
-  final AccommodationPhotosRepository _photos;
+  final ListingPhotosRepository _photos;
 
-  final int accommodationId;
+  final ListingAddress listing;
 
   final VoidCallback onCoverMayChange;
 
@@ -23,7 +24,7 @@ class AccommodationPhotosNotifier extends ScreenNotifier {
   int _chosen = 0;
   int _uploaded = 0;
   int? _busyPhotoId;
-  List<AccommodationPhoto> _items = const <AccommodationPhoto>[];
+  List<ListingPhoto> _items = const <ListingPhoto>[];
   ApiException? _failure;
   String? _refusal;
 
@@ -39,16 +40,16 @@ class AccommodationPhotosNotifier extends ScreenNotifier {
 
   int? get busyPhotoId => _busyPhotoId;
 
-  List<AccommodationPhoto> get items => _items;
+  List<ListingPhoto> get items => _items;
 
   int get totalBytes => _items.fold(
     0,
-    (int total, AccommodationPhoto photo) => total + photo.sizeInBytes,
+    (int total, ListingPhoto photo) => total + photo.sizeInBytes,
   );
 
   String? get failureMessage =>
       _refusal ??
-      _failure?.firstMessageFor(AccommodationPhotosRepository.fileField) ??
+      _failure?.firstMessageFor(ListingPhotosRepository.fileField) ??
       _failure?.message;
 
   String? get failureTraceId => _failure?.traceId;
@@ -87,7 +88,7 @@ class AccommodationPhotosNotifier extends ScreenNotifier {
       }
 
       try {
-        await _photos.upload(accommodationId, image);
+        await _photos.upload(listing, image);
       } on ApiException catch (failure) {
         _failure = failure;
         break;
@@ -109,23 +110,17 @@ class AccommodationPhotosNotifier extends ScreenNotifier {
   Future<void> setCover(int photoId) {
     onCoverMayChange();
 
-    return _writeThenReload(
-      photoId,
-      () => _photos.setCover(accommodationId, photoId),
-    );
+    return _writeThenReload(photoId, () => _photos.setCover(listing, photoId));
   }
 
   Future<void> remove(int photoId) {
     if (_items.any(
-      (AccommodationPhoto photo) => photo.id == photoId && photo.isCover,
+      (ListingPhoto photo) => photo.id == photoId && photo.isCover,
     )) {
       onCoverMayChange();
     }
 
-    return _writeThenReload(
-      photoId,
-      () => _photos.delete(accommodationId, photoId),
-    );
+    return _writeThenReload(photoId, () => _photos.delete(listing, photoId));
   }
 
   void refuse(String message) {
@@ -159,7 +154,7 @@ class AccommodationPhotosNotifier extends ScreenNotifier {
 
   Future<void> _read() async {
     try {
-      _items = await _photos.forAccommodation(accommodationId);
+      _items = await _photos.forListing(listing);
     } on ApiException catch (failure) {
       _failure = failure;
     }
@@ -170,5 +165,5 @@ class AccommodationPhotosNotifier extends ScreenNotifier {
     _refusal = null;
   }
 
-  bool get _hasCover => _items.any((AccommodationPhoto photo) => photo.isCover);
+  bool get _hasCover => _items.any((ListingPhoto photo) => photo.isCover);
 }

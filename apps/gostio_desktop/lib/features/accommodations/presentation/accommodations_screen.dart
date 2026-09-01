@@ -13,6 +13,7 @@ import '../../../core/widgets/pagination_footer.dart';
 import '../../../core/widgets/record_table.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../listings/presentation/listing_status.dart';
 import '../../reference/data/reference_repository.dart';
 import '../data/accommodation.dart';
 import '../data/accommodations_repository.dart';
@@ -20,7 +21,6 @@ import 'accommodation_detail_screen.dart';
 import 'accommodation_filter_options.dart';
 import 'accommodation_filters.dart';
 import 'accommodations_notifier.dart';
-import 'listing_status.dart';
 
 class AccommodationsScreen extends StatefulWidget {
   const AccommodationsScreen({

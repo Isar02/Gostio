@@ -8,6 +8,9 @@ import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/tone.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../listings/data/listing_address.dart';
+import '../../listings/presentation/listing_photos_tab.dart';
+import '../../listings/presentation/listing_status.dart';
 import '../../reference/data/reference_repository.dart';
 import '../../reservations/data/reservations_repository.dart';
 import '../../users/data/users_repository.dart';
@@ -17,8 +20,6 @@ import 'accommodation_amenities_tab.dart';
 import 'accommodation_availability_tab.dart';
 import 'accommodation_detail_notifier.dart';
 import 'accommodation_form.dart';
-import 'accommodation_photos_tab.dart';
-import 'listing_status.dart';
 
 class AccommodationDetailScreen extends StatelessWidget {
   const AccommodationDetailScreen({
@@ -109,8 +110,8 @@ class _Detail extends StatelessWidget {
                       _leave(context, deleted, '${deleted.title} was deleted.'),
                 ),
                 if (notifier.accommodationId case final int id)
-                  AccommodationPhotosTab(
-                    accommodationId: id,
+                  ListingPhotosTab(
+                    listing: ListingAddress(ListingKind.accommodation, id),
                     onCoverMayChange: notifier.coverMayChange,
                   )
                 else

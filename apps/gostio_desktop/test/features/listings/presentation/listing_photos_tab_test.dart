@@ -5,9 +5,10 @@ import 'package:gostio_desktop/core/models/image_upload.dart';
 import 'package:gostio_desktop/core/network/api_client.dart';
 import 'package:gostio_desktop/core/network/api_exception.dart';
 import 'package:gostio_desktop/core/widgets/api_image.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_photo.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_photos_repository.dart';
-import 'package:gostio_desktop/features/accommodations/presentation/accommodation_photos_tab.dart';
+import 'package:gostio_desktop/features/listings/data/listing_address.dart';
+import 'package:gostio_desktop/features/listings/data/listing_photo.dart';
+import 'package:gostio_desktop/features/listings/data/listing_photos_repository.dart';
+import 'package:gostio_desktop/features/listings/presentation/listing_photos_tab.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -116,23 +117,23 @@ Widget _tab(_Photos photos) => MultiProvider(
           ApiClient(baseUrl: Uri.parse('http://localhost:5000')),
       dispose: (BuildContext context, ApiClient client) => client.close(),
     ),
-    Provider<AccommodationPhotosRepository>.value(value: photos),
+    Provider<ListingPhotosRepository>.value(value: photos),
   ],
   child: MaterialApp(
     home: Scaffold(
-      body: AccommodationPhotosTab(accommodationId: 7, onCoverMayChange: () {}),
+      body: ListingPhotosTab(listing: _listing, onCoverMayChange: () {}),
     ),
   ),
 );
 
-class _Photos implements AccommodationPhotosRepository {
-  _Photos({this.failing = false, this.rows = const <AccommodationPhoto>[]});
+class _Photos implements ListingPhotosRepository {
+  _Photos({this.failing = false, this.rows = const <ListingPhoto>[]});
 
   final bool failing;
-  final List<AccommodationPhoto> rows;
+  final List<ListingPhoto> rows;
 
   @override
-  Future<List<AccommodationPhoto>> forAccommodation(int accommodationId) async {
+  Future<List<ListingPhoto>> forListing(ListingAddress listing) async {
     if (failing) {
       throw const ApiException(
         message: 'The photographs could not be read.',
@@ -145,28 +146,26 @@ class _Photos implements AccommodationPhotosRepository {
   }
 
   @override
-  Future<AccommodationPhoto> upload(int accommodationId, ImageUpload image) =>
+  Future<ListingPhoto> upload(ListingAddress listing, ImageUpload image) =>
       throw UnimplementedError();
 
   @override
-  Future<AccommodationPhoto> setCover(int accommodationId, int photoId) =>
+  Future<ListingPhoto> setCover(ListingAddress listing, int photoId) =>
       throw UnimplementedError();
 
   @override
-  Future<void> delete(int accommodationId, int photoId) =>
+  Future<void> delete(ListingAddress listing, int photoId) =>
       throw UnimplementedError();
 }
 
-final List<AccommodationPhoto> _one = <AccommodationPhoto>[
-  _photo(1, isCover: true),
-];
+final List<ListingPhoto> _one = <ListingPhoto>[_photo(1, isCover: true)];
 
-final List<AccommodationPhoto> _two = <AccommodationPhoto>[
+final List<ListingPhoto> _two = <ListingPhoto>[
   _photo(1, isCover: true),
   _photo(2),
 ];
 
-AccommodationPhoto _photo(int id, {bool isCover = false}) => AccommodationPhoto(
+ListingPhoto _photo(int id, {bool isCover = false}) => ListingPhoto(
   id: id,
   listingId: 7,
   contentType: 'image/jpeg',
@@ -175,3 +174,5 @@ AccommodationPhoto _photo(int id, {bool isCover = false}) => AccommodationPhoto(
   sizeInBytes: 1536,
   uploadedAt: DateTime.utc(2026, 3, 4),
 );
+
+const ListingAddress _listing = ListingAddress(ListingKind.accommodation, 7);

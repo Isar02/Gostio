@@ -11,6 +11,8 @@ class MultiSelectField<T extends Object> extends StatelessWidget {
     required this.onChanged,
     this.emptyLabel = 'Any',
     this.width = AppSizes.filterField,
+    this.label,
+    this.errorText,
     super.key,
   });
 
@@ -20,6 +22,8 @@ class MultiSelectField<T extends Object> extends StatelessWidget {
   final ValueChanged<Set<T>> onChanged;
   final String emptyLabel;
   final double width;
+  final String? label;
+  final String? errorText;
 
   void _toggle(T value) {
     final Set<T> chosen = Set<T>.of(selected);
@@ -46,7 +50,11 @@ class MultiSelectField<T extends Object> extends StatelessWidget {
           width: width,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: AppSizes.panelHeight),
+            // The menu is an overlay and never the page being scrolled, so it
+            // keeps a controller of its own rather than adopting the primary
+            // one the screen behind it is already using.
             child: SingleChildScrollView(
+              primary: false,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -69,7 +77,11 @@ class MultiSelectField<T extends Object> extends StatelessWidget {
                 : () => menu.isOpen ? menu.close() : menu.open(),
             borderRadius: AppRadii.medium,
             child: InputDecorator(
-              decoration: const InputDecoration(),
+              decoration: InputDecoration(
+                labelText: label,
+                errorText: errorText,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+              ),
               child: Row(
                 children: <Widget>[
                   Expanded(

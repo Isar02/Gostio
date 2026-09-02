@@ -33,7 +33,9 @@ class ExperienceFormOptions {
     final List<Object> answers = await Future.wait(<Future<Object>>[
       reference.cities(),
       reference.experienceCategories(),
-      asAdministrator ? reference.countries() : _nothing<LookupItem>(),
+      asAdministrator
+          ? reference.countriesHoldingCities()
+          : _nothing<LookupItem>(),
       asAdministrator && forCreating ? users.hosts() : _nothing<User>(),
     ]);
 

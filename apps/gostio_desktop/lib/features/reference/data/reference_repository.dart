@@ -1,5 +1,6 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/paging/page_walk.dart';
+import 'home_country.dart';
 import 'lookup_item.dart';
 
 class ReferenceRepository {
@@ -7,7 +8,10 @@ class ReferenceRepository {
 
   final ApiClient _client;
 
-  Future<List<LookupItem>> countries() => _all('/countries');
+  Future<List<LookupItem>> countriesHoldingCities() => _all(
+    '/countries',
+    query: <String, dynamic>{'isoCode': HomeCountry.isoCode},
+  );
 
   Future<List<LookupItem>> cities() => _all('/cities');
 
@@ -38,6 +42,11 @@ class ReferenceRepository {
     return LookupItem.fromJson(body);
   }
 
-  Future<List<LookupItem>> _all(String path) =>
-      readEveryPage<LookupItem>(_client, path, read: LookupItem.fromJson);
+  Future<List<LookupItem>> _all(String path, {JsonMap? query}) =>
+      readEveryPage<LookupItem>(
+        _client,
+        path,
+        read: LookupItem.fromJson,
+        query: query,
+      );
 }

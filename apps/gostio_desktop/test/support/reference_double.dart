@@ -9,7 +9,8 @@ class ReferenceDouble implements ReferenceRepository {
   const ReferenceDouble();
 
   @override
-  Future<List<LookupItem>> countries() => throw UnimplementedError();
+  Future<List<LookupItem>> countriesHoldingCities() =>
+      throw UnimplementedError();
 
   @override
   Future<List<LookupItem>> cities() => throw UnimplementedError();

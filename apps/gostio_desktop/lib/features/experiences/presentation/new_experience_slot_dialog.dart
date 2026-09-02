@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/formatting/app_dates.dart';
 import '../../../core/formatting/app_durations.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/paging/writing_notifier.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/time/calendar_days.dart';
 import '../../../core/validation/input_formats.dart';
@@ -23,7 +24,7 @@ class NewExperienceSlotDialog extends StatefulWidget {
   });
 
   final int durationMinutes;
-  final Future<ApiException?> Function({
+  final Future<WriteOutcome> Function({
     required DateTime startTime,
     required int capacity,
   })
@@ -175,7 +176,7 @@ class _NewExperienceSlotDialogState extends State<NewExperienceSlotDialog> {
       _isSaving = true;
     });
 
-    final ApiException? refused = await widget.add(
+    final WriteOutcome outcome = await widget.add(
       startTime: start,
       capacity: int.parse(_capacity.text.trim()),
     );
@@ -184,14 +185,14 @@ class _NewExperienceSlotDialogState extends State<NewExperienceSlotDialog> {
       return;
     }
 
-    if (refused == null) {
+    if (outcome.wasWritten) {
       Navigator.of(context).pop();
 
       return;
     }
 
     setState(() {
-      _failure = refused;
+      _failure = outcome.refusal;
       _isSaving = false;
     });
   }

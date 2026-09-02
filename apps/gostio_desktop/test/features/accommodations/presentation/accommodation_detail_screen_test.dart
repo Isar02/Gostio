@@ -21,12 +21,14 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../../../support/bookings_double.dart';
+import '../../../support/reference_double.dart';
+import '../../../support/users_double.dart';
 
 void main() {
   testWidgets(
     'a create that could not read its tables says what the API said',
     (WidgetTester tester) async {
-      await tester.pumpWidget(_screen(_Repositories(failing: true)));
+      await tester.pumpWidget(_screen(failing: true));
       await tester.pumpAndSettle();
 
       expect(find.text('The cities could not be read.'), findsOneWidget);
@@ -42,7 +44,7 @@ void main() {
   testWidgets('a table that really is empty is named as the reason', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(_screen(_Repositories(empty: true)));
+    await tester.pumpWidget(_screen(empty: true));
     await tester.pumpAndSettle();
 
     expect(
@@ -58,7 +60,7 @@ void main() {
   testWidgets('a refused create keeps the form it was typed into', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(_screen(_Repositories(refusing: true)));
+    await tester.pumpWidget(_screen(refusing: true));
     await tester.pumpAndSettle();
 
     await tester
@@ -79,7 +81,9 @@ void main() {
   ) async {
     final _Availability availability = _Availability();
     final _Offerings offerings = _Offerings();
-    await tester.pumpWidget(_screen(_Repositories(), availability, offerings));
+    await tester.pumpWidget(
+      _screen(availability: availability, offerings: offerings),
+    );
     await tester.pumpAndSettle();
 
     await tester
@@ -164,15 +168,19 @@ class _Availability implements AccommodationAvailabilityRepository {
       throw UnimplementedError();
 }
 
-Widget _screen(
-  _Repositories repositories, [
+Widget _screen({
+  bool failing = false,
+  bool empty = false,
+  bool refusing = false,
   AccommodationAvailabilityRepository? availability,
   AccommodationAmenitiesRepository? offerings,
-]) => MultiProvider(
+}) => MultiProvider(
   providers: <SingleChildWidget>[
-    Provider<AccommodationsRepository>.value(value: repositories),
-    Provider<ReferenceRepository>.value(value: repositories),
-    Provider<UsersRepository>.value(value: repositories),
+    Provider<AccommodationsRepository>.value(value: _Stays(refusing: refusing)),
+    Provider<ReferenceRepository>.value(
+      value: _Reference(failing: failing, empty: empty),
+    ),
+    Provider<UsersRepository>.value(value: _Users()),
     Provider<ReservationsRepository>.value(value: const _Bookings()),
     if (availability case final AccommodationAvailabilityRepository rows)
       Provider<AccommodationAvailabilityRepository>.value(value: rows),
@@ -212,23 +220,11 @@ final Accommodation _created = Accommodation(
 
 final DateTime _createdAt = DateTime.utc(2026, 1, 1);
 
-class _Repositories
-    implements AccommodationsRepository, ReferenceRepository, UsersRepository {
-  @override
-  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
-
-  _Repositories({
-    this.failing = false,
-    this.empty = false,
-    this.refusing = false,
-  });
+class _Reference extends ReferenceDouble {
+  _Reference({required this.failing, required this.empty});
 
   final bool failing;
   final bool empty;
-  final bool refusing;
 
   @override
   Future<List<LookupItem>> cities() async {
@@ -260,13 +256,17 @@ class _Repositories
 
   @override
   Future<List<LookupItem>> amenities() async => const <LookupItem>[];
+}
 
-  @override
-  Future<LookupItem> addCity({required String name, required int countryId}) =>
-      throw UnimplementedError();
-
+class _Users extends UsersDouble {
   @override
   Future<List<User>> hosts() async => const <User>[];
+}
+
+class _Stays implements AccommodationsRepository {
+  _Stays({this.refusing = false});
+
+  final bool refusing;
 
   @override
   Future<Accommodation> get(int id) => throw UnimplementedError();

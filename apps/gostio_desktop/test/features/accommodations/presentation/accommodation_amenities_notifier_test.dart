@@ -3,7 +3,8 @@ import 'package:gostio_desktop/core/network/api_exception.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_amenities_repository.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_amenities_notifier.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
-import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
+
+import '../../../support/reference_double.dart';
 
 void main() {
   test(
@@ -184,30 +185,7 @@ class _Amenities implements AccommodationAmenitiesRepository {
   }
 }
 
-class _Reference implements ReferenceRepository {
+class _Reference extends ReferenceDouble {
   @override
   Future<List<LookupItem>> amenities() async => _vocabulary;
-
-  @override
-  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> cities() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> countries() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> accommodationTypes() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> accommodationCategories() =>
-      throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> reservationStatuses() => throw UnimplementedError();
-
-  @override
-  Future<LookupItem> addCity({required String name, required int countryId}) =>
-      throw UnimplementedError();
 }

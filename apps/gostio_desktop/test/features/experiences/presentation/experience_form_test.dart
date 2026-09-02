@@ -9,23 +9,23 @@ import 'package:gostio_desktop/features/experiences/data/experiences_repository.
 import 'package:gostio_desktop/features/experiences/presentation/experience_detail_notifier.dart';
 import 'package:gostio_desktop/features/experiences/presentation/experience_form.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
-import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
-import 'package:gostio_desktop/features/users/data/users_repository.dart';
 
 import '../../../support/bookings_double.dart';
+import '../../../support/reference_double.dart';
+import '../../../support/users_double.dart';
 
 void main() {
   testWidgets('an experience is not created until the lists answer', (
     WidgetTester tester,
   ) async {
-    final _Repositories repositories = _Repositories();
-    final ExperienceDetailNotifier notifier = await _notifier(repositories);
+    final _Experiences experiences = _Experiences();
+    final ExperienceDetailNotifier notifier = await _notifier(experiences);
 
     await tester.pumpWidget(_form(notifier));
     await tester.tap(find.text('Create experience'));
     await tester.pump();
 
-    expect(repositories.created, isNull);
+    expect(experiences.created, isNull);
     expect(find.text('Enter a title.'), findsOneWidget);
     expect(find.text('Enter a meeting point.'), findsOneWidget);
     expect(
@@ -38,9 +38,9 @@ void main() {
   testWidgets('editing writes back every field the experience owns', (
     WidgetTester tester,
   ) async {
-    final _Repositories repositories = _Repositories();
+    final _Experiences experiences = _Experiences();
     final ExperienceDetailNotifier notifier = await _notifier(
-      repositories,
+      experiences,
       experienceId: 12,
     );
 
@@ -48,7 +48,7 @@ void main() {
     await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
 
-    final ExperienceDraft? written = repositories.updated;
+    final ExperienceDraft? written = experiences.updated;
 
     expect(written, isNotNull);
     expect(written!.title, 'Rafting the Neretva canyon');
@@ -57,14 +57,14 @@ void main() {
     expect(written.meetingPoint, 'The old bridge in Konjic');
     expect(written.durationMinutes, 240);
     expect(written.pricePerPerson, 85.5);
-    expect(repositories.updatedActive, isTrue);
+    expect(experiences.updatedActive, isTrue);
   });
 
   // The API holds minutes, and a term on a calendar is read in hours.
   testWidgets('the duration typed in minutes is read back in hours', (
     WidgetTester tester,
   ) async {
-    final ExperienceDetailNotifier notifier = await _notifier(_Repositories());
+    final ExperienceDetailNotifier notifier = await _notifier(_Experiences());
 
     await tester.pumpWidget(_form(notifier));
     await tester.enterText(
@@ -80,7 +80,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final ExperienceDetailNotifier notifier = await _notifier(
-      _Repositories(bookings: 2),
+      _Experiences(bookings: 2),
       experienceId: 12,
     );
 
@@ -94,14 +94,14 @@ void main() {
 }
 
 Future<ExperienceDetailNotifier> _notifier(
-  _Repositories repositories, {
+  _Experiences experiences, {
   int? experienceId,
 }) async {
   final ExperienceDetailNotifier notifier = ExperienceDetailNotifier(
-    repositories,
-    repositories,
-    repositories,
-    _Bookings(repositories.bookings),
+    experiences,
+    _Reference(),
+    _Users(),
+    _Bookings(experiences.bookings),
     experienceId: experienceId,
     asAdministrator: false,
   );
@@ -121,9 +121,8 @@ Widget _form(ExperienceDetailNotifier notifier) => MaterialApp(
   ),
 );
 
-class _Repositories
-    implements ExperiencesRepository, ReferenceRepository, UsersRepository {
-  _Repositories({this.bookings = 0});
+class _Experiences implements ExperiencesRepository {
+  _Experiences({this.bookings = 0});
 
   final int bookings;
 
@@ -166,7 +165,9 @@ class _Repositories
     int pageSize = PagedResult.defaultPageSize,
     int? hostId,
   }) => throw UnimplementedError();
+}
 
+class _Reference extends ReferenceDouble {
   @override
   Future<List<LookupItem>> cities() async => <LookupItem>[
     const LookupItem(id: 11, name: 'Konjic'),
@@ -178,27 +179,12 @@ class _Repositories
   ];
 
   @override
-  Future<List<LookupItem>> accommodationTypes() async => const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> accommodationCategories() async =>
-      const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> amenities() async => const <LookupItem>[];
-
-  @override
   Future<List<LookupItem>> countries() async => const <LookupItem>[];
+}
 
-  @override
-  Future<LookupItem> addCity({required String name, required int countryId}) =>
-      throw UnimplementedError();
-
+class _Users extends UsersDouble {
   @override
   Future<List<User>> hosts() async => const <User>[];
-
-  @override
-  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
 }
 
 // The bookings against the experience are read through their own repository,

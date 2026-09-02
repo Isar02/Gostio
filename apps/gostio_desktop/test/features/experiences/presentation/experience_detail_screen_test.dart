@@ -24,12 +24,14 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../../../support/bookings_double.dart';
+import '../../../support/reference_double.dart';
+import '../../../support/users_double.dart';
 
 void main() {
   testWidgets(
     'a create that could not read its tables says what the API said',
     (WidgetTester tester) async {
-      await tester.pumpWidget(_screen(_Repositories(failing: true)));
+      await tester.pumpWidget(_screen(failing: true));
       await tester.pumpAndSettle();
 
       expect(find.text('The cities could not be read.'), findsOneWidget);
@@ -45,7 +47,7 @@ void main() {
   testWidgets('a table that really is empty is named as the reason', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(_screen(_Repositories(empty: true)));
+    await tester.pumpWidget(_screen(empty: true));
     await tester.pumpAndSettle();
 
     expect(
@@ -62,7 +64,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final _Slots slots = _Slots();
-    await tester.pumpWidget(_screen(_Repositories(), slots: slots));
+    await tester.pumpWidget(_screen(slots: slots));
     await tester.pumpAndSettle();
 
     await tester
@@ -84,7 +86,7 @@ void main() {
   testWidgets('a refused create keeps the form it was typed into', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(_screen(_Repositories(refusing: true)));
+    await tester.pumpWidget(_screen(refusing: true));
     await tester.pumpAndSettle();
 
     await tester
@@ -101,9 +103,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final _Slots slots = _Slots();
-    await tester.pumpWidget(
-      _screen(_Repositories(), slots: slots, experienceId: 12),
-    );
+    await tester.pumpWidget(_screen(slots: slots, experienceId: 12));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Terms'));
@@ -114,15 +114,21 @@ void main() {
   });
 }
 
-Widget _screen(
-  _Repositories repositories, {
+Widget _screen({
+  bool failing = false,
+  bool empty = false,
+  bool refusing = false,
   _Slots? slots,
   int? experienceId,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
-    Provider<ExperiencesRepository>.value(value: repositories),
-    Provider<ReferenceRepository>.value(value: repositories),
-    Provider<UsersRepository>.value(value: repositories),
+    Provider<ExperiencesRepository>.value(
+      value: _Experiences(refusing: refusing),
+    ),
+    Provider<ReferenceRepository>.value(
+      value: _Reference(failing: failing, empty: empty),
+    ),
+    Provider<UsersRepository>.value(value: _Users()),
     Provider<ReservationsRepository>.value(value: const _Bookings()),
     Provider<ExperienceSlotsRepository>.value(value: slots ?? _Slots()),
     Provider<ListingPhotosRepository>.value(value: _Photos()),
@@ -137,17 +143,11 @@ Widget _screen(
   ),
 );
 
-class _Repositories
-    implements ExperiencesRepository, ReferenceRepository, UsersRepository {
-  _Repositories({
-    this.failing = false,
-    this.empty = false,
-    this.refusing = false,
-  });
+class _Reference extends ReferenceDouble {
+  _Reference({required this.failing, required this.empty});
 
   final bool failing;
   final bool empty;
-  final bool refusing;
 
   @override
   Future<List<LookupItem>> cities() async {
@@ -170,27 +170,18 @@ class _Repositories
       : <LookupItem>[const LookupItem(id: 3, name: 'Adventure')];
 
   @override
-  Future<List<LookupItem>> accommodationTypes() async => const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> accommodationCategories() async =>
-      const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> amenities() async => const <LookupItem>[];
-
-  @override
   Future<List<LookupItem>> countries() async => const <LookupItem>[];
+}
 
-  @override
-  Future<LookupItem> addCity({required String name, required int countryId}) =>
-      throw UnimplementedError();
-
+class _Users extends UsersDouble {
   @override
   Future<List<User>> hosts() async => const <User>[];
+}
 
-  @override
-  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
+class _Experiences implements ExperiencesRepository {
+  _Experiences({this.refusing = false});
+
+  final bool refusing;
 
   @override
   Future<Experience> get(int id) async => _experience();

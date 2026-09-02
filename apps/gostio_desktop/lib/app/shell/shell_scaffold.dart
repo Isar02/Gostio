@@ -69,7 +69,11 @@ class _ShellFrame extends StatelessWidget {
               children: <Widget>[
                 ShellTopBar(account: account),
                 Expanded(
-                  child: SectionHost(mode: mode, section: section),
+                  child: SectionHost(
+                    mode: mode,
+                    section: section,
+                    account: account,
+                  ),
                 ),
               ],
             ),

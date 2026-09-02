@@ -15,6 +15,7 @@ import '../features/experiences/data/experience_slots_repository.dart';
 import '../features/experiences/data/experiences_repository.dart';
 import '../features/host_applications/data/host_applications_repository.dart';
 import '../features/listings/data/listing_photos_repository.dart';
+import '../features/news/data/news_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/reference/data/reference_repository.dart';
 import '../features/reference/data/reference_rows_repository.dart';
@@ -95,6 +96,10 @@ class GostioApp extends StatelessWidget {
         Provider<ReviewsRepository>(
           create: (BuildContext context) =>
               ReviewsRepository(context.read<ApiClient>()),
+        ),
+        Provider<NewsRepository>(
+          create: (BuildContext context) =>
+              NewsRepository(context.read<ApiClient>()),
         ),
       ],
       child: MaterialApp(

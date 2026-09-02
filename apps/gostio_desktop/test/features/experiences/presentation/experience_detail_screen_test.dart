@@ -78,6 +78,25 @@ void main() {
     expect(slots.reads, 0);
   });
 
+  // The refusal is what the form was written for, so the screen it is said on
+  // has to still be there: a write that failed is not a page that could not be
+  // read, and emptying the form would throw away everything typed into it.
+  testWidgets('a refused create keeps the form it was typed into', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_screen(_Repositories(refusing: true)));
+    await tester.pumpAndSettle();
+
+    await tester
+        .element(find.byType(TabBarView))
+        .read<ExperienceDetailNotifier>()
+        .save(_draft, isActive: true);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create experience'), findsOneWidget);
+    expect(find.text('An experience already goes by that title.'), findsOne);
+  });
+
   testWidgets('an experience opened from the list carries its terms', (
     WidgetTester tester,
   ) async {
@@ -120,10 +139,15 @@ Widget _screen(
 
 class _Repositories
     implements ExperiencesRepository, ReferenceRepository, UsersRepository {
-  _Repositories({this.failing = false, this.empty = false});
+  _Repositories({
+    this.failing = false,
+    this.empty = false,
+    this.refusing = false,
+  });
 
   final bool failing;
   final bool empty;
+  final bool refusing;
 
   @override
   Future<List<LookupItem>> cities() async {
@@ -175,8 +199,16 @@ class _Repositories
   Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
-  Future<Experience> create(ExperienceDraft draft, {int? hostId}) async =>
-      _experience();
+  Future<Experience> create(ExperienceDraft draft, {int? hostId}) async {
+    if (refusing) {
+      throw const ApiException(
+        message: 'An experience already goes by that title.',
+        statusCode: 409,
+      );
+    }
+
+    return _experience();
+  }
 
   @override
   Future<Experience> update(

@@ -36,6 +36,7 @@ class ExperienceDetailNotifier extends ScreenNotifier {
   Experience? _experience;
   ExperienceFormOptions _options = ExperienceFormOptions.none;
   ApiException? _failure;
+  ApiException? _writeFailure;
 
   bool get isLoading => _isLoading;
 
@@ -58,15 +59,20 @@ class ExperienceDetailNotifier extends ScreenNotifier {
 
   ExperienceFormOptions get options => _options;
 
+  // What a load came back with empties the screen; what a write came back
+  // with is said above the form that is still holding what was typed into it.
   String? get failureMessage => _failure?.message;
 
   String? get failureTraceId => _failure?.traceId;
 
-  String? messageFor(String field) => _failure?.firstMessageFor(field);
+  String? get writeFailureMessage => _writeFailure?.message;
+
+  String? messageFor(String field) => _writeFailure?.firstMessageFor(field);
 
   Future<void> load() async {
     _isLoading = true;
     _failure = null;
+    _writeFailure = null;
     publish();
 
     try {
@@ -98,7 +104,7 @@ class ExperienceDetailNotifier extends ScreenNotifier {
     int? hostId,
   }) async {
     _isSaving = true;
-    _failure = null;
+    _writeFailure = null;
     publish();
 
     Experience? written;
@@ -114,7 +120,7 @@ class ExperienceDetailNotifier extends ScreenNotifier {
       };
       _experience = written;
     } on ApiException catch (failure) {
-      _failure = failure;
+      _writeFailure = failure;
     }
 
     _isSaving = false;
@@ -130,7 +136,7 @@ class ExperienceDetailNotifier extends ScreenNotifier {
     }
 
     _isSaving = true;
-    _failure = null;
+    _writeFailure = null;
     publish();
 
     try {
@@ -138,7 +144,7 @@ class ExperienceDetailNotifier extends ScreenNotifier {
 
       return true;
     } on ApiException catch (failure) {
-      _failure = failure;
+      _writeFailure = failure;
       _isSaving = false;
       publish();
 

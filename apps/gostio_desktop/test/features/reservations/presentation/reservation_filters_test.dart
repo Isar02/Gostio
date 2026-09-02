@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_desktop/core/widgets/date_field.dart';
 import 'package:gostio_desktop/features/listings/data/listing_address.dart';
+import 'package:gostio_desktop/features/listings/data/listing_choice.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reservations/data/reservation_query.dart';
 import 'package:gostio_desktop/features/reservations/presentation/reservation_filter_options.dart';
@@ -108,12 +109,12 @@ class _Harness {
       LookupItem(id: 1, name: 'Pending'),
       LookupItem(id: 2, name: 'Confirmed'),
     ],
-    listings: <BookedListing>[
-      BookedListing(
+    listings: <ListingChoice>[
+      ListingChoice(
         ListingKind.accommodation,
         LookupItem(id: 4, name: 'Stone villa on the hill above Neum'),
       ),
-      BookedListing(
+      ListingChoice(
         ListingKind.experience,
         LookupItem(id: 12, name: 'Rafting the Neretva canyon'),
       ),

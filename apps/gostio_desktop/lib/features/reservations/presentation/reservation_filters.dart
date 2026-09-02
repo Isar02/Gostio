@@ -5,6 +5,7 @@ import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/date_field.dart';
 import '../../../core/widgets/filter_bar.dart';
 import '../../listings/data/listing_address.dart';
+import '../../listings/data/listing_choice.dart';
 import '../../reference/data/lookup_item.dart';
 import '../data/reservation_query.dart';
 import 'reservation_filter_options.dart';
@@ -32,7 +33,7 @@ class ReservationFilters extends StatefulWidget {
 }
 
 class _ReservationFiltersState extends State<ReservationFilters> {
-  BookedListing? _listing;
+  ListingChoice? _listing;
   LookupItem? _status;
   ReservationHold _hold = ReservationHold.any;
   DateTime? _from;
@@ -102,8 +103,8 @@ class _ReservationFiltersState extends State<ReservationFilters> {
     _departsOn = null;
   });
 
-  BookedListing? _listingFor(ListingAddress? address) {
-    for (final BookedListing candidate in widget.options.listings) {
+  ListingChoice? _listingFor(ListingAddress? address) {
+    for (final ListingChoice candidate in widget.options.listings) {
       if (candidate.address == address) {
         return candidate;
       }
@@ -130,12 +131,12 @@ class _ReservationFiltersState extends State<ReservationFilters> {
         FilterField(
           label: 'Listing',
           width: AppSizes.filterFieldWide,
-          child: AppOptionalDropdown<BookedListing>(
+          child: AppOptionalDropdown<ListingChoice>(
             anyLabel: 'Any listing',
             value: _listing,
             values: widget.options.listings,
-            labels: (BookedListing booked) => booked.title,
-            onChanged: (BookedListing? booked) =>
+            labels: (ListingChoice booked) => booked.title,
+            onChanged: (ListingChoice? booked) =>
                 _change(() => _listing = booked),
           ),
         ),

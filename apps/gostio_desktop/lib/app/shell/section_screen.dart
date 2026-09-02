@@ -5,6 +5,8 @@ import '../../core/widgets/screen_states.dart';
 import '../../features/accommodations/presentation/accommodations_screen.dart';
 import '../../features/experiences/presentation/experiences_screen.dart';
 import '../../features/host_applications/presentation/host_applications_screen.dart';
+import '../../features/reference/data/reference_table.dart';
+import '../../features/reference/presentation/reference_screen.dart';
 import '../../features/reservations/presentation/reservations_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
 import 'app_section.dart';
@@ -42,6 +44,26 @@ class SectionScreen extends StatelessWidget {
       // against the caller's own.
       AppSection.users => UsersScreen(signedInUserId: account.id),
       AppSection.hostApplications => const HostApplicationsScreen(),
+      AppSection.countries => const ReferenceScreen(
+        table: ReferenceTable.countries,
+      ),
+      AppSection.cities => const ReferenceScreen(table: ReferenceTable.cities),
+      AppSection.accommodationTypes => const ReferenceScreen(
+        table: ReferenceTable.accommodationTypes,
+      ),
+      AppSection.accommodationCategories => const ReferenceScreen(
+        table: ReferenceTable.accommodationCategories,
+      ),
+      AppSection.experienceCategories => const ReferenceScreen(
+        table: ReferenceTable.experienceCategories,
+      ),
+      AppSection.amenities => const ReferenceScreen(
+        table: ReferenceTable.amenities,
+      ),
+      AppSection.roles => const ReferenceScreen(table: ReferenceTable.roles),
+      AppSection.reservationStatuses => const ReferenceScreen(
+        table: ReferenceTable.reservationStatuses,
+      ),
       _ => EmptyState(
         title: section.label,
         message: 'This section has not been built yet.',

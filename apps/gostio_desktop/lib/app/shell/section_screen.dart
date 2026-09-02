@@ -8,6 +8,7 @@ import '../../features/host_applications/presentation/host_applications_screen.d
 import '../../features/reference/data/reference_table.dart';
 import '../../features/reference/presentation/reference_screen.dart';
 import '../../features/reservations/presentation/reservations_screen.dart';
+import '../../features/reviews/presentation/reviews_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
 import 'app_section.dart';
 import 'workspace_mode.dart';
@@ -44,6 +45,7 @@ class SectionScreen extends StatelessWidget {
       // against the caller's own.
       AppSection.users => UsersScreen(signedInUserId: account.id),
       AppSection.hostApplications => const HostApplicationsScreen(),
+      AppSection.reviews => const ReviewsScreen(),
       AppSection.countries => const ReferenceScreen(
         table: ReferenceTable.countries,
       ),

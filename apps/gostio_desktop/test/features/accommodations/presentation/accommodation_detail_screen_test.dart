@@ -52,6 +52,25 @@ void main() {
     expect(find.text('Try again'), findsNothing);
   });
 
+  // The refusal is what the form was written for, so the screen it is said on
+  // has to still be there: a write that failed is not a page that could not be
+  // read, and emptying the form would throw away everything typed into it.
+  testWidgets('a refused create keeps the form it was typed into', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_screen(_Repositories(refusing: true)));
+    await tester.pumpAndSettle();
+
+    await tester
+        .element(find.byType(TabBarView))
+        .read<AccommodationDetailNotifier>()
+        .save(_draft, isActive: true);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create listing'), findsOneWidget);
+    expect(find.text('A listing already goes by that title.'), findsOne);
+  });
+
   // The form empties for the next listing rather than closing, so a screen
   // that opened a calendar over the one just created would carry it into the
   // one after that: the tabs stay shut until a listing is opened from the list.
@@ -201,10 +220,15 @@ class _Repositories
   @override
   Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
 
-  _Repositories({this.failing = false, this.empty = false});
+  _Repositories({
+    this.failing = false,
+    this.empty = false,
+    this.refusing = false,
+  });
 
   final bool failing;
   final bool empty;
+  final bool refusing;
 
   @override
   Future<List<LookupItem>> cities() async {
@@ -251,8 +275,16 @@ class _Repositories
   Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
-  Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) async =>
-      _created;
+  Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) async {
+    if (refusing) {
+      throw const ApiException(
+        message: 'A listing already goes by that title.',
+        statusCode: 409,
+      );
+    }
+
+    return _created;
+  }
 
   @override
   Future<Accommodation> update(

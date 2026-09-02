@@ -113,7 +113,8 @@ class _AccommodationFormState extends State<AccommodationForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            if (notifier.failureMessage case final String message) ...<Widget>[
+            if (notifier.writeFailureMessage
+                case final String message) ...<Widget>[
               AppNotice(message),
               const SizedBox(height: AppSpacing.lg),
             ],

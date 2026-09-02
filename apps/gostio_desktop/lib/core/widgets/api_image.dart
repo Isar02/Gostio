@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../network/api_client.dart';
+import '../network/api_exception.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 
+// Every picture is fetched through the client, because it lives behind the
+// bearer header.
 class ApiImage extends StatelessWidget {
   const ApiImage({
     required this.path,
@@ -17,6 +20,19 @@ class ApiImage extends StatelessWidget {
     this.borderRadius = AppRadii.medium,
     super.key,
   });
+
+  // Neither the cache nor an Image already showing the old bytes can see them
+  // change, so a replacement is a different picture from here on.
+  static Future<void> forget(BuildContext context, String path) async {
+    final ApiImageProvider stale = ApiImageProvider(
+      context.read<ApiClient>(),
+      path,
+    );
+
+    _Replaced.raise(path);
+
+    await stale.evict();
+  }
 
   final String? path;
   final double? width;
@@ -52,25 +68,46 @@ class ApiImage extends StatelessWidget {
         ) => frame == null ? _Placeholder(width: width, height: height) : child,
         errorBuilder:
             (BuildContext context, Object error, StackTrace? stackTrace) =>
-                _Placeholder(
-                  width: width,
-                  height: height,
-                  icon: Icons.image_not_supported_outlined,
+                Tooltip(
+                  message: _refusal(error),
+                  child: _Placeholder(
+                    width: width,
+                    height: height,
+                    icon: Icons.image_not_supported_outlined,
+                  ),
                 ),
       ),
     );
   }
 }
 
+// How many times this client has replaced the bytes at an address.
+abstract final class _Replaced {
+  static final Map<String, int> _counts = <String, int>{};
+
+  static int of(String path) => _counts[path] ?? 0;
+
+  static void raise(String path) => _counts[path] = of(path) + 1;
+}
+
+String _refusal(Object error) => switch (error) {
+  final ApiException failure =>
+    'This picture could not be read. '
+        '${failure.message}',
+  _ => 'This picture could not be read.',
+};
+
 @immutable
 class ApiImageProvider extends ImageProvider<ApiImageProvider> {
   ApiImageProvider(this.client, this.path)
-    : generation = client.tokenGeneration;
+    : generation = client.tokenGeneration,
+      writes = _Replaced.of(path);
 
   final ApiClient client;
   final String path;
 
   final int generation;
+  final int writes;
 
   @override
   Future<ApiImageProvider> obtainKey(ImageConfiguration configuration) =>
@@ -100,10 +137,11 @@ class ApiImageProvider extends ImageProvider<ApiImageProvider> {
       other is ApiImageProvider &&
       other.client == client &&
       other.path == path &&
-      other.generation == generation;
+      other.generation == generation &&
+      other.writes == writes;
 
   @override
-  int get hashCode => Object.hash(client, path, generation);
+  int get hashCode => Object.hash(client, path, generation, writes);
 }
 
 class _Placeholder extends StatelessWidget {

@@ -13,6 +13,7 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/experiences/data/experience_slots_repository.dart';
 import '../features/experiences/data/experiences_repository.dart';
+import '../features/host_applications/data/host_applications_repository.dart';
 import '../features/listings/data/listing_photos_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/reference/data/reference_repository.dart';
@@ -80,6 +81,10 @@ class GostioApp extends StatelessWidget {
         Provider<ReservationsRepository>(
           create: (BuildContext context) =>
               ReservationsRepository(context.read<ApiClient>()),
+        ),
+        Provider<HostApplicationsRepository>(
+          create: (BuildContext context) =>
+              HostApplicationsRepository(context.read<ApiClient>()),
         ),
       ],
       child: MaterialApp(

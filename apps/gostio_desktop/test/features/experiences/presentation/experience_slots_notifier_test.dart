@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_desktop/core/models/paged_result.dart';
 import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_desktop/core/paging/writing_notifier.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_slot.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_slot_query.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_slots_repository.dart';
@@ -26,12 +27,13 @@ void main() {
     final ExperienceSlotsNotifier notifier = _notifier(slots);
     await notifier.reload();
 
-    final ApiException? refused = await notifier.add(
+    final WriteOutcome outcome = await notifier.add(
       startTime: DateTime(2026, 5, 1, 9),
       capacity: 8,
     );
 
-    expect(refused, isNull);
+    expect(outcome.wasWritten, isTrue);
+    expect(outcome.viewSettled, isTrue);
     expect(slots.reads, 2);
     expect(notifier.isWriting, isFalse);
   });
@@ -47,12 +49,12 @@ void main() {
     final ExperienceSlotsNotifier notifier = _notifier(slots);
     await notifier.reload();
 
-    final ApiException? refused = await notifier.add(
+    final WriteOutcome outcome = await notifier.add(
       startTime: DateTime(2026, 5, 1, 9),
       capacity: 8,
     );
 
-    expect(refused?.statusCode, 409);
+    expect(outcome.refusal?.statusCode, 409);
     expect(notifier.failureMessage, isNull);
     expect(slots.reads, 1);
   });
@@ -80,12 +82,13 @@ void main() {
       statusCode: 503,
     );
 
-    final ApiException? refused = await notifier.add(
+    final WriteOutcome outcome = await notifier.add(
       startTime: DateTime(2026, 5, 1, 9),
       capacity: 8,
     );
 
-    expect(refused, isNull);
+    expect(outcome.wasWritten, isTrue);
+    expect(outcome.viewSettled, isFalse);
     expect(notifier.isStale, isTrue);
     expect(notifier.failureMessage, 'The terms could not be read.');
   });
@@ -173,9 +176,9 @@ void main() {
     final ExperienceSlotsNotifier notifier = _notifier(slots);
     await notifier.reload();
 
-    final ApiException? refused = await notifier.remove(4);
+    final WriteOutcome outcome = await notifier.remove(4);
 
-    expect(refused?.message, contains('cannot be deleted'));
+    expect(outcome.refusal?.message, contains('cannot be deleted'));
     expect(slots.reads, 1);
   });
 }

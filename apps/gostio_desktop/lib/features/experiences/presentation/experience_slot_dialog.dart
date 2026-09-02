@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../core/formatting/app_dates.dart';
 import '../../../core/formatting/app_durations.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/paging/writing_notifier.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/theme/tone.dart';
@@ -28,12 +29,12 @@ class ExperienceSlotDialog extends StatefulWidget {
   });
 
   final ExperienceSlot slot;
-  final Future<ApiException?> Function({
+  final Future<WriteOutcome> Function({
     required int capacity,
     required bool isActive,
   })
   save;
-  final Future<ApiException?> Function() remove;
+  final Future<WriteOutcome> Function() remove;
 
   // Cancelled reservations included: a place they freed is still a foreign key
   // that refuses the delete. A count that fails leaves that to the server.
@@ -247,19 +248,19 @@ class _ExperienceSlotDialogState extends State<ExperienceSlotDialog> {
     _settle(await widget.remove());
   }
 
-  void _settle(ApiException? refused) {
+  void _settle(WriteOutcome outcome) {
     if (!mounted) {
       return;
     }
 
-    if (refused == null) {
+    if (outcome.wasWritten) {
       Navigator.of(context).pop();
 
       return;
     }
 
     setState(() {
-      _failure = refused;
+      _failure = outcome.refusal;
       _isSaving = false;
     });
   }

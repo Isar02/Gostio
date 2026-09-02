@@ -22,13 +22,7 @@ class ListingPhotosRepository {
     ListingAddress listing,
     ImageUpload image,
   ) async => ListingPhoto.fromJson(
-    await _client.upload(
-      listing.photos,
-      field: fileField,
-      name: image.name,
-      bytes: image.bytes,
-      contentType: image.contentType,
-    ),
+    await _client.postForm(listing.photos, file: image.underField(fileField)),
   );
 
   Future<ListingPhoto> setCover(ListingAddress listing, int photoId) async =>

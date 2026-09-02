@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
 import 'api_exception.dart';
+import 'uploaded_file.dart';
 
 typedef JsonMap = Map<String, dynamic>;
 
@@ -65,27 +66,21 @@ class ApiClient {
     await _request('PUT', path, body: body);
   }
 
-  // The boundary is only known once the body is built, so dio writes the
+  // A form rather than JSON, which is how the API takes anything carrying a
+  // file. The boundary is only known once the body is built, so dio writes the
   // content type itself and the one on the client is left alone.
-  Future<JsonMap> upload(
+  Future<JsonMap> postForm(
     String path, {
-    required String field,
-    required String name,
-    required Uint8List bytes,
-    required String contentType,
-  }) async => _asObject(
-    await _request(
-      'POST',
-      path,
-      body: FormData.fromMap(<String, dynamic>{
-        field: MultipartFile.fromBytes(
-          bytes,
-          filename: name,
-          contentType: DioMediaType.parse(contentType),
-        ),
-      }),
-    ),
-  );
+    JsonMap fields = const <String, dynamic>{},
+    UploadedFile? file,
+  }) async =>
+      _asObject(await _request('POST', path, body: _form(fields, file)));
+
+  Future<JsonMap> putForm(
+    String path, {
+    JsonMap fields = const <String, dynamic>{},
+    UploadedFile? file,
+  }) async => _asObject(await _request('PUT', path, body: _form(fields, file)));
 
   Future<List<dynamic>> putList(String path, {Object? body}) async =>
       _asArray(await _request('PUT', path, body: body));
@@ -144,6 +139,17 @@ class ApiClient {
 
   static const String _unexpectedMessage =
       'The request could not be completed.';
+
+  static FormData _form(JsonMap fields, UploadedFile? file) =>
+      FormData.fromMap(<String, dynamic>{
+        ...fields,
+        if (file case final UploadedFile part)
+          part.field: MultipartFile.fromBytes(
+            part.bytes,
+            filename: part.name,
+            contentType: DioMediaType.parse(part.contentType),
+          ),
+      });
 
   static List<dynamic> _asArray(Response<dynamic> response) {
     final dynamic body = response.data;

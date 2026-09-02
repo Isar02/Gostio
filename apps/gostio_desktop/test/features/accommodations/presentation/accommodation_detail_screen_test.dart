@@ -15,11 +15,12 @@ import 'package:gostio_desktop/features/accommodations/presentation/accommodatio
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_detail_screen.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:gostio_desktop/features/users/data/users_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+
+import '../../../support/bookings_double.dart';
 
 void main() {
   testWidgets(
@@ -153,7 +154,7 @@ Widget _screen(
     Provider<AccommodationsRepository>.value(value: repositories),
     Provider<ReferenceRepository>.value(value: repositories),
     Provider<UsersRepository>.value(value: repositories),
-    Provider<ReservationsRepository>.value(value: repositories),
+    Provider<ReservationsRepository>.value(value: const _Bookings()),
     if (availability case final AccommodationAvailabilityRepository rows)
       Provider<AccommodationAvailabilityRepository>.value(value: rows),
     if (offerings case final AccommodationAmenitiesRepository held)
@@ -193,18 +194,12 @@ final Accommodation _created = Accommodation(
 final DateTime _createdAt = DateTime.utc(2026, 1, 1);
 
 class _Repositories
-    implements
-        AccommodationsRepository,
-        ReferenceRepository,
-        UsersRepository,
-        ReservationsRepository {
+    implements AccommodationsRepository, ReferenceRepository, UsersRepository {
   @override
   Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
 
   @override
-  Future<int> countForExperience(int experienceId) async => 0;
-  @override
-  Future<int> countForSlot(int slotId) async => 0;
+  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
 
   _Repositories({this.failing = false, this.empty = false});
 
@@ -250,17 +245,10 @@ class _Repositories
   Future<List<User>> hosts() async => const <User>[];
 
   @override
-  Future<int> countForAccommodation(int accommodationId) async => 0;
-
-  @override
-  Future<List<Reservation>> forAccommodationWindow(
-    int accommodationId, {
-    required DateTime from,
-    required DateTime to,
-  }) => throw UnimplementedError();
-
-  @override
   Future<Accommodation> get(int id) => throw UnimplementedError();
+
+  @override
+  Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
   Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) async =>
@@ -283,4 +271,13 @@ class _Repositories
     int pageSize = PagedResult.defaultPageSize,
     int? hostId,
   }) => throw UnimplementedError();
+}
+
+// The bookings against the listing are read through their own repository,
+// which answers get and search where the catalogue answers the same two names.
+class _Bookings extends BookingsDouble {
+  const _Bookings();
+
+  @override
+  Future<int> countForAccommodation(int accommodationId) async => 0;
 }

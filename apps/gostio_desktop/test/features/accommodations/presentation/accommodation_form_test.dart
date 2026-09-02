@@ -12,9 +12,9 @@ import 'package:gostio_desktop/features/accommodations/presentation/accommodatio
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_form.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
-import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:gostio_desktop/features/users/data/users_repository.dart';
+
+import '../../../support/bookings_double.dart';
 
 void main() {
   testWidgets('a listing is not created until the map and the lists answer', (
@@ -95,7 +95,7 @@ Future<AccommodationDetailNotifier> _notifier(
     repositories,
     repositories,
     repositories,
-    repositories,
+    const _Bookings(),
     accommodationId: accommodationId,
     asAdministrator: false,
   );
@@ -145,18 +145,12 @@ Accommodation _listing() => Accommodation(
 );
 
 class _Repositories
-    implements
-        AccommodationsRepository,
-        ReferenceRepository,
-        UsersRepository,
-        ReservationsRepository {
+    implements AccommodationsRepository, ReferenceRepository, UsersRepository {
   @override
   Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
 
   @override
-  Future<int> countForExperience(int experienceId) async => 0;
-  @override
-  Future<int> countForSlot(int slotId) async => 0;
+  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
 
   _Repositories({this.gate});
 
@@ -169,6 +163,9 @@ class _Repositories
 
   @override
   Future<Accommodation> get(int id) async => _listing();
+
+  @override
+  Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
   Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) async {
@@ -222,20 +219,19 @@ class _Repositories
   Future<List<User>> hosts() async => const <User>[];
 
   @override
-  Future<int> countForAccommodation(int accommodationId) async => 0;
-
-  @override
-  Future<List<Reservation>> forAccommodationWindow(
-    int accommodationId, {
-    required DateTime from,
-    required DateTime to,
-  }) => throw UnimplementedError();
-
-  @override
   Future<PagedResult<Accommodation>> search({
     required AccommodationQuery query,
     int page = 1,
     int pageSize = PagedResult.defaultPageSize,
     int? hostId,
   }) => throw UnimplementedError();
+}
+
+// The bookings against the listing are read through their own repository,
+// which answers get and search where the catalogue answers the same two names.
+class _Bookings extends BookingsDouble {
+  const _Bookings();
+
+  @override
+  Future<int> countForAccommodation(int accommodationId) async => 0;
 }

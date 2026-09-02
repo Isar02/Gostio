@@ -46,6 +46,7 @@ abstract final class AppSizes {
 
   static const double filterField = 200;
   static const double filterFieldNarrow = 120;
+  static const double filterFieldWide = 280;
   static const double photoTile = 168;
   static const double photoTileHeight = 126;
   static const double photoCover = 360;

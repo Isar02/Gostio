@@ -1,5 +1,8 @@
 import '../../../core/models/paged_result.dart';
 import '../../../core/network/api_client.dart';
+import '../../listings/data/listing_address.dart';
+import '../../listings/data/listing_titles.dart';
+import '../../reference/data/lookup_item.dart';
 import 'accommodation.dart';
 import 'accommodation_draft.dart';
 import 'accommodation_query.dart';
@@ -33,6 +36,9 @@ class AccommodationsRepository {
 
   Future<Accommodation> get(int id) async =>
       Accommodation.fromJson(await _client.get('/accommodations/$id'));
+
+  Future<List<LookupItem>> titles({int? hostId}) =>
+      readListingTitles(_client, ListingKind.accommodation, hostId: hostId);
 
   Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) async =>
       Accommodation.fromJson(

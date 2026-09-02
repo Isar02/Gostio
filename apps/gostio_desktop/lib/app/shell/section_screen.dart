@@ -5,6 +5,7 @@ import '../../core/session/session.dart';
 import '../../core/widgets/screen_states.dart';
 import '../../features/accommodations/presentation/accommodations_screen.dart';
 import '../../features/experiences/presentation/experiences_screen.dart';
+import '../../features/reservations/presentation/reservations_screen.dart';
 import 'app_section.dart';
 import 'workspace_mode.dart';
 
@@ -25,6 +26,10 @@ class SectionScreen extends StatelessWidget {
         asAdministrator: mode == WorkspaceMode.administrator,
         hostId: _hostId(context),
       ),
+      // Nothing about this list is the administrator's alone: what a booking
+      // can be told is the server's to allow, and it allows the same two moves
+      // to the host of the listing and to an administrator over both.
+      AppSection.reservations => ReservationsScreen(hostId: _hostId(context)),
       _ => EmptyState(
         title: section.label,
         message: 'This section has not been built yet.',

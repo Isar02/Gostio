@@ -18,11 +18,12 @@ import 'package:gostio_desktop/features/listings/data/listing_photo.dart';
 import 'package:gostio_desktop/features/listings/data/listing_photos_repository.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:gostio_desktop/features/users/data/users_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+
+import '../../../support/bookings_double.dart';
 
 void main() {
   testWidgets(
@@ -103,7 +104,7 @@ Widget _screen(
     Provider<ExperiencesRepository>.value(value: repositories),
     Provider<ReferenceRepository>.value(value: repositories),
     Provider<UsersRepository>.value(value: repositories),
-    Provider<ReservationsRepository>.value(value: repositories),
+    Provider<ReservationsRepository>.value(value: const _Bookings()),
     Provider<ExperienceSlotsRepository>.value(value: slots ?? _Slots()),
     Provider<ListingPhotosRepository>.value(value: _Photos()),
   ],
@@ -118,11 +119,7 @@ Widget _screen(
 );
 
 class _Repositories
-    implements
-        ExperiencesRepository,
-        ReferenceRepository,
-        UsersRepository,
-        ReservationsRepository {
+    implements ExperiencesRepository, ReferenceRepository, UsersRepository {
   _Repositories({this.failing = false, this.empty = false});
 
   final bool failing;
@@ -169,23 +166,13 @@ class _Repositories
   Future<List<User>> hosts() async => const <User>[];
 
   @override
-  Future<int> countForExperience(int experienceId) async => 0;
-  @override
-  Future<int> countForSlot(int slotId) async => 0;
-
-  @override
-  Future<int> countForAccommodation(int accommodationId) =>
-      throw UnimplementedError();
-
-  @override
-  Future<List<Reservation>> forAccommodationWindow(
-    int accommodationId, {
-    required DateTime from,
-    required DateTime to,
-  }) => throw UnimplementedError();
+  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
 
   @override
   Future<Experience> get(int id) async => _experience();
+
+  @override
+  Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
   Future<Experience> create(ExperienceDraft draft, {int? hostId}) async =>
@@ -229,6 +216,10 @@ class _Slots implements ExperienceSlotsRepository {
       totalCount: 0,
     );
   }
+
+  @override
+  Future<ExperienceSlot> get(int experienceId, int slotId) =>
+      throw UnimplementedError();
 
   @override
   Future<ExperienceSlot> add(
@@ -300,3 +291,15 @@ Experience _experience() => Experience(
   reviewCount: 0,
   createdAt: DateTime.utc(2026, 1, 1),
 );
+
+// The bookings against the experience are read through their own repository,
+// which answers get and search where the catalogue answers the same two names.
+class _Bookings extends BookingsDouble {
+  const _Bookings();
+
+  @override
+  Future<int> countForExperience(int experienceId) async => 0;
+
+  @override
+  Future<int> countForSlot(int slotId) async => 0;
+}

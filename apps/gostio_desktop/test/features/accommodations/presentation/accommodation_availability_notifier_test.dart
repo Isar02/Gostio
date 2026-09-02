@@ -8,7 +8,8 @@ import 'package:gostio_desktop/features/accommodations/data/availability_draft.d
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_availability_notifier.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/availability_month.dart';
 import 'package:gostio_desktop/features/reservations/data/reservation.dart';
-import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
+
+import '../../../support/bookings_double.dart';
 
 void main() {
   test(
@@ -302,15 +303,8 @@ class _Availability implements AccommodationAvailabilityRepository {
   }
 }
 
-class _Reservations implements ReservationsRepository {
-  @override
-  Future<int> countForExperience(int experienceId) async => 0;
-  @override
-  Future<int> countForSlot(int slotId) async => 0;
-
-  @override
-  Future<int> countForAccommodation(int accommodationId) =>
-      throw UnimplementedError();
+class _Reservations extends BookingsDouble {
+  const _Reservations();
 
   @override
   Future<List<Reservation>> forAccommodationWindow(

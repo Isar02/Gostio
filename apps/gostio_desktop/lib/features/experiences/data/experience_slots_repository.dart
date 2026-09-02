@@ -29,6 +29,11 @@ class ExperienceSlotsRepository {
     );
   }
 
+  Future<ExperienceSlot> get(int experienceId, int slotId) async =>
+      ExperienceSlot.fromJson(
+        await _client.get('${_path(experienceId)}/$slotId'),
+      );
+
   // The duration is the experience's own, so a term is created from when it
   // starts and how many it takes; the server works out when it ends.
   Future<ExperienceSlot> add(

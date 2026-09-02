@@ -205,6 +205,9 @@ class _Reference implements ReferenceRepository {
       throw UnimplementedError();
 
   @override
+  Future<List<LookupItem>> reservationStatuses() => throw UnimplementedError();
+
+  @override
   Future<LookupItem> addCity({required String name, required int countryId}) =>
       throw UnimplementedError();
 }

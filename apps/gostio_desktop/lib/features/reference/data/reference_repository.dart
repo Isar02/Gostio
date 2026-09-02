@@ -21,6 +21,9 @@ class ReferenceRepository {
 
   Future<List<LookupItem>> amenities() => _all('/amenities');
 
+  Future<List<LookupItem>> reservationStatuses() =>
+      _all('/reservation-statuses');
+
   Future<LookupItem> addCity({
     required String name,
     required int countryId,

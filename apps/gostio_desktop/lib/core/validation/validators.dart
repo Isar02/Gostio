@@ -11,6 +11,7 @@ abstract final class Validators {
   static const int descriptionMaximum = 2000;
   static const int addressMaximum = 250;
   static const int nameMaximum = 100;
+  static const int reasonMaximum = 1000;
   static const double smallestAmount = 0.01;
   static const double largestAmount = 1000000;
 
@@ -66,6 +67,13 @@ abstract final class Validators {
     missing: 'Enter a name.',
     noun: 'A name',
     longest: nameMaximum,
+  );
+
+  static String? cancellationReason(String? value) => _written(
+    value,
+    missing: 'Say why the reservation is being cancelled.',
+    noun: 'A reason',
+    longest: reasonMaximum,
   );
 
   static String? guests(String? value) => _counted(

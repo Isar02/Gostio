@@ -108,7 +108,7 @@ class _AddCityDialogState extends State<AddCityDialog> {
                   labelText: 'Name',
                   errorText: _failure?.firstMessageFor('name'),
                 ),
-                validator: Validators.cityName,
+                validator: Validators.lookupName,
                 onFieldSubmitted: (String _) => _submit(),
               ),
               const SizedBox(height: AppSpacing.lg),

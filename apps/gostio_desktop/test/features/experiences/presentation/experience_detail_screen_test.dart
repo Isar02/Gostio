@@ -170,7 +170,8 @@ class _Reference extends ReferenceDouble {
       : <LookupItem>[const LookupItem(id: 3, name: 'Adventure')];
 
   @override
-  Future<List<LookupItem>> countries() async => const <LookupItem>[];
+  Future<List<LookupItem>> countriesHoldingCities() async =>
+      const <LookupItem>[];
 }
 
 class _Users extends UsersDouble {

@@ -20,6 +20,7 @@ abstract final class Validators {
   static const int usernameMaximum = 50;
   static const int emailMaximum = 254;
   static const int phoneMaximum = 30;
+  static const int codeMaximum = 30;
   static const int reasonMaximum = 1000;
   static const double smallestAmount = 0.01;
   static const double largestAmount = 1000000;
@@ -172,12 +173,36 @@ abstract final class Validators {
     longest: addressMaximum,
   );
 
-  static String? cityName(String? value) => _written(
+  static String? lookupName(String? value) => _written(
     value,
     missing: 'Enter a name.',
     noun: 'A name',
     longest: nameMaximum,
   );
+
+  static String? countryCode(String? value) {
+    if (_isBlank(value)) {
+      return 'Enter the two letter country code.';
+    }
+
+    return _countryCodeShape.hasMatch(value!.trim())
+        ? null
+        : 'A country code is two letters.';
+  }
+
+  static String? code(String? value) => _written(
+    value,
+    missing: 'Enter a code.',
+    noun: 'A code',
+    longest: codeMaximum,
+  );
+
+  // A description a reference row may go without, and only its length is
+  // checked.
+  static String? optionalDescription(String? value) =>
+      _isBlank(value) || value!.trim().length <= descriptionMaximum
+      ? null
+      : 'A description is at most $descriptionMaximum characters long.';
 
   static String? cancellationReason(String? value) => _written(
     value,
@@ -287,6 +312,7 @@ abstract final class Validators {
   static const String _bosniaCode = '+387';
 
   static final RegExp _usernameShape = RegExp(r'^[A-Za-z0-9._-]+$');
+  static final RegExp _countryCodeShape = RegExp(r'^[A-Za-z]{2}$');
   static final RegExp _emailShape = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
   static final RegExp _separators = RegExp(r'[\s\-()]');
   static final RegExp _localNumber = RegExp(r'^0\d{8}$');

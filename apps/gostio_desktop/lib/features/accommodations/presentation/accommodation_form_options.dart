@@ -36,7 +36,9 @@ class AccommodationFormOptions {
       reference.cities(),
       reference.accommodationTypes(),
       reference.accommodationCategories(),
-      asAdministrator ? reference.countries() : _nothing<LookupItem>(),
+      asAdministrator
+          ? reference.countriesHoldingCities()
+          : _nothing<LookupItem>(),
       asAdministrator && forCreating ? users.hosts() : _nothing<User>(),
     ]);
 

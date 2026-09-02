@@ -15,6 +15,7 @@ abstract final class Validators {
   // refuse is refused here first and named the same way.
   static const int titleMaximum = 200;
   static const int descriptionMaximum = 2000;
+  static const int newsBodyMaximum = 4000;
   static const int addressMaximum = 250;
   static const int nameMaximum = 100;
   static const int usernameMaximum = 50;
@@ -157,6 +158,13 @@ abstract final class Validators {
     missing: 'Enter a description.',
     noun: 'A description',
     longest: descriptionMaximum,
+  );
+
+  static String? newsBody(String? value) => _written(
+    value,
+    missing: 'Enter the text.',
+    noun: 'A text',
+    longest: newsBodyMaximum,
   );
 
   static String? address(String? value) => _written(

@@ -6,10 +6,11 @@ import 'package:gostio_desktop/features/experiences/data/experience_slot.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_slot_query.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_slots_repository.dart';
 import 'package:gostio_desktop/features/experiences/presentation/experience_slots_tab.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+
+import '../../../support/bookings_double.dart';
 
 void main() {
   testWidgets('a read that failed says what the API said, with its trace', (
@@ -136,28 +137,13 @@ Widget _tab(_Slots slots, {int held = 0}) => MultiProvider(
   ),
 );
 
-class _Reservations implements ReservationsRepository {
+class _Reservations extends BookingsDouble {
   const _Reservations(this._held);
 
   final int _held;
 
   @override
   Future<int> countForSlot(int slotId) async => _held;
-
-  @override
-  Future<int> countForAccommodation(int accommodationId) =>
-      throw UnimplementedError();
-
-  @override
-  Future<int> countForExperience(int experienceId) =>
-      throw UnimplementedError();
-
-  @override
-  Future<List<Reservation>> forAccommodationWindow(
-    int accommodationId, {
-    required DateTime from,
-    required DateTime to,
-  }) => throw UnimplementedError();
 }
 
 class _Slots implements ExperienceSlotsRepository {
@@ -190,6 +176,10 @@ class _Slots implements ExperienceSlotsRepository {
       totalCount: rows.length,
     );
   }
+
+  @override
+  Future<ExperienceSlot> get(int experienceId, int slotId) =>
+      throw UnimplementedError();
 
   @override
   Future<ExperienceSlot> add(

@@ -227,6 +227,10 @@ class _Slots implements ExperienceSlotsRepository {
   }
 
   @override
+  Future<ExperienceSlot> get(int experienceId, int slotId) =>
+      throw UnimplementedError();
+
+  @override
   Future<ExperienceSlot> add(
     int experienceId, {
     required DateTime startTime,

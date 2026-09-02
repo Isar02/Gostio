@@ -41,6 +41,9 @@ class _FailingReference implements ReferenceRepository {
   Future<List<LookupItem>> countries() async => const <LookupItem>[];
 
   @override
+  Future<List<LookupItem>> reservationStatuses() => throw UnimplementedError();
+
+  @override
   Future<LookupItem> addCity({required String name, required int countryId}) =>
       throw UnimplementedError();
 }

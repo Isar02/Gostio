@@ -149,10 +149,16 @@ Reservation _booking({
   int statusId = _pending,
 }) => Reservation(
   id: id,
+  userId: 21,
   guestName: 'Ana',
+  listingTitle: 'Stone villa on the hill above Neum',
   guestCount: 2,
   reservationStatusId: statusId,
   status: 'Pending',
+  totalPrice: 360,
+  isPaid: false,
+  expiresAt: DateTime.utc(2026, 9),
+  createdAt: DateTime.utc(2026, 8, 20),
   checkInDate: DateTime(2026, 9, arrives),
   checkOutDate: DateTime(2026, 9, departs),
 );

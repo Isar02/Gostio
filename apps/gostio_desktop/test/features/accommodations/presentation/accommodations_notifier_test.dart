@@ -5,6 +5,7 @@ import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodations_repository.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodations_notifier.dart';
+import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 void main() {
   test('the catalogue is asked for without a host', () async {
@@ -63,6 +64,9 @@ class _FakeAccommodationsRepository implements AccommodationsRepository {
   // asking the wrong question.
   @override
   Future<Accommodation> get(int id) => throw UnimplementedError();
+
+  @override
+  Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
   Future<Accommodation> create(AccommodationDraft draft, {int? hostId}) =>

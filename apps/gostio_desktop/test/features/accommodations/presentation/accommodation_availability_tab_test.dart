@@ -11,6 +11,8 @@ import 'package:gostio_desktop/features/reservations/data/reservations_repositor
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import '../../../support/bookings_double.dart';
+
 void main() {
   testWidgets('a read that failed says what the API said, with its trace', (
     WidgetTester tester,
@@ -118,10 +120,16 @@ final AccommodationAvailability _blocked = AccommodationAvailability(
 
 final Reservation _booking = Reservation(
   id: 1,
+  userId: 21,
   guestName: 'Ana Marić',
+  listingTitle: 'Stone villa on the hill above Neum',
   guestCount: 2,
   reservationStatusId: 2,
   status: 'Confirmed',
+  totalPrice: 360,
+  isPaid: true,
+  expiresAt: DateTime.utc(2026, 9),
+  createdAt: DateTime.utc(2026, 8, 20),
   checkInDate: _on(21),
   checkOutDate: _on(22),
 );
@@ -180,19 +188,10 @@ class _Availability implements AccommodationAvailabilityRepository {
       throw UnimplementedError();
 }
 
-class _Reservations implements ReservationsRepository {
-  @override
-  Future<int> countForExperience(int experienceId) async => 0;
-  @override
-  Future<int> countForSlot(int slotId) async => 0;
-
+class _Reservations extends BookingsDouble {
   const _Reservations(this.rows);
 
   final List<Reservation> rows;
-
-  @override
-  Future<int> countForAccommodation(int accommodationId) =>
-      throw UnimplementedError();
 
   @override
   Future<List<Reservation>> forAccommodationWindow(

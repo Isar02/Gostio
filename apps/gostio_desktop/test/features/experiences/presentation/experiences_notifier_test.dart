@@ -5,6 +5,7 @@ import 'package:gostio_desktop/features/experiences/data/experience_draft.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_query.dart';
 import 'package:gostio_desktop/features/experiences/data/experiences_repository.dart';
 import 'package:gostio_desktop/features/experiences/presentation/experiences_notifier.dart';
+import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 void main() {
   test('the catalogue is asked for without a host', () async {
@@ -60,6 +61,9 @@ class _Experiences implements ExperiencesRepository {
   // asking the wrong question.
   @override
   Future<Experience> get(int id) => throw UnimplementedError();
+
+  @override
+  Future<List<LookupItem>> titles({int? hostId}) => throw UnimplementedError();
 
   @override
   Future<Experience> create(ExperienceDraft draft, {int? hostId}) =>

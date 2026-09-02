@@ -61,6 +61,10 @@ class ApiClient {
   Future<JsonMap> put(String path, {Object? body}) async =>
       _asObject(await _request('PUT', path, body: body));
 
+  Future<void> putNoContent(String path, {Object? body}) async {
+    await _request('PUT', path, body: body);
+  }
+
   // The boundary is only known once the body is built, so dio writes the
   // content type itself and the one on the client is left alone.
   Future<JsonMap> upload(

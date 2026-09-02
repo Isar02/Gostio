@@ -3,6 +3,12 @@ import 'dart:convert';
 import '../formatting/app_numbers.dart';
 
 abstract final class Validators {
+  // The server's own sentence for a number it will not take.
+  static const String phoneNumberMeans =
+      'Enter a phone number with its country code, as +387 61 234 567 or '
+      '+49 170 1234567. A number without one is read as Bosnian: 061 234 567.';
+
+  static const int passwordMinimumLength = 8;
   static const int passwordMaximumBytes = 72;
 
   // The lengths and bounds the server holds, mirrored so a value it would
@@ -11,6 +17,9 @@ abstract final class Validators {
   static const int descriptionMaximum = 2000;
   static const int addressMaximum = 250;
   static const int nameMaximum = 100;
+  static const int usernameMaximum = 50;
+  static const int emailMaximum = 254;
+  static const int phoneMaximum = 30;
   static const int reasonMaximum = 1000;
   static const double smallestAmount = 0.01;
   static const double largestAmount = 1000000;
@@ -33,6 +42,107 @@ abstract final class Validators {
 
     return null;
   }
+
+  static String? firstName(String? value) => _written(
+    value,
+    missing: 'Enter a first name.',
+    noun: 'A first name',
+    longest: nameMaximum,
+  );
+
+  static String? lastName(String? value) => _written(
+    value,
+    missing: 'Enter a last name.',
+    noun: 'A last name',
+    longest: nameMaximum,
+  );
+
+  static String? accountUsername(String? value) {
+    final String? written = _written(
+      value,
+      missing: 'Enter a username.',
+      noun: 'A username',
+      longest: usernameMaximum,
+    );
+
+    if (written != null) {
+      return written;
+    }
+
+    return _usernameShape.hasMatch(value!.trim())
+        ? null
+        : 'A username holds letters, digits, dots, dashes and underscores.';
+  }
+
+  static String? emailAddress(String? value) {
+    final String? written = _written(
+      value,
+      missing: 'Enter an email address.',
+      noun: 'An email address',
+      longest: emailMaximum,
+    );
+
+    return written ??
+        (_emailShape.hasMatch(value!.trim())
+            ? null
+            : 'This is not an email address.');
+  }
+
+  // A number is optional, and one that is typed is read the way the server
+  // reads it: separators mean nothing, and a local number is Bosnian.
+  static String? phoneNumber(String? value) {
+    if (_isBlank(value)) {
+      return null;
+    }
+
+    final String typed = value!.trim();
+
+    if (typed.length > phoneMaximum) {
+      return 'A phone number is at most $phoneMaximum characters long.';
+    }
+
+    return _dialled(typed) == null ? phoneNumberMeans : null;
+  }
+
+  static String? newPassword(String? value, {required String missing}) {
+    if (_isBlank(value)) {
+      return missing;
+    }
+
+    if (value!.length < passwordMinimumLength) {
+      return 'A password is at least $passwordMinimumLength characters long.';
+    }
+
+    return utf8.encode(value).length > passwordMaximumBytes
+        ? 'A password is at most $passwordMaximumBytes bytes long once '
+              'written as UTF-8.'
+        : null;
+  }
+
+  static String? repeatedPassword(
+    String? value,
+    String password, {
+    required String missing,
+  }) {
+    if (_isBlank(value)) {
+      return missing;
+    }
+
+    return value == password ? null : 'The two passwords do not match.';
+  }
+
+  static String? rejectionReason(String? value) => _written(
+    value,
+    missing: 'Say why the request is being turned down.',
+    noun: 'A reason',
+    longest: reasonMaximum,
+  );
+
+  // A reason an approval may go without, and only its length is checked.
+  static String? decisionNote(String? value) =>
+      _isBlank(value) || value!.trim().length <= reasonMaximum
+      ? null
+      : 'A reason is at most $reasonMaximum characters long.';
 
   static String? title(String? value) => _written(
     value,
@@ -161,5 +271,24 @@ abstract final class Validators {
     return null;
   }
 
+  // The stored form of a number, or null when it is not one. Separators carry
+  // no meaning, and a nine-digit local number is dialled in Bosnia.
+  static String? _dialled(String number) {
+    final String stripped = number.replaceAll(_separators, '');
+    final String international = _localNumber.hasMatch(stripped)
+        ? '$_bosniaCode${stripped.substring(1)}'
+        : stripped;
+
+    return _internationalNumber.hasMatch(international) ? international : null;
+  }
+
   static bool _isBlank(String? value) => value == null || value.trim().isEmpty;
+
+  static const String _bosniaCode = '+387';
+
+  static final RegExp _usernameShape = RegExp(r'^[A-Za-z0-9._-]+$');
+  static final RegExp _emailShape = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static final RegExp _separators = RegExp(r'[\s\-()]');
+  static final RegExp _localNumber = RegExp(r'^0\d{8}$');
+  static final RegExp _internationalNumber = RegExp(r'^\+[1-9]\d{7,14}$');
 }

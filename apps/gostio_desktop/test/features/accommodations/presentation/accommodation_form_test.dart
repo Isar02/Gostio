@@ -11,23 +11,23 @@ import 'package:gostio_desktop/features/accommodations/data/accommodations_repos
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_detail_notifier.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_form.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
-import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
-import 'package:gostio_desktop/features/users/data/users_repository.dart';
 
 import '../../../support/bookings_double.dart';
+import '../../../support/reference_double.dart';
+import '../../../support/users_double.dart';
 
 void main() {
   testWidgets('a listing is not created until the map and the lists answer', (
     WidgetTester tester,
   ) async {
-    final _Repositories repositories = _Repositories();
-    final AccommodationDetailNotifier notifier = await _notifier(repositories);
+    final _Stays stays = _Stays();
+    final AccommodationDetailNotifier notifier = await _notifier(stays);
 
     await tester.pumpWidget(_form(notifier));
     await tester.tap(find.text('Create listing'));
     await tester.pump();
 
-    expect(repositories.created, isNull);
+    expect(stays.created, isNull);
     expect(find.text('Enter a title.'), findsOneWidget);
     expect(find.text('Choose the type of accommodation.'), findsOneWidget);
     expect(
@@ -40,9 +40,9 @@ void main() {
   testWidgets('editing asks nothing of a field the listing already answers', (
     WidgetTester tester,
   ) async {
-    final _Repositories repositories = _Repositories();
+    final _Stays stays = _Stays();
     final AccommodationDetailNotifier notifier = await _notifier(
-      repositories,
+      stays,
       accommodationId: 1,
     );
 
@@ -50,7 +50,7 @@ void main() {
     await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
 
-    final AccommodationDraft? written = repositories.updated;
+    final AccommodationDraft? written = stays.updated;
 
     expect(written, isNotNull);
     expect(written!.title, 'Villa Neum');
@@ -58,15 +58,15 @@ void main() {
     expect(written.accommodationTypeId, 4);
     expect(written.latitude, 42.92);
     expect(written.pricePerNight, 180.5);
-    expect(repositories.updatedActive, isTrue);
+    expect(stays.updatedActive, isTrue);
   });
   testWidgets('a form left while it saves does not reach for a dead screen', (
     WidgetTester tester,
   ) async {
     final Completer<void> saving = Completer<void>();
-    final _Repositories repositories = _Repositories(gate: saving);
+    final _Stays stays = _Stays(gate: saving);
     final AccommodationDetailNotifier notifier = await _notifier(
-      repositories,
+      stays,
       accommodationId: 1,
     );
     bool reported = false;
@@ -88,13 +88,13 @@ void main() {
 }
 
 Future<AccommodationDetailNotifier> _notifier(
-  _Repositories repositories, {
+  _Stays stays, {
   int? accommodationId,
 }) async {
   final AccommodationDetailNotifier notifier = AccommodationDetailNotifier(
-    repositories,
-    repositories,
-    repositories,
+    stays,
+    _Reference(),
+    _Users(),
     const _Bookings(),
     accommodationId: accommodationId,
     asAdministrator: false,
@@ -144,15 +144,8 @@ Accommodation _listing() => Accommodation(
   createdAt: DateTime.utc(2026, 1, 1),
 );
 
-class _Repositories
-    implements AccommodationsRepository, ReferenceRepository, UsersRepository {
-  @override
-  Future<List<LookupItem>> experienceCategories() async => const <LookupItem>[];
-
-  @override
-  Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[];
-
-  _Repositories({this.gate});
+class _Stays implements AccommodationsRepository {
+  _Stays({this.gate});
 
   // Held open so a test can leave the screen while the write is in flight.
   final Completer<void>? gate;
@@ -191,6 +184,16 @@ class _Repositories
   Future<void> delete(int id) async {}
 
   @override
+  Future<PagedResult<Accommodation>> search({
+    required AccommodationQuery query,
+    int page = 1,
+    int pageSize = PagedResult.defaultPageSize,
+    int? hostId,
+  }) => throw UnimplementedError();
+}
+
+class _Reference extends ReferenceDouble {
+  @override
   Future<List<LookupItem>> cities() async => <LookupItem>[
     const LookupItem(id: 18, name: 'Neum'),
   ];
@@ -210,21 +213,11 @@ class _Repositories
 
   @override
   Future<List<LookupItem>> amenities() async => const <LookupItem>[];
+}
 
-  @override
-  Future<LookupItem> addCity({required String name, required int countryId}) =>
-      throw UnimplementedError();
-
+class _Users extends UsersDouble {
   @override
   Future<List<User>> hosts() async => const <User>[];
-
-  @override
-  Future<PagedResult<Accommodation>> search({
-    required AccommodationQuery query,
-    int page = 1,
-    int pageSize = PagedResult.defaultPageSize,
-    int? hostId,
-  }) => throw UnimplementedError();
 }
 
 // The bookings against the listing are read through their own repository,

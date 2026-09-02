@@ -10,8 +10,9 @@ import 'package:gostio_desktop/features/experiences/data/experience_query.dart';
 import 'package:gostio_desktop/features/experiences/data/experiences_repository.dart';
 import 'package:gostio_desktop/features/listings/data/listing_address.dart';
 import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
-import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
 import 'package:gostio_desktop/features/reservations/presentation/reservation_filter_options.dart';
+
+import '../../../support/reference_double.dart';
 
 void main() {
   test('both catalogues fill one list, each on its own side', () async {
@@ -42,7 +43,7 @@ void main() {
   });
 }
 
-class _Reference implements ReferenceRepository {
+class _Reference extends ReferenceDouble {
   @override
   Future<List<LookupItem>> reservationStatuses() async => const <LookupItem>[
     LookupItem(id: 1, name: 'Pending'),
@@ -50,29 +51,6 @@ class _Reference implements ReferenceRepository {
     LookupItem(id: 3, name: 'Cancelled'),
     LookupItem(id: 4, name: 'Completed'),
   ];
-
-  @override
-  Future<List<LookupItem>> cities() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> countries() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> accommodationTypes() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> accommodationCategories() =>
-      throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> experienceCategories() => throw UnimplementedError();
-
-  @override
-  Future<List<LookupItem>> amenities() => throw UnimplementedError();
-
-  @override
-  Future<LookupItem> addCity({required String name, required int countryId}) =>
-      throw UnimplementedError();
 }
 
 class _Stays implements AccommodationsRepository {

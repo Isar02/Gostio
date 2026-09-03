@@ -23,6 +23,7 @@ abstract final class Validators {
   static const int phoneMaximum = 30;
   static const int codeMaximum = 30;
   static const int reasonMaximum = 1000;
+  static const int messageBodyMaximum = 2000;
   static const double smallestAmount = 0.01;
   static const double largestAmount = 1000000;
 
@@ -165,6 +166,13 @@ abstract final class Validators {
     missing: 'Enter the text.',
     noun: 'A text',
     longest: newsBodyMaximum,
+  );
+
+  static String? messageBody(String? value) => _written(
+    value,
+    missing: 'A message needs something in it.',
+    noun: 'A message',
+    longest: messageBodyMaximum,
   );
 
   static String? address(String? value) => _written(

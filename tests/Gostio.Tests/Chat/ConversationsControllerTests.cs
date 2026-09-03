@@ -116,6 +116,7 @@ public sealed class ConversationsControllerTests : IAsyncLifetime
     {
         Id = id,
         Type = nameof(ConversationType.Direct),
+        OpenedByUserId = 21,
         ReservationId = null,
         ListingTitle = null,
         Participants = [],

@@ -6,6 +6,10 @@ public sealed class ConversationResponse : IIdentified
 
     public required string Type { get; init; }
 
+    // The account that opened the thread, which is the one the first message
+    // came from.
+    public required int OpenedByUserId { get; init; }
+
     public int? ReservationId { get; init; }
 
     public string? ListingTitle { get; init; }

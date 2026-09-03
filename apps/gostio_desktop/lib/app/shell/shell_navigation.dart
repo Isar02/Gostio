@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
+import '../../features/messages/presentation/unread_messages_badge.dart';
 import 'app_navigation.dart';
 import 'app_section.dart';
 import 'workspace.dart';
@@ -131,8 +132,14 @@ class _Link extends StatelessWidget {
       isSelected: isSelected,
       isNested: isNested,
       onTap: () => onOpen(link.section),
+      trailing: _waiting(link.section),
     );
   }
+
+  // The one section that says how much is waiting inside it. Nothing else the
+  // navigation reaches arrives without the account asking for it.
+  static Widget? _waiting(AppSection section) =>
+      section == AppSection.messages ? const UnreadMessagesBadge() : null;
 }
 
 class _Group extends StatelessWidget {

@@ -93,10 +93,28 @@ class ReservationsRepository {
     ).totalCount;
   }
 
-  // The window matches on the days a booking takes up rather than on the ones
-  // it was written on, so a stay reaching past either edge comes back too.
   Future<List<Reservation>> forAccommodationWindow(
     int accommodationId, {
+    required DateTime from,
+    required DateTime to,
+  }) => _inWindow(
+    <String, dynamic>{'accommodationId': accommodationId},
+    from: from,
+    to: to,
+  );
+
+  // Every listing the host owns at once, which is how a month is laid across
+  // all of them rather than read one calendar at a time.
+  Future<List<Reservation>> forHostWindow(
+    int hostId, {
+    required DateTime from,
+    required DateTime to,
+  }) => _inWindow(<String, dynamic>{'hostId': hostId}, from: from, to: to);
+
+  // The window matches on the days a booking takes up rather than on the ones
+  // it was written on, so a stay reaching past either edge comes back too.
+  Future<List<Reservation>> _inWindow(
+    JsonMap matching, {
     required DateTime from,
     required DateTime to,
   }) => readEveryPage<Reservation>(
@@ -104,7 +122,7 @@ class ReservationsRepository {
     _root,
     read: Reservation.fromJson,
     query: <String, dynamic>{
-      'accommodationId': accommodationId,
+      ...matching,
       'from': CalendarDays.write(from),
       'to': CalendarDays.write(to),
     },

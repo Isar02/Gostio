@@ -6,6 +6,7 @@ Reservation booking({
   int id = 1,
   int reservationStatusId = 1,
   String status = 'Pending',
+  String guestName = 'Ana Marić',
   bool isPaid = false,
   int? accommodationId = 4,
   int? experienceId,
@@ -18,7 +19,7 @@ Reservation booking({
 }) => Reservation(
   id: id,
   userId: 21,
-  guestName: 'Ana Marić',
+  guestName: guestName,
   listingTitle: 'Stone villa on the hill above Neum',
   guestCount: 4,
   reservationStatusId: reservationStatusId,

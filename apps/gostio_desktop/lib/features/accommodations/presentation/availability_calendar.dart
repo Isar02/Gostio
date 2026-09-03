@@ -5,8 +5,8 @@ import '../../../core/formatting/app_dates.dart';
 import '../../../core/formatting/app_numbers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
+import '../../listings/presentation/booking_colours.dart';
 import '../../reservations/data/reservation.dart';
-import '../../reservations/data/reservation_status.dart';
 import '../data/accommodation_availability.dart';
 import 'availability_month.dart';
 import 'availability_words.dart';
@@ -206,11 +206,7 @@ class _Bar extends StatelessWidget {
     );
   }
 
-  Color get _ground => switch (bar.booking.standing) {
-    ReservationStatus.confirmed => AppColors.indigo,
-    ReservationStatus.pending => AppColors.warning,
-    _ => AppColors.neutral,
-  };
+  Color get _ground => BookingColours.bar(bar.booking.standing);
 
   String get _label => bar.startsHere
       ? '${bar.booking.guestName} · ${bar.booking.guestCount}'

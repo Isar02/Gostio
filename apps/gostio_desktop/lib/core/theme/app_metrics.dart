@@ -54,6 +54,17 @@ abstract final class AppSizes {
   static const double photoCoverHeight = 270;
   static const double calendarBar = 18;
   static const double calendarDay = 22;
+
+  // A month laid across every listing: the narrowest a day column may be and
+  // still be read, a name column wide enough to tell two titles apart, and the
+  // gutter the scrollbar sits in where the month is wider than the window.
+  static const double timelineDay = 28;
+  static const double timelineRow = 40;
+  static const double timelineBar = 22;
+  static const double timelineListing = 220;
+  static const double timelineGutter = 12;
+  static const double overviewList = 260;
+  static const double overviewChart = 200;
   static const double inbox = 340;
   static const double inboxRow = 76;
   static const double bubble = 460;

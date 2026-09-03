@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:gostio_desktop/core/models/paged_result.dart';
 import 'package:gostio_desktop/core/models/user.dart';
+import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_desktop/core/time/calendar_days.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/experiences/data/experience.dart';
@@ -8,6 +12,11 @@ import 'package:gostio_desktop/features/host_applications/data/host_application.
 import 'package:gostio_desktop/features/host_applications/data/host_application_query.dart';
 import 'package:gostio_desktop/features/host_applications/data/host_applications_repository.dart';
 import 'package:gostio_desktop/features/listings/data/listing_address.dart';
+import 'package:gostio_desktop/features/overview/data/host_overview.dart';
+import 'package:gostio_desktop/features/overview/data/overview_month.dart';
+import 'package:gostio_desktop/features/overview/data/overview_repository.dart';
+import 'package:gostio_desktop/features/overview/data/platform_overview.dart';
+import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reports/data/listing_report.dart';
 import 'package:gostio_desktop/features/reports/data/report_range.dart';
 import 'package:gostio_desktop/features/reports/data/report_scope.dart';
@@ -21,6 +30,7 @@ import 'account_fixture.dart';
 import 'application_fixture.dart';
 import 'bookings_double.dart';
 import 'catalogue_doubles.dart';
+import 'overview_fixture.dart';
 import 'report_fixture.dart';
 import 'users_double.dart';
 
@@ -207,5 +217,83 @@ class OverviewReportsDouble implements ReportsRepository {
     targets.add(target);
 
     return cities?[target] ?? listingReport(rows: const <ListingReportRow>[]);
+  }
+}
+
+// The one seam both overview screens stand on. Held calls are how a test
+// decides which of two months lands first.
+class OverviewDouble implements OverviewRepository {
+  OverviewDouble({
+    HostOverview? figures,
+    this.standing,
+    this.listings = const <LookupItem>[
+      LookupItem(id: 4, name: 'Stone villa on the hill above Neum'),
+    ],
+    this.bookings = const <Reservation>[],
+    this.failing,
+    this.holds = false,
+  }) : figures = figures ?? hostOverview();
+
+  final HostOverview figures;
+  final PlatformOverview? standing;
+  final List<LookupItem> listings;
+  final List<Reservation> bookings;
+  final ApiException? failing;
+  final bool holds;
+
+  final List<int> hosts = <int>[];
+  final List<DateTime> months = <DateTime>[];
+  final List<Completer<void>> waits = <Completer<void>>[];
+
+  int platformReads = 0;
+
+  @override
+  Future<HostOverview> host(int hostId) async {
+    hosts.add(hostId);
+    await _held();
+
+    return _answer(figures);
+  }
+
+  @override
+  Future<OverviewMonth> month(DateTime month, {required int hostId}) async {
+    months.add(month);
+    await _held();
+
+    return _answer(
+      OverviewMonth.of(
+        month: month,
+        listings: listings,
+        bookings: bookings,
+        today: CalendarDays.today(),
+      ),
+    );
+  }
+
+  @override
+  Future<PlatformOverview> platform() async {
+    platformReads++;
+    await _held();
+
+    return _answer(standing ?? (throw UnimplementedError()));
+  }
+
+  Future<void> _held() {
+    if (!holds) {
+      return Future<void>.value();
+    }
+
+    final Completer<void> wait = Completer<void>();
+    waits.add(wait);
+
+    return wait.future;
+  }
+
+  T _answer<T>(T value) {
+    if (failing case final ApiException refusal) {
+      throw refusal;
+    }
+
+    return value;
   }
 }

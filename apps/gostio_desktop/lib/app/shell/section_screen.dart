@@ -9,6 +9,8 @@ import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/news/presentation/news_screen.dart';
 import '../../features/reference/data/reference_table.dart';
 import '../../features/reference/presentation/reference_screen.dart';
+import '../../features/reports/data/report_scope.dart';
+import '../../features/reports/presentation/reports_screen.dart';
 import '../../features/reservations/presentation/reservations_screen.dart';
 import '../../features/reviews/presentation/reviews_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
@@ -49,6 +51,13 @@ class SectionScreen extends StatelessWidget {
       AppSection.hostApplications => const HostApplicationsScreen(),
       AppSection.reviews => const ReviewsScreen(),
       AppSection.news => const NewsScreen(),
+      // The two route families are told apart by the panel rather than by the
+      // roles the token holds, so an account in both asks each one on purpose.
+      AppSection.reports => ReportsScreen(
+        scope: mode == WorkspaceMode.administrator
+            ? ReportScope.platform
+            : ReportScope.mine,
+      ),
       // Both panels read the threads the server hands the caller. A host is in
       // every thread they reach; an administrator also oversees the support
       // queue, so the host view asks for the ones they are actually in.

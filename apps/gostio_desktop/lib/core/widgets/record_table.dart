@@ -112,7 +112,8 @@ class _Header<T> extends StatelessWidget {
       child: Row(
         children: _laidOut<T>(
           columns,
-          (TableColumn<T> column) => Text(column.label, style: style),
+          (int index, TableColumn<T> column) =>
+              Text(column.label, style: style),
         ),
       ),
     );
@@ -148,13 +149,52 @@ class _Row<T> extends StatelessWidget {
         child: Row(
           children: _laidOut<T>(
             columns,
-            (TableColumn<T> column) => DefaultTextStyle(
+            (int index, TableColumn<T> column) => DefaultTextStyle(
               style: body,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               child: column.cell(context, row),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// A row under the rows, laid out on the same columns they are, so a figure
+// that sums a column cannot drift out from under it.
+class TableSummaryRow<T> extends StatelessWidget {
+  const TableSummaryRow({required this.columns, required this.cells, super.key})
+    : assert(
+        columns.length == cells.length,
+        'a summary says one thing per column',
+      );
+
+  final List<TableColumn<T>> columns;
+  final List<String> cells;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle? style = Theme.of(context).textTheme.bodyMedium
+        ?.copyWith(fontWeight: FontWeight.w600);
+
+    return Container(
+      height: AppSizes.footerRow,
+      decoration: const BoxDecoration(
+        color: AppColors.hover,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.borderStrong,
+            width: AppSizes.stroke,
+          ),
+        ),
+      ),
+      child: Row(
+        children: _laidOut<T>(
+          columns,
+          (int index, TableColumn<T> column) =>
+              Text(cells[index], style: style),
         ),
       ),
     );
@@ -177,23 +217,22 @@ class _NothingToShow extends StatelessWidget {
 
 List<Widget> _laidOut<T>(
   List<TableColumn<T>> columns,
-  Widget Function(TableColumn<T> column) content,
+  Widget Function(int index, TableColumn<T> column) content,
 ) {
-  return columns
-      .map((TableColumn<T> column) {
-        final Widget cell = Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Align(
-            alignment: column.numeric
-                ? Alignment.centerRight
-                : Alignment.centerLeft,
-            child: content(column),
-          ),
-        );
+  return List<Widget>.generate(columns.length, (int index) {
+    final TableColumn<T> column = columns[index];
+    final Widget cell = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Align(
+        alignment: column.numeric
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
+        child: content(index, column),
+      ),
+    );
 
-        return column.width == null
-            ? Expanded(flex: column.flex, child: cell)
-            : SizedBox(width: column.width, child: cell);
-      })
-      .toList(growable: false);
+    return column.width == null
+        ? Expanded(flex: column.flex, child: cell)
+        : SizedBox(width: column.width, child: cell);
+  }, growable: false);
 }

@@ -1,12 +1,18 @@
 import 'package:flutter/foundation.dart';
 
 enum ListingKind {
-  accommodation('/accommodations'),
-  experience('/experiences');
+  accommodation('/accommodations', 'Accommodations'),
+  experience('/experiences', 'Experiences');
 
-  const ListingKind(this.root);
+  const ListingKind(this.root, this.catalogueName);
 
   final String root;
+
+  // What the API calls this whole side of the catalogue, where a request names
+  // the side rather than a listing on it.
+  final String catalogueName;
+
+  String get slug => root.substring(1);
 }
 
 @immutable

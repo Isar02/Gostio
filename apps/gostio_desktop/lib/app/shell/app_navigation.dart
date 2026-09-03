@@ -92,6 +92,7 @@ abstract final class AppNavigation {
     NavigationLink(AppSection.accommodations, label: 'My accommodations'),
     NavigationLink(AppSection.experiences, label: 'My experiences'),
     NavigationLink(AppSection.reservations),
+    NavigationLink(AppSection.reports),
     NavigationLink(AppSection.messages),
     NavigationLink(AppSection.profile),
   ];

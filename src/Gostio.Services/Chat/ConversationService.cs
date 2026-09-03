@@ -24,6 +24,7 @@ internal sealed class ConversationService(
         {
             Id = conversation.Id,
             Type = conversation.Type.ToString(),
+            OpenedByUserId = conversation.OpenedByUserId,
             ReservationId = conversation.ReservationId,
             ListingTitle = conversation.Reservation == null
                 ? null
@@ -38,6 +39,7 @@ internal sealed class ConversationService(
                     UserId = participant.UserId,
                     Username = participant.User.Username,
                     Name = participant.User.FirstName + " " + participant.User.LastName,
+                    HasProfileImage = participant.User.ProfileImage != null,
                     JoinedAt = participant.JoinedAt,
                     LastReadAt = participant.LastReadAt,
                 })

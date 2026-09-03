@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
+import '../../../core/widgets/count_badge.dart';
 import 'notifications_notifier.dart';
 import 'notifications_panel.dart';
 
@@ -41,38 +41,11 @@ class NotificationBell extends StatelessWidget {
                   Positioned(
                     top: -AppSpacing.xs,
                     right: -AppSpacing.sm,
-                    child: _Count(unread),
+                    child: CountBadge(unread),
                   ),
               ],
             ),
           ),
-    );
-  }
-}
-
-class _Count extends StatelessWidget {
-  const _Count(this.unread);
-
-  final int unread;
-
-  static const int _largest = 99;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: AppSizes.badge,
-      constraints: const BoxConstraints(minWidth: AppSizes.badge),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: AppColors.indigo,
-        borderRadius: AppRadii.pill,
-      ),
-      child: Text(
-        unread > _largest ? '$_largest+' : '$unread',
-        style: Theme.of(context).textTheme.labelSmall
-            ?.copyWith(color: AppColors.surface),
-      ),
     );
   }
 }

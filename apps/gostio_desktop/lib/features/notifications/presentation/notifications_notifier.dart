@@ -41,10 +41,11 @@ class NotificationsNotifier
   Future<void> load({
     required int page,
     required NotificationFilter query,
+    bool quietly = false,
   }) async {
     final Future<void> counting = _refreshUnread();
 
-    await super.load(page: page, query: query);
+    await super.load(page: page, query: query, quietly: quietly);
     await counting;
   }
 

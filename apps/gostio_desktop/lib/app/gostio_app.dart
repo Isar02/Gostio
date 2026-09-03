@@ -15,6 +15,8 @@ import '../features/experiences/data/experience_slots_repository.dart';
 import '../features/experiences/data/experiences_repository.dart';
 import '../features/host_applications/data/host_applications_repository.dart';
 import '../features/listings/data/listing_photos_repository.dart';
+import '../features/messages/data/conversations_repository.dart';
+import '../features/messages/data/messages_repository.dart';
 import '../features/news/data/news_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/reference/data/reference_repository.dart';
@@ -33,6 +35,7 @@ class GostioApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: <SingleChildWidget>[
+        Provider<AppSettings>.value(value: settings),
         Provider<ApiClient>(
           create: (BuildContext context) =>
               ApiClient(baseUrl: settings.apiBaseUrl),
@@ -100,6 +103,14 @@ class GostioApp extends StatelessWidget {
         Provider<NewsRepository>(
           create: (BuildContext context) =>
               NewsRepository(context.read<ApiClient>()),
+        ),
+        Provider<ConversationsRepository>(
+          create: (BuildContext context) =>
+              ConversationsRepository(context.read<ApiClient>()),
+        ),
+        Provider<MessagesRepository>(
+          create: (BuildContext context) =>
+              MessagesRepository(context.read<ApiClient>()),
         ),
       ],
       child: MaterialApp(

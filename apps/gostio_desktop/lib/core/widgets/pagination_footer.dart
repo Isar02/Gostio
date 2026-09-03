@@ -38,31 +38,47 @@ class PaginationFooter extends StatelessWidget {
           top: BorderSide(color: AppColors.border, width: AppSizes.hairline),
         ),
       ),
-      child: Row(
-        children: <Widget>[
-          Text(
-            totalCount == 0
-                ? 'No rows'
-                : '$_firstOnPage–$_lastOnPage of $totalCount',
-            style: counts,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text('· $pageSize per page', style: counts),
-          const Spacer(),
-          IconButton(
-            onPressed: page > 1 ? () => onPageChanged(page - 1) : null,
-            icon: const Icon(Icons.chevron_left),
-            tooltip: 'Previous page',
-          ),
-          Text('Page $page of $_totalPages', style: counts),
-          IconButton(
-            onPressed: page < _totalPages
-                ? () => onPageChanged(page + 1)
-                : null,
-            icon: const Icon(Icons.chevron_right),
-            tooltip: 'Next page',
-          ),
-        ],
+      // A list beside another one has a column rather than a page to fit into.
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints room) {
+          final bool isRoomy = room.maxWidth >= AppSizes.footerRoomy;
+
+          return Row(
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  totalCount == 0
+                      ? 'No rows'
+                      : '$_firstOnPage–$_lastOnPage of $totalCount',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: counts,
+                ),
+              ),
+              if (isRoomy) ...<Widget>[
+                const SizedBox(width: AppSpacing.sm),
+                Text('· $pageSize per page', style: counts),
+              ],
+              const Spacer(),
+              IconButton(
+                onPressed: page > 1 ? () => onPageChanged(page - 1) : null,
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Previous page',
+              ),
+              Text(
+                isRoomy ? 'Page $page of $_totalPages' : '$page / $_totalPages',
+                style: counts,
+              ),
+              IconButton(
+                onPressed: page < _totalPages
+                    ? () => onPageChanged(page + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Next page',
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -44,13 +44,25 @@ abstract class PagedNotifier<T, TQuery> extends ScreenNotifier {
 
   Future<void> reload() => load(page: _page, query: _query);
 
+  // Announces nothing until it lands, drops a failure nobody asked for, and
+  // stands aside for a load already in flight.
+  Future<void> refreshQuietly() => _isLoading
+      ? Future<void>.value()
+      : load(page: _page, query: _query, quietly: true);
+
   @protected
-  Future<void> load({required int page, required TQuery query}) async {
+  Future<void> load({
+    required int page,
+    required TQuery query,
+    bool quietly = false,
+  }) async {
     final int request = ++_request;
 
-    _isLoading = true;
-    _failure = null;
-    publish();
+    if (!quietly) {
+      _isLoading = true;
+      _failure = null;
+      publish();
+    }
 
     PagedResult<T>? result;
     ApiException? failure;
@@ -75,6 +87,10 @@ abstract class PagedNotifier<T, TQuery> extends ScreenNotifier {
     }
 
     if (request != _request) {
+      return;
+    }
+
+    if (quietly && result == null) {
       return;
     }
 

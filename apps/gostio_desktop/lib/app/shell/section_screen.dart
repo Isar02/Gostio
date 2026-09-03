@@ -5,6 +5,7 @@ import '../../core/widgets/screen_states.dart';
 import '../../features/accommodations/presentation/accommodations_screen.dart';
 import '../../features/experiences/presentation/experiences_screen.dart';
 import '../../features/host_applications/presentation/host_applications_screen.dart';
+import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/news/presentation/news_screen.dart';
 import '../../features/reference/data/reference_table.dart';
 import '../../features/reference/presentation/reference_screen.dart';
@@ -48,6 +49,13 @@ class SectionScreen extends StatelessWidget {
       AppSection.hostApplications => const HostApplicationsScreen(),
       AppSection.reviews => const ReviewsScreen(),
       AppSection.news => const NewsScreen(),
+      // Both panels read the threads the server hands the caller. A host is in
+      // every thread they reach; an administrator also oversees the support
+      // queue, so the host view asks for the ones they are actually in.
+      AppSection.messages => MessagesScreen(
+        signedInUserId: account.id,
+        onlyThreadsJoined: mode == WorkspaceMode.host,
+      ),
       AppSection.countries => const ReferenceScreen(
         table: ReferenceTable.countries,
       ),

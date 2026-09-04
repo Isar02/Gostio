@@ -1,7 +1,9 @@
 import '../../../core/theme/tone.dart';
-import '../data/reservation_status.dart';
+import 'reservation_status.dart';
 
-// What a standing looks like on a chip. The label stays the API's own word for
+// What a standing looks like on a chip. It sits beside the standing rather
+// than beside the table, because the overview reports a booking too and the
+// two must not disagree about what a colour means. The label stays the API's own word for
 // the row, so nothing here renames a status; only the colour is decided.
 abstract final class ReservationStanding {
   static Tone toneOf(ReservationStatus? standing) => switch (standing) {

@@ -63,7 +63,9 @@ abstract final class AppSizes {
   static const double timelineBar = 22;
   static const double timelineListing = 220;
   static const double timelineGutter = 12;
-  static const double overviewList = 260;
+  static const double rankingCity = 110;
+  static const double rankingBar = 10;
+  static const double overviewList = 288;
   static const double overviewChart = 200;
   static const double inbox = 340;
   static const double inboxRow = 76;

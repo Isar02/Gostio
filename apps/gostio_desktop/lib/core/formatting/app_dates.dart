@@ -7,6 +7,7 @@ abstract final class AppDates {
   static final DateFormat _dateTime = DateFormat('d MMM y, HH:mm');
   static final DateFormat _time = DateFormat('HH:mm');
   static final DateFormat _month = DateFormat('MMMM y');
+  static final DateFormat _shortMonth = DateFormat('MMM');
   static final DateFormat _weekday = DateFormat('EEE');
 
   static String date(DateTime value) => _date.format(value.toLocal());
@@ -20,6 +21,9 @@ abstract final class AppDates {
   static String day(DateTime value) => _date.format(value);
 
   static String month(DateTime value) => _month.format(value);
+
+  // What a month is called where a column is only wide enough for a word.
+  static String shortMonth(DateTime value) => _shortMonth.format(value);
 
   static String weekday(DateTime value) => _weekday.format(value);
 

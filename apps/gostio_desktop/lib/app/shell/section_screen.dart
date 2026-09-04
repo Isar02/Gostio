@@ -8,6 +8,7 @@ import '../../features/host_applications/presentation/host_applications_screen.d
 import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/news/presentation/news_screen.dart';
 import '../../features/overview/presentation/host_overview_screen.dart';
+import '../../features/overview/presentation/platform_overview_screen.dart';
 import '../../features/reference/data/reference_table.dart';
 import '../../features/reference/presentation/reference_screen.dart';
 import '../../features/reports/data/report_scope.dart';
@@ -35,9 +36,10 @@ class SectionScreen extends StatelessWidget {
     return switch (section) {
       // Both panels land here, and the two read nothing alike: a host is shown
       // the month across its own listings, an administrator the platform.
-      AppSection.overview when mode == WorkspaceMode.host => HostOverviewScreen(
-        hostId: account.id,
-      ),
+      AppSection.overview =>
+        mode == WorkspaceMode.administrator
+            ? const PlatformOverviewScreen()
+            : HostOverviewScreen(hostId: account.id),
       AppSection.accommodations => AccommodationsScreen(
         asAdministrator: mode == WorkspaceMode.administrator,
         hostId: _hostId,

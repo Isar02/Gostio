@@ -21,11 +21,12 @@ import '../../experiences/data/experience_slots_repository.dart';
 import '../data/reservation.dart';
 import '../data/reservation_payment.dart';
 import '../data/reservation_refund.dart';
+import '../data/reservation_standing.dart';
 import '../data/reservation_status.dart';
 import '../data/reservations_repository.dart';
 import 'cancel_reservation_dialog.dart';
 import 'reservation_detail_notifier.dart';
-import 'reservation_standing.dart';
+
 import 'side_read.dart';
 
 class ReservationDetailScreen extends StatelessWidget {

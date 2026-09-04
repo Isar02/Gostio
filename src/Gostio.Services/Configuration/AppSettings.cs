@@ -7,6 +7,7 @@ public sealed class AppSettings
     public required JwtSettings Jwt { get; init; }
     public required RabbitMqSettings RabbitMq { get; init; }
     public required SmtpSettings Smtp { get; init; }
+    public required PushSettings Push { get; init; }
     public required StripeSettings Stripe { get; init; }
     public required SeedSettings Seed { get; init; }
     public required WorkerSettings Worker { get; init; }
@@ -43,6 +44,7 @@ public sealed class RabbitMqSettings
     public required string VirtualHost { get; init; }
     public required string EmailQueue { get; init; }
     public required string NotificationQueue { get; init; }
+    public required string PushQueue { get; init; }
 }
 
 public sealed class SmtpSettings
@@ -57,6 +59,15 @@ public sealed class SmtpSettings
 
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(Host) && !string.IsNullOrWhiteSpace(FromEmail);
+}
+
+// One base64 value rather than a second secret file: a file is a second thing
+// to keep out of the repository, and the rule is that a secret lives in .env.
+public sealed class PushSettings
+{
+    public required string ServiceAccount { get; init; }
+
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(ServiceAccount);
 }
 
 public sealed class StripeSettings

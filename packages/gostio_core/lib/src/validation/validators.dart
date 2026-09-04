@@ -98,7 +98,7 @@ abstract final class Validators {
   }
 
   // The minimum length is deliberately not applied: the password an account
-  // already has was taken under rules that may since have moved, and holding
+  // already has was taken under a policy that may since have moved, and holding
   // it to today's would refuse one the server is about to accept. The ceiling
   // is applied, because the server holds this field to it as well.
   static String? currentPassword(String? value) =>

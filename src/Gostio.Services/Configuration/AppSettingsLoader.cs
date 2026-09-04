@@ -58,7 +58,8 @@ public static class AppSettingsLoader
                 Password = RequireValue("RABBITMQ_PASSWORD"),
                 VirtualHost = OptionalValue("RABBITMQ_VIRTUAL_HOST", "/"),
                 EmailQueue = RequireValue("RABBITMQ_QUEUE_EMAIL"),
-                NotificationQueue = RequireValue("RABBITMQ_QUEUE_NOTIFICATIONS")
+                NotificationQueue = RequireValue("RABBITMQ_QUEUE_NOTIFICATIONS"),
+                PushQueue = RequireValue("RABBITMQ_QUEUE_PUSH")
             },
             Smtp = new SmtpSettings
             {
@@ -69,6 +70,10 @@ public static class AppSettingsLoader
                 UseSsl = OptionalBoolean("SMTP_USE_SSL", true),
                 FromEmail = OptionalValue("SMTP_FROM_EMAIL"),
                 FromName = OptionalValue("SMTP_FROM_NAME", "Gostio")
+            },
+            Push = new PushSettings
+            {
+                ServiceAccount = OptionalValue("FIREBASE_SERVICE_ACCOUNT_BASE64")
             },
             Stripe = new StripeSettings
             {

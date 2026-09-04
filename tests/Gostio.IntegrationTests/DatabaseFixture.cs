@@ -66,12 +66,6 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     public CacheSettings Cache { get; } = new() { LookupSeconds = 600 };
 
-    public ApiSettings Api { get; } = new()
-    {
-        BaseUrl = "http://localhost:5000",
-        HttpPort = 5000,
-    };
-
     public RabbitMqSettings Broker { get; } = new()
     {
         Host = "localhost",
@@ -81,7 +75,10 @@ public sealed class DatabaseFixture : IAsyncLifetime
         VirtualHost = "/",
         EmailQueue = "gostio.email.tests",
         NotificationQueue = "gostio.notifications.tests",
+        PushQueue = "gostio.push.tests",
     };
+
+    public PushSettings Push { get; } = new() { ServiceAccount = "" };
 
     public SmtpSettings Smtp { get; } = new()
     {
@@ -250,7 +247,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     // The worker's composition for the queues: what a message asks for once it
     // has been read, with nothing here reaching a broker.
-    public ServiceProvider BuildConsumers()
+    public ServiceProvider BuildConsumers(IPushSender? pushes = null)
     {
         var services = new ServiceCollection();
 
@@ -258,7 +255,13 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddScoped(_ => CreateContext());
         services.AddSingleton(Broker);
         services.AddSingleton(Smtp);
+        services.AddSingleton(Push);
         services.AddGostioMessageConsumers();
+
+        if (pushes is not null)
+        {
+            services.AddSingleton(pushes);
+        }
 
         return services.BuildServiceProvider();
     }

@@ -59,6 +59,8 @@ public class GostioDbContext(DbContextOptions<GostioDbContext> options) : DbCont
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
+
     public DbSet<NewsItem> News => Set<NewsItem>();
 
     public DbSet<SearchHistory> SearchHistory => Set<SearchHistory>();

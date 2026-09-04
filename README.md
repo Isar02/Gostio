@@ -148,8 +148,9 @@ apps/
 
 .NET 10 and ASP.NET Core, Entity Framework Core against SQL Server, Mapster,
 Swashbuckle, JWT bearer authentication, BCrypt for password hashing, RabbitMQ
-for messaging, MailKit for mail, Stripe for payments and refunds, SignalR for
-chat, and Docker Compose for the whole stack. The clients are Flutter.
+for messaging, MailKit for mail, Firebase Cloud Messaging for mobile push,
+Stripe for payments and refunds, SignalR for chat, and Docker Compose for the
+whole stack. The clients are Flutter.
 
 ## Features
 
@@ -161,7 +162,8 @@ chat, and Docker Compose for the whole stack. The clients are Flutter.
   a cancellation policy and sent by the worker.
 - Reviews of finished stays, favourites, and host applications an administrator
   answers.
-- Chat over SignalR, notifications, and email, both carried on durable queues.
+- Chat over SignalR, and notifications, email and mobile push each carried on a
+  durable queue of its own.
 - Explainable recommendations — see `recommender-dokumentacija.md`.
 - Revenue and catalogue reports for the administrative client.
 

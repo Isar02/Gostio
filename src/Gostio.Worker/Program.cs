@@ -16,6 +16,7 @@ builder.Services.AddGostioMessageConsumers();
 
 builder.Services.AddHostedService<EmailConsumerService>();
 builder.Services.AddHostedService<NotificationConsumerService>();
+builder.Services.AddHostedService<PushConsumerService>();
 builder.Services.AddHostedService<ReservationSweepService>();
 builder.Services.AddHostedService<RefundSweepService>();
 

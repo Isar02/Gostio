@@ -42,4 +42,7 @@ public static class ColumnLengths
     public const int NewsBody = 4000;
 
     public const int SearchTerm = 200;
+
+    // Under the 900 bytes a unique index may key on.
+    public const int DeviceToken = 400;
 }

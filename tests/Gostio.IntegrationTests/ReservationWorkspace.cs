@@ -239,6 +239,30 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
             role,
             (IExperienceService service) => service.SearchAsync(search, default));
 
+    public Task<PagedResult<AccommodationResponse>> SearchStaysAsync(
+        int actor,
+        string role,
+        AccommodationSearchRequest search) =>
+        AsAsync(
+            actor,
+            role,
+            (IAccommodationService service) => service.SearchAsync(search, default));
+
+    public Task<IReadOnlyList<StayCalendarDayResponse>> CalendarAsync(
+        int actor,
+        string role,
+        int listing,
+        StayCalendarRequest request) =>
+        AsAsync(
+            actor,
+            role,
+            (IStayCalendarService service) => service.ReadAsync(listing, request, default));
+
+    public Task<int> AnotherListingAsync(int host) =>
+        listings.CreateAsync(host, $"A listing {Guid.NewGuid():N}");
+
+    public Task WithdrawAsync(int host, int listing) => listings.WithdrawAsync(host, listing);
+
     public Task<PagedResult<ReservationResponse>> ListAsync(
         int actor,
         string role,

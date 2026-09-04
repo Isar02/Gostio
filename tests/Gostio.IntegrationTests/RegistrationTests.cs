@@ -157,8 +157,7 @@ public class RegistrationTests(DatabaseFixture fixture) : IAsyncLifetime
             db,
             new JwtTokenService(fixture.Jwt),
             new AnonymousUser(),
-            new CapturedNotices(),
-            fixture.Api);
+            new CapturedNotices());
 
         return await auth.RegisterAsync(
             new RegisterRequest

@@ -23,7 +23,8 @@ public static class ReservationPricing
         return total;
     }
 
-    private static decimal PriceOf(
+    // Public because the calendar a guest picks on prices a night with it too.
+    public static decimal PriceOf(
         DateOnly night,
         decimal basePrice,
         IReadOnlyCollection<PricedRange> overrides)

@@ -87,8 +87,7 @@ public class AdministratorPasswordTests(DatabaseFixture fixture)
             db,
             new JwtTokenService(fixture.Jwt),
             new AnonymousUser(),
-            new CapturedNotices(),
-            fixture.Api);
+            new CapturedNotices());
 
         await auth.LoginAsync(
             new LoginRequest { Username = username, Password = password },

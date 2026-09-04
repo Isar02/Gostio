@@ -2,7 +2,6 @@ using Gostio.Model.Authorization;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
-using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
 using Gostio.Services.Messaging;
@@ -14,8 +13,7 @@ public sealed class AuthService(
     GostioDbContext db,
     JwtTokenService tokens,
     ICurrentUser currentUser,
-    INotices notices,
-    ApiSettings api) : IAuthService
+    INotices notices) : IAuthService
 {
     private const string CredentialsRejected = "The username or password is incorrect.";
 
@@ -174,7 +172,7 @@ public sealed class AuthService(
         await db.SaveChangesAsync(cancellationToken);
 
         await notices.SendAsync(
-            PasswordResetEmail.For(account.FirstName, account.Email, token, api),
+            PasswordResetEmail.For(account.FirstName, account.Email, token),
             cancellationToken);
     }
 

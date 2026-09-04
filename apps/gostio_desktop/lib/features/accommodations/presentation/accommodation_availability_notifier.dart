@@ -128,15 +128,22 @@ class AccommodationAvailabilityNotifier extends ScreenNotifier {
       final DateTime from = AvailabilityMonth.startOfGrid(month);
       final DateTime to = AvailabilityMonth.endOfGrid(month);
 
-      final List<AccommodationAvailability> entries = await _availability
-          .forWindow(accommodationId, from: from, to: to);
-      final List<Reservation> bookings = await _reservations
-          .forAccommodationWindow(accommodationId, from: from, to: to);
+      // The same window asked of two endpoints that know nothing of each
+      // other, so they are asked at once: a month drawn after two round trips
+      // in a row waits for both of them end to end.
+      final List<Object?> answers = await Future.wait(<Future<Object?>>[
+        _availability.forWindow(accommodationId, from: from, to: to),
+        _reservations.forAccommodationWindow(
+          accommodationId,
+          from: from,
+          to: to,
+        ),
+      ]);
 
       composed = AvailabilityMonth.of(
         month: month,
-        entries: entries,
-        bookings: bookings,
+        entries: answers[0]! as List<AccommodationAvailability>,
+        bookings: answers[1]! as List<Reservation>,
         today: CalendarDays.today(),
       );
     } on ApiException catch (thrown) {

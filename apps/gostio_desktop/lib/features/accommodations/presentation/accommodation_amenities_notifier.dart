@@ -58,8 +58,18 @@ class AccommodationAmenitiesNotifier extends ScreenNotifier {
     publish();
 
     try {
-      _vocabulary = await _reference.amenities();
-      _offered = _idsOf(await _amenities.forAccommodation(accommodationId));
+      // Neither read is the other's to wait for: one is the catalogue's whole
+      // vocabulary and one is this listing's set, and asking in turn only
+      // makes the tab slower to open by however long the first one takes.
+      final List<List<LookupItem>> answers = await Future.wait(
+        <Future<List<LookupItem>>>[
+          _reference.amenities(),
+          _amenities.forAccommodation(accommodationId),
+        ],
+      );
+
+      _vocabulary = answers[0];
+      _offered = _idsOf(answers[1]);
       _chosen = _offered;
       _isLoaded = true;
     } on ApiException catch (thrown) {

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
+
+import '../core/theme/app_metrics.dart';
+import '../core/theme/app_theme.dart';
 
 class ConfigurationFailureApp extends StatelessWidget {
   const ConfigurationFailureApp({required this.reason, super.key});
@@ -10,6 +14,7 @@ class ConfigurationFailureApp extends StatelessWidget {
     return MaterialApp(
       title: 'Gostio',
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
       home: _ConfigurationFailureScreen(reason: reason),
     );
   }
@@ -27,14 +32,17 @@ class _ConfigurationFailureScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text('Gostio cannot start', style: text.headlineSmall),
-              const SizedBox(height: 12),
-              SelectableText(reason, style: text.bodyMedium),
+              const SizedBox(height: AppSpacing.md),
+              SelectableText(
+                reason,
+                style: text.bodyMedium?.copyWith(color: AppColors.inkMuted),
+              ),
             ],
           ),
         ),

@@ -23,6 +23,8 @@ class Session extends ChangeNotifier {
 
   bool get isSignedIn => _account != null;
 
+  int get tokenGeneration => _client.tokenGeneration;
+
   bool get isAdministrator => hasRole(RoleNames.administrator);
 
   bool get isHost => hasRole(RoleNames.host);

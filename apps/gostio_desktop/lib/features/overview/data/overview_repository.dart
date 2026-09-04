@@ -90,9 +90,15 @@ class OverviewRepository {
     );
 
     final Future<List<LookupItem>> listings = _stays.titles(hostId: hostId);
+
+    // The window matches on the nights a booking takes up, and the day a stay
+    // ends on is not one of them, so a stay leaving on the first of the month
+    // occupies none of it and would never come back to be listed as leaving.
+    // It opens a day early to reach that one; the month it is drawn in clips
+    // the extra day back out of the grid.
     final Future<List<Reservation>> bookings = _bookings.forHostWindow(
       hostId,
-      from: first,
+      from: CalendarDays.addDays(first, -1),
       to: last,
     );
 

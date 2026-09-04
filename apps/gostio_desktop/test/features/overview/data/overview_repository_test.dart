@@ -85,17 +85,43 @@ void main() {
   });
 
   group('the month', () {
-    test('is asked for over the days the month actually has', () async {
-      final OverviewBookingsDouble bookings = OverviewBookingsDouble();
+    // The window matches on the nights a booking takes up, and the day a stay
+    // ends on is not one of them, so it opens a day early: a stay leaving on
+    // the first occupies none of the month it leaves in.
+    test(
+      'is asked for over the days the month has, and the one before',
+      () async {
+        final OverviewBookingsDouble bookings = OverviewBookingsDouble();
 
-      await _repository(bookings: bookings)
-          .month(DateTime(2026, 2, 17), hostId: 7);
+        await _repository(bookings: bookings)
+            .month(DateTime(2026, 2, 17), hostId: 7);
 
-      expect(bookings.windowedHosts, <int>[7]);
-      expect(bookings.windows.single, (
-        DateTime(2026, 2),
-        DateTime(2026, 2, 28),
-      ));
+        expect(bookings.windowedHosts, <int>[7]);
+        expect(bookings.windows.single, (
+          DateTime(2026, 1, 31),
+          DateTime(2026, 2, 28),
+        ));
+      },
+    );
+
+    test('lists a stay leaving on the first as leaving that month', () async {
+      final OverviewMonth month = await _repository(
+        bookings: OverviewBookingsDouble(
+          window: <Reservation>[
+            booking(
+              accommodationId: 4,
+              checkInDate: DateTime(2026, 8, 28),
+              checkOutDate: DateTime(2026, 9),
+            ),
+          ],
+        ),
+      ).month(DateTime(2026, 9), hostId: 7);
+
+      expect(month.departures.single.day, DateTime(2026, 9));
+      expect(month.arrivals, isEmpty);
+
+      // Its last night was August's, so it takes up none of September's grid.
+      expect(month.rows.single.spans, isEmpty);
     });
 
     // Taking a listing off the catalogue does not call off the bookings made

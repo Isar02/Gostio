@@ -108,7 +108,51 @@ internal sealed class AccommodationService(
                 .Count(offering => wanted.Contains(offering.AmenityId)) == wanted.Count);
         }
 
+        if (search.AvailableFrom is not null || search.AvailableTo is not null)
+        {
+            query = WithFreeNights(query, search);
+        }
+
         return query;
+    }
+
+    // The two questions a booking asks before it writes, inverted: a stay the
+    // search offers has to be one ReservationService.CreateAsync still takes.
+    private IQueryable<Accommodation> WithFreeNights(
+        IQueryable<Accommodation> query,
+        AccommodationSearchRequest search)
+    {
+        var (from, to) = RequireAStay(search);
+        var now = DateTime.UtcNow;
+
+        return query.Where(accommodation =>
+            !accommodation.Availability.Any(range =>
+                !range.IsAvailable && range.StartDate < to && range.EndDate >= from)
+            && !Db.Reservations
+                .Where(reservation => reservation.AccommodationId == accommodation.Id)
+                .Where(ReservationQueries.IsActive(now))
+                .Any(reservation =>
+                    reservation.CheckInDate < to && from < reservation.CheckOutDate));
+    }
+
+    // A single bound names no nights, and a window of none is not a stay. The
+    // second is where this parts from a term's window, which may close on the
+    // moment it opens because a term is attended rather than slept through.
+    private static (DateOnly From, DateOnly To) RequireAStay(AccommodationSearchRequest search)
+    {
+        var from = search.AvailableFrom ?? throw new ValidationException(
+            nameof(search.AvailableFrom), "Give both dates of the stay or neither.");
+
+        var to = search.AvailableTo ?? throw new ValidationException(
+            nameof(search.AvailableTo), "Give both dates of the stay or neither.");
+
+        if (to <= from)
+        {
+            throw new ValidationException(
+                nameof(search.AvailableTo), "A stay checks out after the day it checks in.");
+        }
+
+        return (from, to);
     }
 
     protected override SearchSignal Signal(AccommodationSearchRequest search) =>

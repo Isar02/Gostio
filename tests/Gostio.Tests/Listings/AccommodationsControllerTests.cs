@@ -80,7 +80,8 @@ public sealed class AccommodationsControllerTests : IAsyncLifetime
     {
         var response = await host.SendAsync(
             HttpMethod.Get,
-            $"{Route}?title=loft&cityId=3&minGuests=4&maxPrice=120&page=0&pageSize=5000",
+            $"{Route}?title=loft&cityId=3&minGuests=4&maxPrice=120"
+                + "&availableFrom=2026-09-12&availableTo=2026-09-15&page=0&pageSize=5000",
             RoleNames.Guest);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -88,6 +89,8 @@ public sealed class AccommodationsControllerTests : IAsyncLifetime
         Assert.Equal(3, accommodations.LastSearch.CityId);
         Assert.Equal(4, accommodations.LastSearch.MinGuests);
         Assert.Equal(120m, accommodations.LastSearch.MaxPrice);
+        Assert.Equal(new DateOnly(2026, 9, 12), accommodations.LastSearch.AvailableFrom);
+        Assert.Equal(new DateOnly(2026, 9, 15), accommodations.LastSearch.AvailableTo);
         Assert.Equal(1, accommodations.LastSearch.Page);
         Assert.Equal(PagedRequest.MaxPageSize, accommodations.LastSearch.PageSize);
     }

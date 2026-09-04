@@ -1,15 +1,10 @@
 using Gostio.Model.Messaging;
-using Gostio.Services.Configuration;
 
 namespace Gostio.Services.Authentication;
 
 internal static class PasswordResetEmail
 {
-    public static EmailMessage For(
-        string firstName,
-        string address,
-        string token,
-        ApiSettings api) =>
+    public static EmailMessage For(string firstName, string address, string token) =>
         new()
         {
             ToEmail = address,
@@ -19,7 +14,8 @@ internal static class PasswordResetEmail
                 Hello {firstName},
 
                 Somebody asked to reset the password on the Gostio account registered to this
-                address. Open {api.BaseUrl} and enter the code below to choose a new one.
+                address. Open Gostio, ask to reset the password again, and enter the code below
+                on the screen that asks for it to choose a new one.
 
                     {token}
 

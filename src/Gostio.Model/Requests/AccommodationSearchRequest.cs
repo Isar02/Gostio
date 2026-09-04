@@ -23,4 +23,10 @@ public sealed class AccommodationSearchRequest : ListingSearchRequest
     // Every named amenity has to be there, not any of them: a guest who asks
     // for parking and a cot is naming two things they will not do without.
     public List<int>? AmenityIds { get; set; }
+
+    // Read as a stay: check in on the first, out on the second, so the nights
+    // asked for are [AvailableFrom, AvailableTo).
+    public DateOnly? AvailableFrom { get; set; }
+
+    public DateOnly? AvailableTo { get; set; }
 }

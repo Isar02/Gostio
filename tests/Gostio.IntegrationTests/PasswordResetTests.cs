@@ -64,6 +64,20 @@ public class PasswordResetTests(DatabaseFixture fixture)
         Assert.DoesNotContain(stored.TokenHash, mail.Body, StringComparison.OrdinalIgnoreCase);
     }
 
+    // There is no page at the API's address, and the guest who asked for this
+    // is standing in the application that sent them.
+    [Fact]
+    public async Task TheMailSendsTheReaderBackToTheApplicationRatherThanAnAddress()
+    {
+        var userId = await fixture.AddUserAsync(OldPassword);
+
+        var notices = await ForgotAsync(await EmailOfAsync(userId));
+        var mail = Assert.Single(notices.Of<EmailMessage>());
+
+        Assert.Contains("Open Gostio", mail.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("http", mail.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task TheCodeInTheMailIsTheOneThatChangesThePassword()
     {
@@ -210,6 +224,5 @@ public class PasswordResetTests(DatabaseFixture fixture)
             db,
             new JwtTokenService(fixture.Jwt),
             new AnonymousUser(),
-            notices ?? new CapturedNotices(),
-            fixture.Api);
+            notices ?? new CapturedNotices());
 }

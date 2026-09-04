@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/models/user.dart';
-import '../../core/widgets/screen_states.dart';
 import '../../features/accommodations/presentation/accommodations_screen.dart';
 import '../../features/experiences/presentation/experiences_screen.dart';
 import '../../features/host_applications/presentation/host_applications_screen.dart';
@@ -9,6 +8,7 @@ import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/news/presentation/news_screen.dart';
 import '../../features/overview/presentation/host_overview_screen.dart';
 import '../../features/overview/presentation/platform_overview_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/reference/data/reference_table.dart';
 import '../../features/reference/presentation/reference_screen.dart';
 import '../../features/reports/data/report_scope.dart';
@@ -31,6 +31,9 @@ class SectionScreen extends StatelessWidget {
   final AppSection section;
   final User account;
 
+  // Every section is named here and none has a fallback: a section added to
+  // the navigation without a screen behind it is a compile error rather than a
+  // menu entry that opens an apology.
   @override
   Widget build(BuildContext context) {
     return switch (section) {
@@ -93,10 +96,9 @@ class SectionScreen extends StatelessWidget {
       AppSection.reservationStatuses => const ReferenceScreen(
         table: ReferenceTable.reservationStatuses,
       ),
-      _ => EmptyState(
-        title: section.label,
-        message: 'This section has not been built yet.',
-      ),
+      // Whoever is signed in, in either panel, is an account that can read and
+      // write its own.
+      AppSection.profile => const ProfileScreen(),
     };
   }
 

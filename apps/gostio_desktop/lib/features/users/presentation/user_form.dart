@@ -442,8 +442,8 @@ class _ChangePassword extends StatelessWidget {
 
     return Tooltip(
       message: isSelf
-          ? 'An administrator changes their own password by entering the '
-                'current one.'
+          ? 'Your own password is changed under Profile, where the one you '
+                'sign in with now is asked for.'
           : 'The account is signed out and signs back in with what is typed '
                 'here. Nobody is sent it.',
       child: SwitchListTile(

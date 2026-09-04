@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_mobile/app/configuration_failure_app.dart';
 import 'package:gostio_mobile/app/gostio_app.dart';
-import 'package:gostio_mobile/app/startup_screen.dart';
 import 'package:gostio_mobile/core/config/app_settings.dart';
+import 'package:gostio_mobile/features/auth/presentation/sign_in_screen.dart';
 
 void main() {
   testWidgets('a client without an address says so and draws nothing else', (
@@ -14,18 +14,18 @@ void main() {
 
     expect(find.text('Gostio cannot start'), findsOneWidget);
     expect(find.text('API_BASE_URL is missing'), findsOneWidget);
-    expect(find.byType(StartupScreen), findsNothing);
+    expect(find.byType(SignInScreen), findsNothing);
   });
 
-  testWidgets('a client with an address names the API it will call', (
+  testWidgets('a client with an address opens on the sign in screen', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
       GostioApp(settings: AppSettings(apiBaseUrl: _address)),
     );
 
-    expect(find.text('Gostio'), findsOneWidget);
-    expect(find.text('http://10.0.2.2:5000'), findsOneWidget);
+    expect(find.byType(SignInScreen), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 }
 

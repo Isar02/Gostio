@@ -33,18 +33,8 @@ abstract final class Validators {
   static String? username(String? value) =>
       _isBlank(value) ? 'Enter your username.' : null;
 
-  static String? password(String? value) {
-    if (_isBlank(value)) {
-      return 'Enter your password.';
-    }
-
-    if (utf8.encode(value!).length > passwordMaximumBytes) {
-      return 'A password is at most $passwordMaximumBytes bytes long once '
-          'written as UTF-8.';
-    }
-
-    return null;
-  }
+  static String? password(String? value) =>
+      _password(value, missing: 'Enter your password.');
 
   static String? firstName(String? value) => _written(
     value,
@@ -106,6 +96,13 @@ abstract final class Validators {
 
     return _dialled(typed) == null ? phoneNumberMeans : null;
   }
+
+  // The minimum length is deliberately not applied: the password an account
+  // already has was taken under rules that may since have moved, and holding
+  // it to today's would refuse one the server is about to accept. The ceiling
+  // is applied, because the server holds this field to it as well.
+  static String? currentPassword(String? value) =>
+      _password(value, missing: 'Enter your current password.');
 
   static String? newPassword(String? value, {required String missing}) {
     if (_isBlank(value)) {
@@ -258,6 +255,20 @@ abstract final class Validators {
 
   static String? pricePerPerson(String? value) =>
       _amount(value, noun: 'A price per person', smallest: smallestAmount);
+
+  // A password that is only being proved, not set: what is typed has to reach
+  // the server as it stands, so only the ceiling BCrypt and the server share
+  // is checked here.
+  static String? _password(String? value, {required String missing}) {
+    if (_isBlank(value)) {
+      return missing;
+    }
+
+    return utf8.encode(value!).length > passwordMaximumBytes
+        ? 'A password is at most $passwordMaximumBytes bytes long once '
+              'written as UTF-8.'
+        : null;
+  }
 
   static String? _written(
     String? value, {

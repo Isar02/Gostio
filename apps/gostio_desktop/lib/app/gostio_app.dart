@@ -20,6 +20,7 @@ import '../features/messages/data/messages_repository.dart';
 import '../features/news/data/news_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/overview/data/overview_repository.dart';
+import '../features/profile/data/profile_repository.dart';
 import '../features/reference/data/reference_repository.dart';
 import '../features/reference/data/reference_rows_repository.dart';
 import '../features/reports/data/reports_repository.dart';
@@ -89,6 +90,10 @@ class GostioApp extends StatelessWidget {
         Provider<UsersRepository>(
           create: (BuildContext context) =>
               UsersRepository(context.read<ApiClient>()),
+        ),
+        Provider<ProfileRepository>(
+          create: (BuildContext context) =>
+              ProfileRepository(context.read<ApiClient>()),
         ),
         Provider<ReservationsRepository>(
           create: (BuildContext context) =>

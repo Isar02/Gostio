@@ -85,6 +85,7 @@ abstract final class AppNavigation {
       ],
     ),
     NavigationLink(AppSection.messages),
+    NavigationLink(AppSection.profile),
   ];
 
   static final List<NavigationEntry> _host = <NavigationEntry>[

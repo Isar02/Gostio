@@ -12,7 +12,9 @@ const String _authorization = 'Authorization';
 String _bearer(String token) => 'Bearer $token';
 
 class ApiClient {
-  ApiClient({required Uri baseUrl})
+  // The adapter is the one seam this class has. Nothing supplies it but a
+  // test, which is the only caller with no server to reach.
+  ApiClient({required Uri baseUrl, HttpClientAdapter? adapter})
     : _dio = Dio(
         BaseOptions(
           baseUrl: '$baseUrl/api',
@@ -24,11 +26,19 @@ class ApiClient {
           listFormat: ListFormat.multi,
         ),
       ) {
+    if (adapter != null) {
+      _dio.httpClientAdapter = adapter;
+    }
+
     // The session interceptor is added before the failure one because that one
     // rejects, which ends the chain: put it second and no 401 is ever seen.
     _dio.interceptors.add(_TokenInterceptor(() => token));
     _dio.interceptors.add(
-      _SessionInterceptor(() => token, _reportUnauthorized),
+      _SessionInterceptor(
+        () => token,
+        () => _renewals == 0,
+        _reportUnauthorized,
+      ),
     );
     _dio.interceptors.add(_FailureInterceptor());
   }
@@ -37,6 +47,7 @@ class ApiClient {
 
   String? _token;
   int _tokenGeneration = 0;
+  int _renewals = 0;
 
   void Function()? onUnauthorized;
 
@@ -47,6 +58,24 @@ class ApiClient {
   set token(String? value) {
     _token = value;
     _tokenGeneration++;
+  }
+
+  // A call that is going to replace this client's token makes every other
+  // refusal ambiguous while it is out. The server raises the account's token
+  // version as it processes the change, so a call already in flight — the two
+  // thirty second polls in the shell, most likely — can be refused before the
+  // replacement has arrived here, and at that moment the refused call is still
+  // carrying what this client calls its current token. Nothing ends a session
+  // while one of these is open. A token that really did die is caught by the
+  // next poll instead, which is thirty seconds rather than never.
+  Future<T> renewing<T>(Future<T> Function() call) async {
+    _renewals++;
+
+    try {
+      return await call();
+    } finally {
+      _renewals--;
+    }
   }
 
   Future<JsonMap> get(String path, {JsonMap? query}) async =>
@@ -195,14 +224,20 @@ class _TokenInterceptor extends Interceptor {
 }
 
 class _SessionInterceptor extends Interceptor {
-  _SessionInterceptor(this._token, this._onUnauthorized);
+  _SessionInterceptor(
+    this._token,
+    this._nothingIsBeingRenewed,
+    this._onUnauthorized,
+  );
 
   final String? Function() _token;
+  final bool Function() _nothingIsBeingRenewed;
   final void Function() _onUnauthorized;
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (err.response?.statusCode == 401 &&
+        _nothingIsBeingRenewed() &&
         _carriedTheTokenInForce(err.requestOptions)) {
       _onUnauthorized();
     }

@@ -37,6 +37,31 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Editing the profile answers the account the rest of the client is drawing
+  // from, so the top bar is not left showing the name that was just replaced.
+  void accountChanged(User account) {
+    if (_account == null) {
+      return;
+    }
+
+    _account = account;
+
+    notifyListeners();
+  }
+
+  // Changing a password ends every token issued before it, the one this
+  // session holds included, so the replacement has to be taken up here or the
+  // next call is answered with a 401.
+  void tokenRenewed(String token) {
+    if (_account == null) {
+      return;
+    }
+
+    _client.token = token;
+
+    notifyListeners();
+  }
+
   void end(SessionEnding ending) {
     if (_account == null) {
       return;

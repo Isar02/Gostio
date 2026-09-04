@@ -30,6 +30,14 @@ abstract final class AppSizes {
   static const double spinner = 20;
   static const double avatar = 32;
 
+  // The one place an account looks at its own picture rather than being
+  // recognised by it in a row.
+  static const double avatarLarge = 96;
+
+  // A label beside its value rather than above it, wide enough that the
+  // values under one another line up.
+  static const double labelColumn = 56;
+
   static const double control = 36;
   static const double tableHeaderRow = 40;
   static const double tableRow = 24;

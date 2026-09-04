@@ -1,5 +1,4 @@
-import '../../../core/network/api_client.dart';
-import '../../../core/time/calendar_days.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // What the calendar writes, in the two shapes the server accepts. A range that
 // stays open carries a nightly price of its own and a blocked one carries

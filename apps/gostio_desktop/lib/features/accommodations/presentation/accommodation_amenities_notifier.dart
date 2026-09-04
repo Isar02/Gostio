@@ -1,6 +1,6 @@
-import '../../../core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/state/screen_notifier.dart';
-import '../../reference/data/lookup_item.dart';
 import '../../reference/data/reference_repository.dart';
 import '../data/accommodation_amenities_repository.dart';
 

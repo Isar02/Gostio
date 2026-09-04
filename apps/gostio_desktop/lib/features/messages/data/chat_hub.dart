@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import 'message.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 @immutable
 sealed class ChatEvent {

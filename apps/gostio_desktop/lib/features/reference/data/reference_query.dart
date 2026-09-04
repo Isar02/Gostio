@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 @immutable
 class ReferenceQuery {

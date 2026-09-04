@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_availability.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_availability_repository.dart';
 import 'package:gostio_desktop/features/accommodations/data/availability_draft.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_availability_notifier.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/availability_month.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 
 import '../../../support/bookings_double.dart';
 

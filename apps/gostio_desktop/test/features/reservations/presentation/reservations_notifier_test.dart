@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reservations/data/reservation_query.dart';
 import 'package:gostio_desktop/features/reservations/presentation/reservations_notifier.dart';
 

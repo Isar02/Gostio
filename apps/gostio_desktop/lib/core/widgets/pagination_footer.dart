@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../models/paged_result.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 
 class PaginationFooter extends StatelessWidget {

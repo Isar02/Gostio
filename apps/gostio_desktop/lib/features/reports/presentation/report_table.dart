@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/widgets/record_table.dart';
-import '../data/report_document.dart';
 import 'report_columns.dart';
 
 class ReportTable<TRow, TTotals> extends StatelessWidget {

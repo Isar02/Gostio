@@ -15,6 +15,14 @@ written yet:
 | Desktop client | administrators and hosts | `apps/gostio_desktop` | built |
 | Mobile client | guests | `apps/gostio_mobile` | not started |
 
+The two clients share one package. `packages/gostio_core` holds what belongs to
+the product rather than to a client — the response models, the API client and
+its interceptors, the session, the validation rules mirroring the server's, the
+date and money formats, the palette and the three bundled faces. What stays in
+each client is measurement and drawing: its own spacing and type scales, its own
+widgets, notifiers and repositories. A client imports the one library the
+package publishes and nothing inside it.
+
 ## Test accounts
 
 Created by the seeder the first time the API starts against an empty database.

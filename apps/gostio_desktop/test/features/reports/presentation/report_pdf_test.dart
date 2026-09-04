@@ -1,8 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
-import 'package:gostio_desktop/features/reports/data/listing_report.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reports/presentation/report_columns.dart';
 import 'package:gostio_desktop/features/reports/presentation/report_pdf.dart';
 import 'package:pdf/pdf.dart';
@@ -18,8 +16,8 @@ void main() {
     'the printed face carries every letter the catalogue is spelt with',
     () async {
       for (final String path in <String>[
-        ReportPdf.regularFont,
-        ReportPdf.boldFont,
+        AppFonts.interfaceRegular,
+        AppFonts.interfaceSemiBold,
       ]) {
         final TtfParser face = TtfParser(await rootBundle.load(path));
 

@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/network/api_exception.dart';
-import '../../../core/session/session.dart';
 import '../data/auth_repository.dart';
-import '../data/auth_result.dart';
 
 class SignInNotifier extends ChangeNotifier {
   SignInNotifier(this._repository, this._session);

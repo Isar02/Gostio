@@ -1,13 +1,10 @@
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodations_repository.dart';
-import 'package:gostio_desktop/features/experiences/data/experience.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_draft.dart';
 import 'package:gostio_desktop/features/experiences/data/experience_query.dart';
 import 'package:gostio_desktop/features/experiences/data/experiences_repository.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 // Every filter bar that names a listing reads the two catalogues for their
 // titles and nothing else. The rest of both repositories is refused here, so

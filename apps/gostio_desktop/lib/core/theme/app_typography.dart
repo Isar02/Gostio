@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-
-import 'app_colors.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 abstract final class AppTypography {
-  static const String interfaceFamily = 'Geist';
-  static const String displayFamily = 'PlusJakartaSans';
-  static const String fallbackFamily = 'Manrope';
-
-  static const List<String> _fallback = <String>[fallbackFamily];
+  static const List<String> _fallback = <String>[AppFonts.fallbackFamily];
 
   static const List<FontFeature> _tabularFigures = <FontFeature>[
     FontFeature.tabularFigures(),
@@ -46,7 +41,7 @@ abstract final class AppTypography {
     double spacing = 0,
     Color color = AppColors.ink,
   }) => TextStyle(
-    fontFamily: interfaceFamily,
+    fontFamily: AppFonts.interfaceFamily,
     fontFamilyFallback: _fallback,
     fontFeatures: _tabularFigures,
     fontSize: size,
@@ -63,7 +58,7 @@ abstract final class AppTypography {
     double spacing = 0,
     Color color = AppColors.ink,
   }) => TextStyle(
-    fontFamily: displayFamily,
+    fontFamily: AppFonts.displayFamily,
     fontFamilyFallback: _fallback,
     fontFeatures: _tabularFigures,
     fontSize: size,

@@ -1,4 +1,4 @@
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The listing's own fields as the form holds them. Create and edit are one
 // form, so one draft answers both endpoints: a host is named only where an

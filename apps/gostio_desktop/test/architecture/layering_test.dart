@@ -40,6 +40,22 @@ void main() {
     }
   });
 
+  // The shared package is reached through what it publishes. What sits behind
+  // that is its own business and moves without a client hearing about it.
+  test('the client reaches the shared package through what it publishes', () {
+    for (final _Source source in sources) {
+      for (final String imported in source.packages.where(
+        (String imported) => imported.startsWith('package:gostio_core/'),
+      )) {
+        expect(
+          imported,
+          'package:gostio_core/gostio_core.dart',
+          reason: '${source.path} reaches inside the package',
+        );
+      }
+    }
+  });
+
   test('a data layer never reaches a presentation layer', () {
     for (final _Source source in sources.where(
       (_Source source) => source.path.contains('/data/'),
@@ -107,13 +123,14 @@ List<_Source> _lib() {
 }
 
 class _Source {
-  _Source(this.path, this.reaches);
+  _Source(this.path, this.reaches, this.packages);
 
   factory _Source.read(File file) {
     final String path = _asPosix(file.path).split('lib/').last;
 
     // An export carries the same dependency an import does, so both are read.
     final List<String> reaches = <String>[];
+    final List<String> packages = <String>[];
 
     for (final String line in file.readAsLinesSync()) {
       final RegExpMatch? matched = _directive.firstMatch(line);
@@ -124,17 +141,19 @@ class _Source {
       final String target = matched.group(1)!;
       if (target.startsWith('package:gostio_desktop/')) {
         reaches.add(target.split('gostio_desktop/').last);
-      } else if (!target.startsWith('package:') &&
-          !target.startsWith('dart:')) {
+      } else if (target.startsWith('package:')) {
+        packages.add(target);
+      } else if (!target.startsWith('dart:')) {
         reaches.add(_resolved(path, target));
       }
     }
 
-    return _Source(path, reaches);
+    return _Source(path, reaches, packages);
   }
 
   final String path;
   final List<String> reaches;
+  final List<String> packages;
 
   static final RegExp _directive = RegExp(
     r"""^\s*(?:import|export)\s+['"]([^'"]+)['"]""",

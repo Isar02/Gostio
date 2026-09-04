@@ -1,5 +1,4 @@
-import '../models/paged_result.dart';
-import '../network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A dropdown and a gallery are filled from the whole table rather than from
 // its first page. The API caps a page at a hundred rows, so the pages are

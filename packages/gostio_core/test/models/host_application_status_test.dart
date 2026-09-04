@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/host_applications/data/host_application_status.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 void main() {
   test('the API words name the standings this client knows', () {

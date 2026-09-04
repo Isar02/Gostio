@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/validation/image_rules.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 void main() {
   group('detect', () {

@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/data/chat_hub.dart';
-import 'package:gostio_desktop/features/messages/data/message.dart';
 import 'package:gostio_desktop/features/messages/presentation/thread_notifier.dart';
 
 import '../../../support/chat_doubles.dart';

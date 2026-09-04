@@ -1,6 +1,4 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import 'message.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 class MessagesRepository {
   const MessagesRepository(this._client);

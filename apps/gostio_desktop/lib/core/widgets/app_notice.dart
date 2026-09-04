@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../theme/app_metrics.dart';
-import '../theme/tone.dart';
 
 class AppNotice extends StatelessWidget {
   const AppNotice(this.message, {this.tone = Tone.negative, super.key});

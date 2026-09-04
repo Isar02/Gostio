@@ -1,6 +1,6 @@
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/page_walk.dart';
-import '../../reference/data/lookup_item.dart';
 
 class AccommodationAmenitiesRepository {
   const AccommodationAmenitiesRepository(this._client);

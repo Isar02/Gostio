@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../listings/data/listing_address.dart';
+import 'listing_address.dart';
 
 part 'accommodation.g.dart';
 

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../reports/data/listing_report.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // Where the platform's trade actually happened. The listing report answers a
 // row to a city and a category together, and each catalogue answers a document

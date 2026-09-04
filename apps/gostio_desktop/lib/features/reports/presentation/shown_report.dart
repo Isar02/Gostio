@@ -1,9 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../data/listing_report.dart';
-import '../data/report_document.dart';
-import '../data/revenue_report.dart';
 import 'report_columns.dart';
 import 'report_pdf.dart';
 import 'report_table.dart';

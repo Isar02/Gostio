@@ -1,18 +1,13 @@
 import 'package:flutter/services.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/theme/app_colors.dart';
-import '../data/report_document.dart';
 import 'report_columns.dart';
 
 // Either report as a printed document, landscape because eight columns of
 // figures do not fit upright.
 abstract final class ReportPdf {
-  static const String regularFont = 'assets/fonts/Geist-Regular.ttf';
-  static const String boldFont = 'assets/fonts/Geist-SemiBold.ttf';
-
   static Future<Uint8List> build<TRow, TTotals>({
     required String title,
     required String scope,
@@ -64,8 +59,8 @@ abstract final class ReportPdf {
   static Future<pw.ThemeData>? _theme;
 
   static Future<pw.ThemeData> _read() async => pw.ThemeData.withFont(
-    base: pw.Font.ttf(await rootBundle.load(regularFont)),
-    bold: pw.Font.ttf(await rootBundle.load(boldFont)),
+    base: pw.Font.ttf(await rootBundle.load(AppFonts.interfaceRegular)),
+    bold: pw.Font.ttf(await rootBundle.load(AppFonts.interfaceSemiBold)),
   );
 
   static pw.Widget _heading({

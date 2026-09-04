@@ -1,6 +1,5 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import 'experience_slot.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'experience_slot_query.dart';
 
 class ExperienceSlotsRepository {

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:gostio_desktop/features/news/data/news_item.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // An article as the seed writes one. What a test is about it names itself.
 NewsItem newsItem({

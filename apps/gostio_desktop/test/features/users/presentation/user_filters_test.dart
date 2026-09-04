@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/users/data/user_query.dart';
 import 'package:gostio_desktop/features/users/presentation/user_filter_options.dart';
 import 'package:gostio_desktop/features/users/presentation/user_filters.dart';

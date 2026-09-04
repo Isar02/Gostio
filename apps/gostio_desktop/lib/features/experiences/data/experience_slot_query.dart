@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/network/api_client.dart';
-import '../../../core/time/calendar_days.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The API matches the moment a term starts, so the second edge is the last
 // instant of the day picked rather than that day's midnight.

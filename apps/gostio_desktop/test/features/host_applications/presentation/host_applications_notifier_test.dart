@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/features/host_applications/data/host_application.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/host_applications/data/host_application_query.dart';
-import 'package:gostio_desktop/features/host_applications/data/host_application_status.dart';
 import 'package:gostio_desktop/features/host_applications/data/host_applications_repository.dart';
 import 'package:gostio_desktop/features/host_applications/presentation/host_applications_notifier.dart';
 

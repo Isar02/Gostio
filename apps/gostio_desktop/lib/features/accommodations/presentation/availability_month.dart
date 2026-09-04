@@ -1,9 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/time/calendar_days.dart';
-import '../../reservations/data/reservation.dart';
-import '../../reservations/data/reservation_status.dart';
-import '../data/accommodation_availability.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // One month as the calendar draws it: the six weeks that hold it, what each
 // day carries, and the bookings laid over them. The grid is always six weeks

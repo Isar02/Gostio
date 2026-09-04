@@ -1,6 +1,6 @@
-import '../../../core/models/paged_result.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/paged_notifier.dart';
-import '../data/host_application.dart';
 import '../data/host_application_query.dart';
 import '../data/host_applications_repository.dart';
 

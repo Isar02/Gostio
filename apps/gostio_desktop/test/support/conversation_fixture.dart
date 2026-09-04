@@ -1,7 +1,4 @@
-import 'package:gostio_desktop/features/messages/data/conversation.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_participant.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_type.dart';
-import 'package:gostio_desktop/features/messages/data/message.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The account the desktop tests sign in as, and the guest on the other side of
 // most of these threads.

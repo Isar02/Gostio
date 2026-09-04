@@ -1,7 +1,5 @@
-import '../../../core/authorization/role_names.dart';
-import '../../../core/models/paged_result.dart';
-import '../../../core/models/user.dart';
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/page_walk.dart';
 import 'user_draft.dart';
 import 'user_query.dart';

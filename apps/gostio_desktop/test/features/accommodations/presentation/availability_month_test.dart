@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_availability.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/availability_month.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 
 void main() {
   test('a booking fills its nights and leaves the day it ends on free', () {

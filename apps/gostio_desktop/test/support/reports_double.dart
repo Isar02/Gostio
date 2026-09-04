@@ -1,12 +1,9 @@
 import 'dart:async';
 
-import 'package:gostio_desktop/core/network/api_exception.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
-import 'package:gostio_desktop/features/reports/data/listing_report.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reports/data/report_range.dart';
 import 'package:gostio_desktop/features/reports/data/report_scope.dart';
 import 'package:gostio_desktop/features/reports/data/reports_repository.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
 
 import 'report_fixture.dart';
 

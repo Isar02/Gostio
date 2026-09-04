@@ -1,9 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/paging/writing_notifier.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
-import 'package:gostio_desktop/features/reviews/data/review.dart';
 import 'package:gostio_desktop/features/reviews/data/review_query.dart';
 import 'package:gostio_desktop/features/reviews/presentation/reviews_notifier.dart';
 

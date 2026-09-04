@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/formatting/app_dates.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/theme/app_theme.dart';
 import 'package:gostio_desktop/features/overview/data/overview_month.dart';
 import 'package:gostio_desktop/features/overview/presentation/overview_movements.dart';

@@ -1,6 +1,4 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import 'app_notification.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 class NotificationsRepository {
   const NotificationsRepository(this._client);

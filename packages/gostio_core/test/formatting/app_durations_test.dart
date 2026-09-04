@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/formatting/app_durations.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 void main() {
   test('under an hour is read in minutes', () {

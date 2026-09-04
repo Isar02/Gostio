@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/network/api_client.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/paging/writing_notifier.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
-import '../data/lookup_item.dart';
 import '../data/reference_row.dart';
 import 'reference_layout.dart';
 

@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'app_fonts.dart';
+
 const Map<String, String> _licences = <String, String>{
-  'Geist': 'assets/fonts/Geist-OFL.txt',
-  'Manrope': 'assets/fonts/Manrope-OFL.txt',
-  'Plus Jakarta Sans': 'assets/fonts/PlusJakartaSans-OFL.txt',
+  'Geist': '${AppFonts.folder}/Geist-OFL.txt',
+  'Manrope': '${AppFonts.folder}/Manrope-OFL.txt',
+  'Plus Jakarta Sans': '${AppFonts.folder}/PlusJakartaSans-OFL.txt',
 };
 
 void registerFontLicences() {

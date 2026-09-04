@@ -1,10 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/models/image_upload.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/state/screen_notifier.dart';
-import '../data/listing_address.dart';
-import '../data/listing_photo.dart';
 import '../data/listing_photos_repository.dart';
 
 class ListingPhotosNotifier extends ScreenNotifier {

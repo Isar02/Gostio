@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/data/chat_broadcast.dart';
-import 'package:gostio_desktop/features/messages/data/message.dart';
 
 void main() {
   test('the hub carries the message as the one argument of its call', () {

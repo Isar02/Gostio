@@ -1,6 +1,4 @@
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/network/api_client.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reference/data/reference_query.dart';
 import 'package:gostio_desktop/features/reference/data/reference_row.dart';
 import 'package:gostio_desktop/features/reference/data/reference_rows_repository.dart';

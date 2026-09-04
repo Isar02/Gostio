@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../formatting/app_dates.dart';
 import '../theme/app_metrics.dart';
 
 class DateField extends StatelessWidget {

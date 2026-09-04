@@ -1,21 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../core/formatting/app_numbers.dart';
-import '../../../core/models/user.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/validation/input_formats.dart';
-import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../core/widgets/map_point_field.dart';
-import '../../reference/data/lookup_item.dart';
 import '../../reference/presentation/add_city_dialog.dart';
 import '../../reference/presentation/city_field.dart';
-import '../data/accommodation.dart';
 import '../data/accommodation_draft.dart';
 import 'accommodation_detail_notifier.dart';
 import 'accommodation_form_options.dart';

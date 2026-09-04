@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/paging/writing_notifier.dart';
 import 'package:gostio_desktop/features/reference/data/reference_query.dart';
 import 'package:gostio_desktop/features/reference/data/reference_row.dart';

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // What is read beside the booking answers one of three things: the thing, that
 // there is none, or that it could not be read. The last two are not the same

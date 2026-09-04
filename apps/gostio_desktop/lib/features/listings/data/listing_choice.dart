@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../reference/data/lookup_item.dart';
-import 'listing_address.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A listing to narrow by, on the side of the catalogue it belongs to.
 @immutable

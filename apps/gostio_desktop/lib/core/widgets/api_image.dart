@@ -2,11 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../network/api_client.dart';
-import '../network/api_exception.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 
 // Every picture is fetched through the client, because it lives behind the

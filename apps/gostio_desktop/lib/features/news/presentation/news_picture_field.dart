@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_numbers.dart';
-import '../../../core/models/image_upload.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/validation/image_rules.dart';
 import '../../../core/widgets/api_image.dart';
 
 // The picture an article is published with. One that has been chosen is drawn

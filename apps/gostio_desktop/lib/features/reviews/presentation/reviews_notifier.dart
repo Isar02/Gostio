@@ -1,7 +1,7 @@
-import '../../../core/models/paged_result.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/paged_notifier.dart';
 import '../../../core/paging/writing_notifier.dart';
-import '../data/review.dart';
 import '../data/review_query.dart';
 import '../data/reviews_repository.dart';
 

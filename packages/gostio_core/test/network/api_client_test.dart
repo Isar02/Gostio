@@ -3,8 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_client.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 const String _poll = '/notifications';
 const String _change = '/auth/change-password';

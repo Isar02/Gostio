@@ -1,8 +1,6 @@
-import '../../../core/models/image_upload.dart';
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/page_walk.dart';
-import 'listing_address.dart';
-import 'listing_photo.dart';
 
 class ListingPhotosRepository {
   const ListingPhotosRepository(this._client);

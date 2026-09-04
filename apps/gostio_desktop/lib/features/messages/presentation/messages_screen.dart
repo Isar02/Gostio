@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../data/chat_hub.dart';
-import '../data/conversation.dart';
 import '../data/conversation_query.dart';
 import '../data/conversations_repository.dart';
 import '../data/messages_repository.dart';

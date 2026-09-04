@@ -1,8 +1,5 @@
-import 'package:gostio_desktop/core/models/image_upload.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/news/data/news_draft.dart';
-import 'package:gostio_desktop/features/news/data/news_item.dart';
 import 'package:gostio_desktop/features/news/data/news_query.dart';
 import 'package:gostio_desktop/features/news/data/news_repository.dart';
 

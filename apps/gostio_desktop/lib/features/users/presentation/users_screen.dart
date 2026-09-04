@@ -1,12 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/models/user.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/theme/tone.dart';
 import '../../../core/widgets/account_avatar.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/pagination_footer.dart';

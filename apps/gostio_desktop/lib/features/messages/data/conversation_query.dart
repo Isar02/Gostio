@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/network/api_client.dart';
-import 'conversation_type.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A filter nobody set is left out of the request rather than sent empty,
 // which the API would read as a value to match.

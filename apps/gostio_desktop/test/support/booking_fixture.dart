@@ -1,4 +1,4 @@
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A stay, which is the shape most of these tests read. What a test is actually
 // about it names itself; everything else is a plausible row from the seed.

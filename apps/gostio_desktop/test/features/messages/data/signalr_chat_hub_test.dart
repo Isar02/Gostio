@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/data/chat_hub.dart';
 import 'package:gostio_desktop/features/messages/data/signalr_chat_hub.dart';
 

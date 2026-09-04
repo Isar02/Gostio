@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/overview/data/overview_month.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 
 import '../../../support/booking_fixture.dart';
 

@@ -1,9 +1,7 @@
-import 'package:gostio_desktop/features/host_applications/data/host_application.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/overview/data/destination_share.dart';
 import 'package:gostio_desktop/features/overview/data/host_overview.dart';
 import 'package:gostio_desktop/features/overview/data/platform_overview.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
 
 import 'application_fixture.dart';
 import 'booking_fixture.dart';

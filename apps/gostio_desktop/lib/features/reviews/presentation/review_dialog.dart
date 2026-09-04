@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/paging/writing_notifier.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/theme/tone.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../../listings/data/listing_address.dart';
-import '../data/review.dart';
 import 'rating_stars.dart';
 
 class ReviewDialog extends StatefulWidget {

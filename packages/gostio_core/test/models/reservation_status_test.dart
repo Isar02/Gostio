@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation_status.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 void main() {
   test('the seeded keys name the statuses this client knows', () {

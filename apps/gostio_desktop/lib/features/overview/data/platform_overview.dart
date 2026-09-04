@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../host_applications/data/host_application.dart';
-import '../../reports/data/revenue_report.dart';
-import '../../reservations/data/reservation.dart';
 import 'destination_share.dart';
 
 // What the administrator panel opens with: four figures, the year behind them,

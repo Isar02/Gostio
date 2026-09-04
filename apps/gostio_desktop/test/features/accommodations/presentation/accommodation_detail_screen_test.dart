@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/models/user.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_amenities_repository.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation_availability.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_availability_repository.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
@@ -13,7 +9,6 @@ import 'package:gostio_desktop/features/accommodations/data/accommodations_repos
 import 'package:gostio_desktop/features/accommodations/data/availability_draft.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_detail_notifier.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_detail_screen.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:gostio_desktop/features/users/data/users_repository.dart';

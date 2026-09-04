@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
-import '../data/lookup_item.dart';
 
 // Adding a city is the administrator's route, so a host is offered the
 // dropdown alone.

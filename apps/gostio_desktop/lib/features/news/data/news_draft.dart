@@ -1,5 +1,4 @@
-import '../../../core/network/api_client.dart';
-import 'news_item.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // Both endpoints take a multipart body, so the text goes as fields.
 class NewsDraft {

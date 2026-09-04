@@ -1,4 +1,4 @@
-import 'package:gostio_desktop/core/models/user.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // An account the way the API answers one. What a test is actually about it
 // names itself; everything else is a plausible row from the seed.

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/account_avatar.dart';
-import '../data/message.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({

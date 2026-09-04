@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/widgets/account_avatar.dart';
 import 'package:gostio_desktop/features/messages/data/chat_hub.dart';
-import 'package:gostio_desktop/features/messages/data/conversation.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_participant.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_type.dart';
 import 'package:gostio_desktop/features/messages/data/conversations_repository.dart';
-import 'package:gostio_desktop/features/messages/data/message.dart';
 import 'package:gostio_desktop/features/messages/data/messages_repository.dart';
 import 'package:gostio_desktop/features/messages/presentation/chat_unread_notifier.dart';
 import 'package:gostio_desktop/features/messages/presentation/message_bubble.dart';

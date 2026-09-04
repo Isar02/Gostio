@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/data/conversation_query.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_type.dart';
 
 void main() {
   test('a filter nobody set sends nothing', () {

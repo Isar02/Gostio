@@ -1,4 +1,4 @@
-import 'package:gostio_desktop/features/host_applications/data/host_application.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A request still waiting for an answer, which is the shape most of these
 // tests read. What a test is about it names itself.

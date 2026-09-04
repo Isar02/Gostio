@@ -1,7 +1,5 @@
-import '../../../core/models/image_upload.dart';
-import '../../../core/models/user.dart';
-import '../../../core/network/api_exception.dart';
-import '../../../core/session/session.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/state/screen_notifier.dart';
 import '../../users/data/user_draft.dart';
 import '../data/profile_repository.dart';

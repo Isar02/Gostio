@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:gostio_core/gostio_core.dart';
 
-// A call in flight outlives the screen that started it — a form left through
-// Back while it is sending. What the answer wanted to announce is dropped
-// rather than thrown at a notifier nobody listens to.
-abstract class ScreenNotifier extends ChangeNotifier {
-  bool _isDisposed = false;
+import 'live_notifier.dart';
+
+// One screen's one request: whether it is in flight, and what the server
+// faulted if it was refused. A list holding pages keeps different state and
+// does not come through here.
+abstract class ScreenNotifier extends LiveNotifier {
   bool _isBusy = false;
   ApiException? _failure;
 
@@ -26,17 +27,17 @@ abstract class ScreenNotifier extends ChangeNotifier {
 
     try {
       await request();
-      if (!_isDisposed) {
+      if (!isDisposed) {
         onSuccess?.call();
 
         return true;
       }
     } on ApiException catch (failure) {
-      if (!_isDisposed) {
+      if (!isDisposed) {
         _failure = failure;
       }
     } finally {
-      if (!_isDisposed) {
+      if (!isDisposed) {
         _isBusy = false;
         publish();
       }
@@ -47,7 +48,7 @@ abstract class ScreenNotifier extends ChangeNotifier {
 
   void clearFailureFor(String field) {
     final ApiException? failure = _failure;
-    if (failure == null || _isDisposed) {
+    if (failure == null || isDisposed) {
       return;
     }
 
@@ -79,19 +80,5 @@ abstract class ScreenNotifier extends ChangeNotifier {
             traceId: failure.traceId,
           );
     publish();
-  }
-
-  @protected
-  void publish() {
-    if (!_isDisposed) {
-      notifyListeners();
-    }
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-
-    super.dispose();
   }
 }

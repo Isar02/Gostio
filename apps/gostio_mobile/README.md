@@ -3,6 +3,18 @@
 The Android client for guests. Administrators and hosts are served by the
 Windows client beside it.
 
+## Current state
+
+Milestone C2 is complete and C3 is in review. The client signs in, registers, requests and spends a
+password-reset code, signs out, and validates the active session whenever the
+application returns to the foreground. Behind those screens sits the widget
+vocabulary the catalogue flow is built from: cards and listing cards, section
+headers, chips, rating stars, the loading, empty and error states, a bottom
+sheet and action bar, an appending paged list that says how much of the whole
+it holds, a date range picker over a month grid, and `ApiImage`. None of it
+is drawn by a screen yet, so C4, the five-tab shell, is both what composes it
+and what first puts it in front of a reader.
+
 ## The emulator
 
 Android Studio brings the SDK but no system image, and without one there is no
@@ -45,6 +57,10 @@ flutter test
 ```
 
 Nothing is committed while any of the three reports anything.
+
+The vocabulary lives under `lib/core` and belongs to no feature. A screen that
+needs a card, a state, a chip or a list footer composes one from there rather
+than writing its own.
 
 ## Layout
 

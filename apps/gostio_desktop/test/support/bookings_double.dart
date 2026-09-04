@@ -57,4 +57,11 @@ class BookingsDouble implements ReservationsRepository {
     required DateTime from,
     required DateTime to,
   }) => throw UnimplementedError();
+
+  @override
+  Future<List<Reservation>> forHostWindow(
+    int hostId, {
+    required DateTime from,
+    required DateTime to,
+  }) => throw UnimplementedError();
 }

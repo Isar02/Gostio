@@ -18,6 +18,7 @@ import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../experiences/data/experience_slot.dart';
 import '../../experiences/data/experience_slots_repository.dart';
+import '../../listings/presentation/booking_colours.dart';
 import '../data/reservation.dart';
 import '../data/reservation_payment.dart';
 import '../data/reservation_refund.dart';
@@ -25,7 +26,7 @@ import '../data/reservation_status.dart';
 import '../data/reservations_repository.dart';
 import 'cancel_reservation_dialog.dart';
 import 'reservation_detail_notifier.dart';
-import 'reservation_standing.dart';
+import 'settlement_tone.dart';
 import 'side_read.dart';
 
 class ReservationDetailScreen extends StatelessWidget {
@@ -210,7 +211,7 @@ class _Header extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           StatusChip(
             booking.status,
-            tone: ReservationStanding.toneOf(booking.standing),
+            tone: BookingColours.tone(booking.standing),
           ),
           const SizedBox(width: AppSpacing.lg),
           _Moves(notifier: notifier, booking: booking),
@@ -494,10 +495,7 @@ class _Settlement extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: StatusChip(
-        status,
-        tone: ReservationStanding.toneOfSettlement(status),
-      ),
+      child: StatusChip(status, tone: SettlementTone.of(status)),
     );
   }
 }

@@ -19,6 +19,7 @@ import '../features/messages/data/conversations_repository.dart';
 import '../features/messages/data/messages_repository.dart';
 import '../features/news/data/news_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
+import '../features/overview/data/overview_repository.dart';
 import '../features/reference/data/reference_repository.dart';
 import '../features/reference/data/reference_rows_repository.dart';
 import '../features/reports/data/reports_repository.dart';
@@ -116,6 +117,18 @@ class GostioApp extends StatelessWidget {
         Provider<MessagesRepository>(
           create: (BuildContext context) =>
               MessagesRepository(context.read<ApiClient>()),
+        ),
+        // The overview reads what the others already answer, so it is composed
+        // from them rather than given a client of its own.
+        Provider<OverviewRepository>(
+          create: (BuildContext context) => OverviewRepository(
+            accommodations: context.read<AccommodationsRepository>(),
+            experiences: context.read<ExperiencesRepository>(),
+            reservations: context.read<ReservationsRepository>(),
+            reports: context.read<ReportsRepository>(),
+            users: context.read<UsersRepository>(),
+            applications: context.read<HostApplicationsRepository>(),
+          ),
         ),
       ],
       child: MaterialApp(

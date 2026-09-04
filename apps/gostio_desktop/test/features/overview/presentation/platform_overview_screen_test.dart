@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_desktop/core/theme/app_colors.dart';
 import 'package:gostio_desktop/core/theme/app_theme.dart';
 import 'package:gostio_desktop/core/time/calendar_days.dart';
 import 'package:gostio_desktop/features/host_applications/data/host_application.dart';
@@ -67,8 +68,8 @@ void main() {
     expect(find.text('Feb'), findsOneWidget);
   });
 
-  // A year with nothing in it has no bar to draw against, so it says so
-  // instead of dividing by a peak of nought.
+  // A year in which every month is exactly nought has no length to draw with,
+  // so it says so instead of dividing by a span of nought.
   testWidgets('a year that traded nothing draws no bars', (
     WidgetTester tester,
   ) async {
@@ -76,7 +77,7 @@ void main() {
       _screen(
         OverviewDouble(
           standing: platformOverview(
-            trade: <RevenueReportRow>[revenueRow(net: 0)],
+            trade: <RevenueReportRow>[revenueRow(net: 0), revenueRow(net: 0)],
           ),
         ),
       ),
@@ -84,6 +85,56 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nothing traded yet'), findsOneWidget);
+    expect(_bars(AppColors.iris), findsNothing);
+  });
+
+  // A month that gave back more than it took is a net below nought. It is
+  // drawn under the line rather than folded up above it, where it would read
+  // as a small month that earned something.
+  testWidgets('a month that gave more back than it took is drawn as a loss', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _screen(
+        OverviewDouble(
+          standing: platformOverview(
+            trade: <RevenueReportRow>[
+              revenueRow(month: 6, net: 4200),
+              revenueRow(month: 7, net: -800, refunded: 800, grossCharged: 0),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nothing traded yet'), findsNothing);
+    expect(_bars(AppColors.iris), findsOneWidget);
+    expect(_bars(AppColors.danger), findsOneWidget);
+  });
+
+  // A year that only ever gave money back has a length to draw with, and it
+  // is all below the line.
+  testWidgets('a year of nothing but refunds is still drawn', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _screen(
+        OverviewDouble(
+          standing: platformOverview(
+            trade: <RevenueReportRow>[
+              revenueRow(month: 6, net: -300, refunded: 300, grossCharged: 0),
+              revenueRow(month: 7, net: -900, refunded: 900, grossCharged: 0),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nothing traded yet'), findsNothing);
+    expect(_bars(AppColors.danger), findsNWidgets(2));
+    expect(_bars(AppColors.iris), findsNothing);
   });
 
   testWidgets('the destinations are ranked with what each took', (
@@ -194,6 +245,18 @@ void main() {
     expect(find.text('Trace a51b30'), findsOneWidget);
   });
 }
+
+// A bar is the only painted box the trend draws, so its colour is what tells
+// a month that earned from one that gave back.
+Finder _bars(Color ink) => find.descendant(
+  of: find.byType(OverviewTrend),
+  matching: find.byWidgetPredicate(
+    (Widget widget) =>
+        widget is DecoratedBox &&
+        widget.decoration is BoxDecoration &&
+        (widget.decoration as BoxDecoration).color == ink,
+  ),
+);
 
 Finder _figure(String value) => find.descendant(
   of: find.byType(OverviewFigures),

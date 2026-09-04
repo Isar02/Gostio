@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/host_applications/data/host_application_query.dart';
-import 'package:gostio_desktop/features/host_applications/data/host_application_status.dart';
 
 void main() {
   test('a filter nobody set is left out of the request', () {

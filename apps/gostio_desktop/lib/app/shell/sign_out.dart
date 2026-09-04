@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/network/api_exception.dart';
-import '../../core/session/session.dart';
 import '../../features/auth/data/auth_repository.dart';
 
 // The session ends whatever the server answered: a token it has already

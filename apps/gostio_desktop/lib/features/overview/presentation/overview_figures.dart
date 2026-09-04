@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 
 // One figure the panel opens with. Both panels read four, and which four is

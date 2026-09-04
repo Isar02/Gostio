@@ -1,8 +1,6 @@
-import '../../../core/models/image_upload.dart';
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'news_draft.dart';
-import 'news_item.dart';
 import 'news_query.dart';
 
 class NewsRepository {

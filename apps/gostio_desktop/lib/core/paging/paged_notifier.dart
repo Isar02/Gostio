@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../models/paged_result.dart';
-import '../network/api_exception.dart';
 import '../state/screen_notifier.dart';
 
 // The state behind a list: one page of rows, the query they were fetched

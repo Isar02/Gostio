@@ -1,6 +1,5 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import 'conversation.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'conversation_query.dart';
 
 class ConversationsRepository {

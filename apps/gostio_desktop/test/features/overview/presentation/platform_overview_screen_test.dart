@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
-import 'package:gostio_desktop/core/theme/app_colors.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/theme/app_theme.dart';
-import 'package:gostio_desktop/core/time/calendar_days.dart';
-import 'package:gostio_desktop/features/host_applications/data/host_application.dart';
 import 'package:gostio_desktop/features/overview/data/destination_share.dart';
 import 'package:gostio_desktop/features/overview/data/overview_repository.dart';
 import 'package:gostio_desktop/features/overview/presentation/overview_bookings.dart';
@@ -12,7 +9,6 @@ import 'package:gostio_desktop/features/overview/presentation/overview_figures.d
 import 'package:gostio_desktop/features/overview/presentation/overview_ranking.dart';
 import 'package:gostio_desktop/features/overview/presentation/overview_trend.dart';
 import 'package:gostio_desktop/features/overview/presentation/platform_overview_screen.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
 import 'package:provider/provider.dart';
 
 import '../../../support/application_fixture.dart';

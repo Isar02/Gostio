@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/overview/presentation/platform_overview_notifier.dart';
 
 import '../../../support/overview_doubles.dart';

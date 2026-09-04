@@ -1,11 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/models/image_upload.dart';
-import '../../../core/models/user.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/validation/image_rules.dart';
 import '../../../core/widgets/account_avatar.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 

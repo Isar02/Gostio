@@ -2,19 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/formatting/app_durations.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/paging/writing_notifier.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/theme/tone.dart';
-import '../../../core/validation/input_formats.dart';
-import '../../../core/validation/validators.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
-import '../data/experience_slot.dart';
 
 // What a term that already exists can still be told: how many places it takes
 // and whether it is open. When it runs is not among them, because the API has

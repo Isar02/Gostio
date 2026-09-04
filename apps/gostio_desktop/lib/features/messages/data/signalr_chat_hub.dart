@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'chat_broadcast.dart';
 import 'chat_connection.dart';
 import 'chat_hub.dart';
-import 'message.dart';
 import 'signalr_connection.dart';
 
 class SignalRChatHub implements ChatHub {

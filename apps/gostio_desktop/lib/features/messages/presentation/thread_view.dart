@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/theme/tone.dart';
 import '../../../core/widgets/account_avatar.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../data/conversation.dart';
-import '../data/conversation_participant.dart';
-import '../data/conversation_type.dart';
-import '../data/message.dart';
 import 'conversation_look.dart';
 import 'message_bubble.dart';
 import 'message_composer.dart';

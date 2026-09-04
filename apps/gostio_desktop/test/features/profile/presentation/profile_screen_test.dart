@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_client.dart';
-import 'package:gostio_desktop/core/session/session.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/profile/data/profile_repository.dart';
 import 'package:gostio_desktop/features/profile/presentation/profile_screen.dart';
 import 'package:provider/provider.dart';

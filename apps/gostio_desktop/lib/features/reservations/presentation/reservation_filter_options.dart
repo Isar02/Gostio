@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../accommodations/data/accommodations_repository.dart';
 import '../../experiences/data/experiences_repository.dart';
 import '../../listings/data/listing_choice.dart';
-import '../../reference/data/lookup_item.dart';
 import '../../reference/data/reference_repository.dart';
 
 @immutable

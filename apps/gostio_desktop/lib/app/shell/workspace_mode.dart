@@ -1,5 +1,4 @@
-import '../../core/authorization/role_names.dart';
-import '../../core/models/user.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // Declared widest first: an account holding both opens on the first of the two.
 enum WorkspaceMode {

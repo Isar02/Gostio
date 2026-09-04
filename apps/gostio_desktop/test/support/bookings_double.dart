@@ -1,9 +1,5 @@
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/features/reservations/data/refund_quote.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation_payment.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reservations/data/reservation_query.dart';
-import 'package:gostio_desktop/features/reservations/data/reservation_refund.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 
 // Five screens outside the reservations feature reach this repository for one

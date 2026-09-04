@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/time/calendar_days.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/widgets/date_field.dart';
 
 void main() {

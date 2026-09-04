@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reports/presentation/report_columns.dart';
 
 import '../../../support/report_fixture.dart';

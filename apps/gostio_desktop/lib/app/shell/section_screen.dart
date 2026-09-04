@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../core/models/user.dart';
 import '../../features/accommodations/presentation/accommodations_screen.dart';
 import '../../features/experiences/presentation/experiences_screen.dart';
 import '../../features/host_applications/presentation/host_applications_screen.dart';

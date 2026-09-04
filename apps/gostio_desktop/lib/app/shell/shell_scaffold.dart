@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../../core/config/app_settings.dart';
-import '../../core/models/user.dart';
-import '../../core/network/api_client.dart';
-import '../../core/session/session.dart';
 import '../../features/messages/data/chat_hub.dart';
 import '../../features/messages/data/messages_repository.dart';
 import '../../features/messages/data/signalr_chat_hub.dart';

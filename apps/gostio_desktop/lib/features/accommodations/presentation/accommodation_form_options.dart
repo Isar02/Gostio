@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/models/user.dart';
-import '../../reference/data/lookup_item.dart';
 import '../../reference/data/reference_repository.dart';
 import '../../users/data/users_repository.dart';
 

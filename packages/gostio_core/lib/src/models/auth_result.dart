@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../../core/models/user.dart';
+import 'user.dart';
 
 part 'auth_result.g.dart';
 

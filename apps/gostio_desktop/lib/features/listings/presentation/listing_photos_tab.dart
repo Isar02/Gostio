@@ -3,22 +3,15 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/formatting/app_numbers.dart';
-import '../../../core/models/image_upload.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/theme/tone.dart';
-import '../../../core/validation/image_rules.dart';
 import '../../../core/widgets/api_image.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../data/listing_address.dart';
-import '../data/listing_photo.dart';
 import '../data/listing_photos_repository.dart';
 import 'listing_photos_notifier.dart';
 

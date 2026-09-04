@@ -1,5 +1,5 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/models/user.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/paged_notifier.dart';
 import '../data/user_query.dart';
 import '../data/users_repository.dart';

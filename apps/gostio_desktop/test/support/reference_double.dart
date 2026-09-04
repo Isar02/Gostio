@@ -1,4 +1,4 @@
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reference/data/reference_repository.dart';
 
 // Nine screens outside the reference feature read one or two of its tables.

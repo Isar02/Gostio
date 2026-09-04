@@ -1,5 +1,4 @@
-import '../../../core/network/api_client.dart';
-import 'message.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The one call the hub makes carries the message as its only argument.
 abstract final class ChatBroadcast {

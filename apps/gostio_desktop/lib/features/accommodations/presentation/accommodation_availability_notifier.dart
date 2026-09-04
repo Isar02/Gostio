@@ -1,9 +1,7 @@
-import '../../../core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/state/screen_notifier.dart';
-import '../../../core/time/calendar_days.dart';
-import '../../reservations/data/reservation.dart';
 import '../../reservations/data/reservations_repository.dart';
-import '../data/accommodation_availability.dart';
 import '../data/accommodation_availability_repository.dart';
 import '../data/availability_draft.dart';
 import 'availability_month.dart';

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
 import '../data/conversation_query.dart';
-import '../data/conversation_type.dart';
 
 class ConversationFilters extends StatelessWidget {
   const ConversationFilters({

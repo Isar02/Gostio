@@ -1,8 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/messages/data/conversation.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_participant.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_type.dart';
-import 'package:gostio_desktop/features/messages/data/message.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../../support/conversation_fixture.dart';
 

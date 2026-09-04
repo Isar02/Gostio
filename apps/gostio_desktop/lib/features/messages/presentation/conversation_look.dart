@@ -1,5 +1,4 @@
-import '../../../core/theme/tone.dart';
-import '../data/conversation_type.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 extension ConversationLook on ConversationType {
   Tone get tone => switch (this) {

@@ -2,15 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/models/user.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodations_repository.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_detail_notifier.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_form.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 import '../../../support/bookings_double.dart';
 import '../../../support/reference_double.dart';

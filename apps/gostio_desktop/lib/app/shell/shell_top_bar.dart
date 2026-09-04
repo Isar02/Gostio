@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/models/user.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
 import '../../features/notifications/presentation/notification_bell.dart';
 import 'account_menu.dart';

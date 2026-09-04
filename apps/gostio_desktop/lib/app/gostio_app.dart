@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../core/config/app_settings.dart';
-import '../core/network/api_client.dart';
-import '../core/session/session.dart';
 import '../core/theme/app_theme.dart';
 import '../features/accommodations/data/accommodation_amenities_repository.dart';
 import '../features/accommodations/data/accommodation_availability_repository.dart';

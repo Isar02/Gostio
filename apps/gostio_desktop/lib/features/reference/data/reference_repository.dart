@@ -1,7 +1,7 @@
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/page_walk.dart';
 import 'home_country.dart';
-import 'lookup_item.dart';
 
 class ReferenceRepository {
   const ReferenceRepository(this._client);

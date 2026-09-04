@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/account_avatar.dart';
 import '../../../core/widgets/app_notice.dart';
@@ -9,9 +8,6 @@ import '../../../core/widgets/count_badge.dart';
 import '../../../core/widgets/pagination_footer.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../data/conversation.dart';
-import '../data/conversation_participant.dart';
-import '../data/message.dart';
 import 'conversation_look.dart';
 import 'inbox_notifier.dart';
 

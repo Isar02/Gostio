@@ -1,12 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/image_upload.dart';
-import 'package:gostio_desktop/core/network/api_client.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/widgets/api_image.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
-import 'package:gostio_desktop/features/listings/data/listing_photo.dart';
 import 'package:gostio_desktop/features/listings/data/listing_photos_repository.dart';
 import 'package:gostio_desktop/features/listings/presentation/listing_photos_tab.dart';
 import 'package:provider/provider.dart';

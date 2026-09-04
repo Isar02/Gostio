@@ -1,5 +1,4 @@
-import '../../../core/theme/tone.dart';
-import '../data/host_application_status.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // What a standing looks like on a chip. The label stays the API's own word for
 // the row, so nothing here renames one; only the colour is decided.

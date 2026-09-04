@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/image_upload.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/news/data/news_draft.dart';
 import 'package:gostio_desktop/features/news/presentation/news_detail_notifier.dart';
 

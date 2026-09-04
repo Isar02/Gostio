@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/time/calendar_days.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 void main() {
   test('a week begins on the Monday on or before the day', () {

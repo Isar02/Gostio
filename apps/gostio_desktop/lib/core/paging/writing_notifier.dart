@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../network/api_exception.dart';
 import 'paged_notifier.dart';
 
 @immutable

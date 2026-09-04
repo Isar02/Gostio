@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_amenities_repository.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_amenities_notifier.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 import '../../../support/reference_double.dart';
 

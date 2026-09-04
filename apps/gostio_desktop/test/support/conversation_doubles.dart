@@ -1,9 +1,6 @@
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/core/network/api_exception.dart';
-import 'package:gostio_desktop/features/messages/data/conversation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/data/conversation_query.dart';
 import 'package:gostio_desktop/features/messages/data/conversations_repository.dart';
-import 'package:gostio_desktop/features/messages/data/message.dart';
 import 'package:gostio_desktop/features/messages/data/messages_repository.dart';
 
 // What the inbox asked for and what it was told.

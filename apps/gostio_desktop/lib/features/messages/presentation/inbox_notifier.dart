@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import '../../../core/models/paged_result.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/paged_notifier.dart';
-import '../data/conversation.dart';
 import '../data/conversation_query.dart';
 import '../data/conversations_repository.dart';
 

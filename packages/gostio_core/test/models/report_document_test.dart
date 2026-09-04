@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/reports/data/listing_report.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 void main() {
   test('a month of trade is read with its four figures', () {

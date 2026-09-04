@@ -1,9 +1,6 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import '../../listings/data/listing_address.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../listings/data/listing_titles.dart';
-import '../../reference/data/lookup_item.dart';
-import 'accommodation.dart';
 import 'accommodation_draft.dart';
 import 'accommodation_query.dart';
 

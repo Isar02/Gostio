@@ -1,8 +1,5 @@
 import 'package:flutter/painting.dart';
-
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/tone.dart';
-import '../../reservations/data/reservation_status.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // What a booking looks like wherever one is drawn. Three features report the
 // same standing — the booking table, the calendar of one listing and the month

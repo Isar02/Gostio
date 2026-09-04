@@ -1,4 +1,4 @@
-import '../../../core/theme/tone.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A charge and a refund each name their own state, and the two enumerations
 // share every name this colours. One it does not know keeps the word, not a

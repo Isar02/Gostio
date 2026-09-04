@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import 'app_colors.dart';
 import 'app_metrics.dart';
 import 'app_typography.dart';
 

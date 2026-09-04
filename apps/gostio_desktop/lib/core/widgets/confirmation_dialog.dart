@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 
 abstract final class ConfirmationDialog {

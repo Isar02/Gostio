@@ -1,5 +1,4 @@
-import 'package:gostio_desktop/features/reports/data/listing_report.dart';
-import 'package:gostio_desktop/features/reports/data/revenue_report.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // Two months of trade and two rows of the catalogue, in the shape the API
 // answers with. What a test is about it says itself.

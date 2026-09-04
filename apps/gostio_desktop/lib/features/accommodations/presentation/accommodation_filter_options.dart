@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../reference/data/lookup_item.dart';
 import '../../reference/data/reference_repository.dart';
 
 @immutable

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 
 // The one container the overview is built out of. Every panel on either screen

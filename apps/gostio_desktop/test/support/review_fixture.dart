@@ -1,4 +1,4 @@
-import 'package:gostio_desktop/features/reviews/data/review.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // A review of a stay, which is the shape most of these tests read. What a
 // test is about it names itself; the rest is a plausible row from the seed.

@@ -1,9 +1,7 @@
-import '../../../core/network/api_client.dart';
-import '../../listings/data/listing_address.dart';
-import 'listing_report.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'report_range.dart';
 import 'report_scope.dart';
-import 'revenue_report.dart';
 
 // Neither report is paged: a document is read whole or not at all.
 class ReportsRepository {

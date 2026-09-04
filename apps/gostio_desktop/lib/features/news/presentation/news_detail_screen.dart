@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/formatting/app_dates.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/screen_states.dart';
-import '../data/news_item.dart';
 import '../data/news_repository.dart';
 import 'news_detail_notifier.dart';
 import 'news_form.dart';

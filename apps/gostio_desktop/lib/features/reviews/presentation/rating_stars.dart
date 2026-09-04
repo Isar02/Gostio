@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../data/review_stars.dart';
 
 class RatingStars extends StatelessWidget {
   const RatingStars(this.rating, {this.size = AppSizes.iconSmall, super.key});

@@ -1,13 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/formatting/app_numbers.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../listings/presentation/booking_colours.dart';
-import '../../reservations/data/reservation.dart';
-import '../data/accommodation_availability.dart';
 import 'availability_month.dart';
 import 'availability_words.dart';
 

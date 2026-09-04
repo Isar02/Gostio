@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/listings/data/listing_choice.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 import 'package:gostio_desktop/features/reservations/presentation/reservation_filter_options.dart';
 
 import '../../../support/catalogue_doubles.dart';

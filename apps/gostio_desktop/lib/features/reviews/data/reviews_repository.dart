@@ -1,6 +1,5 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import 'review.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'review_query.dart';
 
 class ReviewsRepository {

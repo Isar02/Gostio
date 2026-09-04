@@ -1,7 +1,6 @@
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/page_walk.dart';
-import '../../reference/data/lookup_item.dart';
-import 'listing_address.dart';
 
 // Both catalogues answer a title where a reference table answers a name, and
 // a filter that names a listing wants nothing else off the row. Written once

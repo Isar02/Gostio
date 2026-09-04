@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import '../../../core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/state/screen_notifier.dart';
 import '../data/messages_repository.dart';
 

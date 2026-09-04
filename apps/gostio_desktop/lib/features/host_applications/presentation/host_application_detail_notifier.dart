@@ -1,6 +1,6 @@
-import '../../../core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/state/screen_notifier.dart';
-import '../data/host_application.dart';
 import '../data/host_applications_repository.dart';
 
 class HostApplicationDetailNotifier extends ScreenNotifier {

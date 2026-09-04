@@ -1,5 +1,4 @@
-import '../../../core/models/user.dart';
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The four fields both endpoints take. What only a new account carries — the
 // username it is known by, the password it starts with, the roles it holds —

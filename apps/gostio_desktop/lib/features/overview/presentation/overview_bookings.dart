@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/formatting/app_numbers.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../listings/presentation/booking_colours.dart';
-import '../../reservations/data/reservation.dart';
 
 // The bookings most recently made, which is what the list itself is ordered by.
 // The status keeps the API's own word for it and the colour it carries in the

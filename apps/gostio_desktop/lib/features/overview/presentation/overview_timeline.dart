@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/time/calendar_days.dart';
 import '../../listings/presentation/booking_colours.dart';
-import '../../reservations/data/reservation.dart';
 import '../data/overview_month.dart';
 
 // A month across every listing a host owns. The names are pinned and the days

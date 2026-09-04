@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 
 // Coordinates are chosen on a map rather than typed. The tile policy asks

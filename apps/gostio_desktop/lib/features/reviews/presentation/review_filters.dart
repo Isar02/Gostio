@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
-import '../../listings/data/listing_address.dart';
 import '../../listings/data/listing_choice.dart';
 import '../data/review_query.dart';
-import '../data/review_stars.dart';
 import 'review_filter_options.dart';
 
 class ReviewFilters extends StatefulWidget {

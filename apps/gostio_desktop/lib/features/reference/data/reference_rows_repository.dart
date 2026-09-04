@@ -1,5 +1,5 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'reference_query.dart';
 import 'reference_row.dart';
 import 'reference_table.dart';

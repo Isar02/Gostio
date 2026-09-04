@@ -1,8 +1,7 @@
-import '../../../core/models/image_upload.dart';
-import '../../../core/network/api_exception.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/state/screen_notifier.dart';
 import '../data/news_draft.dart';
-import '../data/news_item.dart';
 import '../data/news_repository.dart';
 
 // A save with nothing to write is not a write.

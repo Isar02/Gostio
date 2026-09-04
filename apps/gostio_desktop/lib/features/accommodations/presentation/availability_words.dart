@@ -1,6 +1,4 @@
-import '../../../core/formatting/app_dates.dart';
-import '../../../core/formatting/app_numbers.dart';
-import '../data/accommodation_availability.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The calendar says the same three things in a tooltip, on the bar under it
 // and in the dialog that writes them, so they are written once.

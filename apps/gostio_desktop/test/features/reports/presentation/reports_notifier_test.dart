@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/listings/data/listing_address.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/reports/data/report_range.dart';
 import 'package:gostio_desktop/features/reports/data/report_scope.dart';
 import 'package:gostio_desktop/features/reports/presentation/reports_notifier.dart';

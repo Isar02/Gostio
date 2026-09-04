@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/validation/validators.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/presentation/message_composer.dart';
 
 void main() {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/validation/validators.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The messages are the server's own, so each one here is quoted from the
 // attribute that writes it rather than from the method under test.

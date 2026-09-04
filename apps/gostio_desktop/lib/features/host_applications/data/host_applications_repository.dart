@@ -1,6 +1,5 @@
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_client.dart';
-import 'host_application.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import 'host_application_query.dart';
 
 class HostApplicationsRepository {

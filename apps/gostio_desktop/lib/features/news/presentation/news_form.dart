@@ -1,16 +1,12 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/models/image_upload.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/validation/image_rules.dart';
-import '../../../core/validation/validators.dart';
 import '../../../core/widgets/api_image.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../data/news_draft.dart';
-import '../data/news_item.dart';
 import 'news_detail_notifier.dart';
 import 'news_picture_field.dart';
 

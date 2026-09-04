@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/features/messages/data/conversation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/messages/data/conversation_query.dart';
-import 'package:gostio_desktop/features/messages/data/conversation_type.dart';
 import 'package:gostio_desktop/features/messages/presentation/inbox_notifier.dart';
 
 import '../../../support/conversation_doubles.dart';

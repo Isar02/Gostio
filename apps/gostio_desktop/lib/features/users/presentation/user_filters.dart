@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
-import '../../reference/data/lookup_item.dart';
 import '../data/user_query.dart';
 import 'account_state.dart';
 import 'user_filter_options.dart';

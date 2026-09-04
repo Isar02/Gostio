@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/overview/data/destination_share.dart';
-import 'package:gostio_desktop/features/reports/data/listing_report.dart';
 
 import '../../../support/report_fixture.dart';
 

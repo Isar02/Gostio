@@ -1,11 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/models/paged_result.dart';
-import 'package:gostio_desktop/features/accommodations/data/accommodation.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_draft.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodations_repository.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodations_notifier.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 void main() {
   test('the catalogue is asked for without a host', () async {

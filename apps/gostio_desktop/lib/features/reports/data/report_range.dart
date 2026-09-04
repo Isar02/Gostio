@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
-
-import '../../../core/network/api_client.dart';
-import '../../../core/time/calendar_days.dart';
+import 'package:gostio_core/gostio_core.dart';
 
 // The days a report covers, closed at both ends. What the server would refuse
 // is refused here first, so it is never asked for.

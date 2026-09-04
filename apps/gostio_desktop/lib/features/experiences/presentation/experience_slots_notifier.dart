@@ -1,8 +1,7 @@
-import '../../../core/models/paged_result.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../../core/paging/paged_notifier.dart';
 import '../../../core/paging/writing_notifier.dart';
-import '../../../core/time/calendar_days.dart';
-import '../data/experience_slot.dart';
 import '../data/experience_slot_query.dart';
 import '../data/experience_slots_repository.dart';
 

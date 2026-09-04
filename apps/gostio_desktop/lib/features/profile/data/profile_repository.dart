@@ -1,7 +1,5 @@
-import '../../../core/models/image_upload.dart';
-import '../../../core/models/user.dart';
-import '../../../core/network/api_client.dart';
-import '../../auth/data/auth_result.dart';
+import 'package:gostio_core/gostio_core.dart';
+
 import '../../users/data/user_draft.dart';
 
 // The account the token belongs to. Not one route here names an id: who is

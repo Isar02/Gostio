@@ -1,12 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/state/screen_notifier.dart';
 import '../data/chat_hub.dart';
-import '../data/message.dart';
 import '../data/messages_repository.dart';
 
 class ThreadNotifier extends ScreenNotifier {

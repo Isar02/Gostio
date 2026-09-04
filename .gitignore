@@ -108,6 +108,13 @@ devtools_options.yaml
 # NOTE: generated Dart files (*.g.dart, *.freezed.dart) are committed on
 # purpose, so the project builds from source without running build_runner.
 
+# The rule above is NuGet's and takes every folder called packages with it. The
+# Dart package the two clients share is not one of those.
+!packages/gostio_core/
+
+# It is a library rather than an application, so the applications hold the locks.
+packages/gostio_core/pubspec.lock
+
 # ---------------------------------------------------------------------------
 # Release build output -- published via GitHub Releases, not repo history
 # ---------------------------------------------------------------------------

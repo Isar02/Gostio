@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_query.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_filter_options.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_filters.dart';
-import 'package:gostio_desktop/features/reference/data/lookup_item.dart';
 
 void main() {
   testWidgets('a filter that did not load goes back off the controls', (

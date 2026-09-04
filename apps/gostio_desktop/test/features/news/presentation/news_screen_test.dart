@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_desktop/core/network/api_client.dart';
+import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_desktop/core/widgets/filter_bar.dart';
-import 'package:gostio_desktop/features/news/data/news_item.dart';
 import 'package:gostio_desktop/features/news/data/news_repository.dart';
 import 'package:gostio_desktop/features/news/presentation/news_screen.dart';
 import 'package:provider/provider.dart';

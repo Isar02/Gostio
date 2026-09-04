@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/models/paged_result.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../core/paging/paged_notifier.dart';
-import '../data/app_notification.dart';
 import '../data/notifications_repository.dart';
 import 'notification_filter.dart';
 

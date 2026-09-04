@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gostio_core/gostio_core.dart';
 
-import '../../core/models/user.dart';
 import 'app_section.dart';
 import 'section_screen.dart';
 import 'workspace_mode.dart';

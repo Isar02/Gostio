@@ -5,8 +5,8 @@ import '../../../core/formatting/app_numbers.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../listings/presentation/booking_colours.dart';
 import '../../reservations/data/reservation.dart';
-import '../../reservations/data/reservation_standing.dart';
 
 // The bookings most recently made, which is what the list itself is ordered by.
 // The status keeps the API's own word for it and the colour it carries in the
@@ -75,7 +75,7 @@ class _Booking extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           StatusChip(
             booking.status,
-            tone: ReservationStanding.toneOf(booking.standing),
+            tone: BookingColours.tone(booking.standing),
           ),
           const SizedBox(width: AppSpacing.md),
           SizedBox(

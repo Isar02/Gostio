@@ -13,9 +13,9 @@ import '../../../core/widgets/screen_states.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../accommodations/data/accommodations_repository.dart';
 import '../../experiences/data/experiences_repository.dart';
+import '../../listings/presentation/booking_colours.dart';
 import '../../reference/data/reference_repository.dart';
 import '../data/reservation.dart';
-import '../data/reservation_standing.dart';
 import '../data/reservations_repository.dart';
 import 'reservation_detail_screen.dart';
 import 'reservation_filter_options.dart';
@@ -244,7 +244,7 @@ final List<TableColumn<Reservation>> _columns = <TableColumn<Reservation>>[
     label: 'Status',
     width: AppSizes.statusColumn,
     cell: (BuildContext context, Reservation row) =>
-        StatusChip(row.status, tone: ReservationStanding.toneOf(row.standing)),
+        StatusChip(row.status, tone: BookingColours.tone(row.standing)),
   ),
   TableColumn<Reservation>.text(
     label: 'Booked',

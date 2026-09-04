@@ -4,6 +4,6 @@ namespace Gostio.Model.Requests;
 
 public sealed class ResetPasswordRequest : NewPasswordRequest
 {
-    [Required(ErrorMessage = "This reset link carries no token.")]
+    [Required(ErrorMessage = "Enter the code from the email.")]
     public string Token { get; set; } = null!;
 }

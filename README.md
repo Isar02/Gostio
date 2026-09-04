@@ -122,8 +122,13 @@ flutter pub get
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```
 
-Its own checks are the desktop's three. What it draws today is the address it
-was given; the screens arrive with the units that follow.
+Its own checks are the desktop's three. Milestone C2 is complete: the client
+has branded sign-in, registration, password recovery and session validation
+screens, all exercised on the emulator against the running API, and the shared
+widget vocabulary — cards, states, chips, sheets, the appending paged list and
+the date range picker — that the catalogue flow composes from. That vocabulary
+is C3 and is still in review: no screen draws it yet. C4, the five-tab shell,
+is next.
 
 ## Building for release
 

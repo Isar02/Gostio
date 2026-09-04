@@ -6,14 +6,13 @@ for it and talks to the host; a host manages their listings and the bookings
 made against them; an administrator manages the reference data, the host
 applications, the news and the reports.
 
-Gostio consists of a backend, a desktop client, and a mobile client that is not
-written yet:
+Gostio consists of a backend, a desktop client and a mobile client:
 
 | Application | Audience | Location | State |
 | --- | --- | --- | --- |
 | REST API and background worker | both clients | `src/` | built |
 | Desktop client | administrators and hosts | `apps/gostio_desktop` | built |
-| Mobile client | guests | `apps/gostio_mobile` | not started |
+| Mobile client | guests | `apps/gostio_mobile` | in progress |
 
 The two clients share one package. `packages/gostio_core` holds what belongs to
 the product rather than to a client — the response models, the API client and
@@ -44,7 +43,8 @@ recommendations have data behind them. They use the same password.
 
 - Docker Desktop
 - .NET 10 SDK — only to build or test outside the containers
-- Flutter 3.47 or later — only for the desktop client
+- Flutter 3.47 or later — only for the clients
+- Android SDK and an emulator — only for the mobile client
 
 ## Running the stack
 
@@ -111,6 +111,20 @@ flutter analyze
 flutter test
 ```
 
+## Running the mobile client
+
+The address is passed the same way, and it is the one an Android emulator uses
+to reach the host machine.
+
+```bash
+cd apps/gostio_mobile
+flutter pub get
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
+```
+
+Its own checks are the desktop's three. What it draws today is the address it
+was given; the screens arrive with the units that follow.
+
 ## Building for release
 
 The build carries the address the same way the run does, and the address is the
@@ -123,9 +137,17 @@ flutter clean
 flutter build windows --release --dart-define=API_BASE_URL=http://localhost:5000
 ```
 
-That writes `build/windows/x64/runner/Release`. `Gostio.exe` is its entry
-point and the DLLs and the `data` folder beside it travel with it, so the
-folder is what gets distributed rather than the executable alone.
+```bash
+cd apps/gostio_mobile
+flutter clean
+flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5000
+```
+
+The Windows build writes `build/windows/x64/runner/Release`. `Gostio.exe` is
+its entry point and the DLLs and the `data` folder beside it travel with it, so
+the folder is what gets distributed rather than the executable alone. The
+Android build writes one file, `build/app/outputs/flutter-apk/app-release.apk`,
+signed with the debug keys so it installs from a build alone.
 
 Build output stays out of the repository; it belongs on a GitHub Release.
 
@@ -142,6 +164,9 @@ tests/
   Gostio.IntegrationTests   endpoint tests against SQL Server
 apps/
   gostio_desktop      Flutter desktop client for administrators and hosts
+  gostio_mobile       Flutter Android client for guests
+packages/
+  gostio_core         the contract, the session and the brand both clients share
 ```
 
 ## Technology

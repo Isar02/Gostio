@@ -18,7 +18,9 @@ public static class MessagingServiceCollectionExtensions
         services.AddGostioMessaging();
 
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddSingleton<IPushSender, FirebasePushSender>();
         services.AddScoped<INotificationWriter, NotificationWriter>();
+        services.AddScoped<IPushDispatcher, PushDispatcher>();
 
         return services;
     }

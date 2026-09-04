@@ -96,7 +96,7 @@ internal sealed class ReservationNotices(
     {
         var raisedAt = DateTime.UtcNow;
 
-        await notices.SendAsync(
+        await notices.NotifyAsync(
             new NotificationMessage
             {
                 UserId = party.UserId,

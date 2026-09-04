@@ -202,7 +202,7 @@ internal sealed class HostVerificationService(
     {
         var words = HostVerificationNoticeText.Of(decision, reason);
 
-        await notices.SendAsync(
+        await notices.NotifyAsync(
             new NotificationMessage
             {
                 UserId = applicant.UserId,

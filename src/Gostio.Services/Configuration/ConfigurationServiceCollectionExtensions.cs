@@ -14,6 +14,7 @@ public static class ConfigurationServiceCollectionExtensions
         services.AddSingleton(settings.Jwt);
         services.AddSingleton(settings.RabbitMq);
         services.AddSingleton(settings.Smtp);
+        services.AddSingleton(settings.Push);
         services.AddSingleton(settings.Stripe);
         services.AddSingleton(settings.Seed);
         services.AddSingleton(settings.Worker);

@@ -46,5 +46,7 @@ public class User : IEntity
 
     public ICollection<Notification> Notifications { get; set; } = [];
 
+    public ICollection<DeviceToken> DeviceTokens { get; set; } = [];
+
     public ICollection<SearchHistory> SearchHistory { get; set; } = [];
 }

@@ -11,11 +11,11 @@ public sealed class CapturedNotices : INotices
 
     public IEnumerable<TMessage> Of<TMessage>() => sent.OfType<TMessage>();
 
-    public Task SendAsync<TMessage>(TMessage message, CancellationToken cancellationToken)
+    public Task<bool> SendAsync<TMessage>(TMessage message, CancellationToken cancellationToken)
         where TMessage : class
     {
         sent.Add(message);
 
-        return Task.CompletedTask;
+        return Task.FromResult(true);
     }
 }

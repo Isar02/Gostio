@@ -15,11 +15,17 @@ public sealed class NotificationsControllerTests : IAsyncLifetime
 
     private readonly StubNotifications notifications = new();
 
+    private readonly StubDevices devices = new();
+
     private ApiHost host = null!;
 
     public async Task InitializeAsync() =>
         host = await ApiHost.StartAsync(
-            services => services.AddSingleton<INotificationService>(notifications));
+            services =>
+            {
+                services.AddSingleton<INotificationService>(notifications);
+                services.AddSingleton<IDeviceTokenService>(devices);
+            });
 
     public async Task DisposeAsync() => await host.DisposeAsync();
 
@@ -77,11 +83,43 @@ public sealed class NotificationsControllerTests : IAsyncLifetime
         Assert.Null(notifications.LastMarked);
     }
 
+    [Fact]
+    public async Task RegisteringADeviceHandsTheServiceWhatTheBodyCarried()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Post,
+            $"{Route}/device-tokens",
+            RoleNames.Guest,
+            new DeviceTokenRequest
+            {
+                Token = "a-device",
+                Platform = DevicePlatform.Android,
+            });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal("a-device", devices.LastRegistered?.Token);
+        Assert.Equal(DevicePlatform.Android, devices.LastRegistered?.Platform);
+    }
+
+    [Fact]
+    public async Task RemovingADeviceNamesItInTheBodyRatherThanThePath()
+    {
+        var response = await host.SendAsync(
+            HttpMethod.Delete,
+            $"{Route}/device-tokens",
+            RoleNames.Guest,
+            new DeviceTokenRequest { Token = "a-device" });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal("a-device", devices.LastForgotten?.Token);
+    }
     [Theory]
     [InlineData("GET", Route)]
     [InlineData("GET", $"{Route}/unread-count")]
     [InlineData("POST", $"{Route}/7/read")]
     [InlineData("POST", $"{Route}/read")]
+    [InlineData("POST", $"{Route}/device-tokens")]
+    [InlineData("DELETE", $"{Route}/device-tokens")]
     public async Task NoneOfItIsReachableWithoutAToken(string method, string path)
     {
         var response = await host.SendAsync(new HttpMethod(method), path);
@@ -100,6 +138,26 @@ public sealed class NotificationsControllerTests : IAsyncLifetime
         CreatedAt = new DateTime(2026, 8, 24, 12, 0, 0, DateTimeKind.Utc),
     };
 
+    private sealed class StubDevices : IDeviceTokenService
+    {
+        public DeviceTokenRequest? LastRegistered { get; private set; }
+
+        public DeviceTokenRequest? LastForgotten { get; private set; }
+
+        public Task RegisterAsync(DeviceTokenRequest request, CancellationToken cancellationToken)
+        {
+            LastRegistered = request;
+
+            return Task.CompletedTask;
+        }
+
+        public Task ForgetAsync(DeviceTokenRequest request, CancellationToken cancellationToken)
+        {
+            LastForgotten = request;
+
+            return Task.CompletedTask;
+        }
+    }
     private sealed class StubNotifications : INotificationService
     {
         public NotificationSearchRequest? LastSearch { get; private set; }

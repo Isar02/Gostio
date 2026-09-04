@@ -48,10 +48,16 @@ class _SessionCheckState extends State<SessionCheck>
       return;
     }
 
+    final AuthRepository repository = context.read<AuthRepository>();
+    final int tokenGeneration = session.tokenGeneration;
+
     try {
       // A 401 ends the session through the client; what comes back instead is
       // the account as it stands, which may have been edited elsewhere.
-      session.accountChanged(await context.read<AuthRepository>().me());
+      final User account = await repository.me();
+      if (mounted && session.tokenGeneration == tokenGeneration) {
+        session.accountChanged(account);
+      }
     } on ApiException {
       return;
     }

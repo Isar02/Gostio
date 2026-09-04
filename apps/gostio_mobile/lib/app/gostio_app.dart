@@ -19,7 +19,6 @@ class GostioApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: <SingleChildWidget>[
-        Provider<AppSettings>.value(value: settings),
         Provider<ApiClient>(
           create: (BuildContext context) =>
               ApiClient(baseUrl: settings.apiBaseUrl),

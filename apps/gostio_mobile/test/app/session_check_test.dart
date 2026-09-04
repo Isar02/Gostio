@@ -52,6 +52,36 @@ void main() {
 
     expect(session.isSignedIn, isTrue);
   });
+
+  testWidgets('a late check cannot overwrite a newer session', (
+    WidgetTester tester,
+  ) async {
+    final AuthDouble auth = AuthDouble(
+      user: account(firstName: 'Old'),
+      holdsTheCall: true,
+    );
+    final Session session = signedOutSession()
+      ..begin(
+        account: account(firstName: 'First'),
+        token: 'old-token',
+      );
+    await _pump(tester, auth: auth, session: session);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    session
+      ..end(SessionEnding.signedOut)
+      ..begin(
+        account: account(firstName: 'New'),
+        token: 'new-token',
+      );
+    auth.answer();
+    await tester.pumpAndSettle();
+
+    expect(session.account?.firstName, 'New');
+  });
 }
 
 Future<void> _pump(

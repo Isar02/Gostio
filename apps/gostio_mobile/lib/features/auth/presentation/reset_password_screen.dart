@@ -96,19 +96,21 @@ class _ResetPasswordFormState extends State<_ResetPasswordForm>
     final NavigatorState navigator = Navigator.of(context);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
 
-    await notifier.reset(
+    final bool wasReset = await notifier.reset(
       code: _code.text.trim(),
       newPassword: _newPassword.text,
       confirmNewPassword: _confirmNewPassword.text,
     );
 
-    if (notifier.failure case final ApiException failure) {
-      _fields.revealFault(failure);
+    if (!wasReset) {
+      if (notifier.failure case final ApiException failure) {
+        _fields.revealFault(failure);
+      }
 
       return;
     }
 
-    if (notifier.wasReset && navigator.mounted) {
+    if (navigator.mounted) {
       navigator.popUntil((Route<dynamic> route) => route.isFirst);
       messenger.showSnackBar(
         const SnackBar(
@@ -126,7 +128,7 @@ class _ResetPasswordFormState extends State<_ResetPasswordForm>
     final bool isBusy = notifier.isBusy;
 
     return DiscardGuard(
-      hasInput: _hasInput && !isBusy,
+      hasInput: _hasInput,
       child: AuthLayout(
         appBar: AppBar(),
         children: <Widget>[
@@ -160,6 +162,7 @@ class _ResetPasswordFormState extends State<_ResetPasswordForm>
                     errorText: notifier.messageFor('token'),
                   ),
                   validator: _codeIsThere,
+                  onChanged: (_) => notifier.clearFailureFor('token'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 PasswordField(
@@ -174,6 +177,7 @@ class _ResetPasswordFormState extends State<_ResetPasswordForm>
                     value,
                     missing: 'Enter a new password.',
                   ),
+                  onChanged: (_) => notifier.clearFailureFor('newPassword'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 PasswordField(
@@ -188,6 +192,8 @@ class _ResetPasswordFormState extends State<_ResetPasswordForm>
                     _newPassword.text,
                     missing: 'Repeat the new password.',
                   ),
+                  onChanged: (_) =>
+                      notifier.clearFailureFor('confirmNewPassword'),
                   onSubmitted: _submit,
                 ),
               ],

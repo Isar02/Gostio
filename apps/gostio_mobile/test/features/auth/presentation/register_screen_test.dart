@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
@@ -49,6 +51,51 @@ void main() {
     await _create(tester);
 
     expect(find.byType(RegisterScreen), findsNothing);
+  });
+
+  testWidgets('leaving a registration drops its late answer', (
+    WidgetTester tester,
+  ) async {
+    final AuthDouble auth = AuthDouble(holdsTheCall: true);
+    final Session session = signedOutSession();
+    await pushOnto(
+      tester,
+      const RegisterScreen(),
+      auth: auth,
+      session: session,
+    );
+
+    await _fillIn(tester);
+    final Finder button = find.widgetWithText(FilledButton, 'Create account');
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Leave this form?'), findsOneWidget);
+    await tester.tap(find.text('Leave'));
+    await tester.pumpAndSettle();
+
+    final NavigatorState navigator = tester.state<NavigatorState>(
+      find.byType(Navigator),
+    );
+    unawaited(
+      navigator.push<void>(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) =>
+              const Scaffold(body: Text('The next screen')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    auth.answer();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RegisterScreen), findsNothing);
+    expect(find.text('The next screen'), findsOneWidget);
+    expect(session.isSignedIn, isFalse);
   });
 
   // The field is optional, and an account with no number is not an account

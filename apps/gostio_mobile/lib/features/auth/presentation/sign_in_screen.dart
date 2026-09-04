@@ -120,6 +120,7 @@ class _SignInFormState extends State<_SignInForm>
                     errorText: notifier.messageFor('username'),
                   ),
                   validator: Validators.username,
+                  onChanged: (_) => notifier.clearFailureFor('username'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 PasswordField(
@@ -131,6 +132,7 @@ class _SignInFormState extends State<_SignInForm>
                   autofillHints: const <String>[AutofillHints.password],
                   errorText: notifier.messageFor('password'),
                   validator: Validators.password,
+                  onChanged: (_) => notifier.clearFailureFor('password'),
                   onSubmitted: _submit,
                 ),
               ],

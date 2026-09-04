@@ -85,7 +85,7 @@ class _ForgotPasswordFormState extends State<_ForgotPasswordForm>
     final bool isBusy = notifier.isBusy;
 
     return DiscardGuard(
-      hasInput: _email.text.isNotEmpty && !notifier.wasAsked && !isBusy,
+      hasInput: _email.text.isNotEmpty && !notifier.wasAsked,
       child: AuthLayout(
         appBar: AppBar(),
         children: <Widget>[
@@ -126,6 +126,7 @@ class _ForgotPasswordFormState extends State<_ForgotPasswordForm>
                 errorText: notifier.messageFor('email'),
               ),
               validator: Validators.emailAddress,
+              onChanged: (_) => notifier.clearFailureFor('email'),
               onFieldSubmitted: (_) => _submit(),
             ),
           ),

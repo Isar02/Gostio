@@ -102,7 +102,7 @@ class _RegisterFormState extends State<_RegisterForm>
     final NavigatorState navigator = Navigator.of(context);
     final String phoneNumber = _phoneNumber.text.trim();
 
-    await notifier.register(
+    final bool wasRegistered = await notifier.register(
       AccountRegistration(
         firstName: _firstName.text.trim(),
         lastName: _lastName.text.trim(),
@@ -114,8 +114,10 @@ class _RegisterFormState extends State<_RegisterForm>
       ),
     );
 
-    if (notifier.failure case final ApiException failure) {
-      _fields.revealFault(failure);
+    if (!wasRegistered) {
+      if (notifier.failure case final ApiException failure) {
+        _fields.revealFault(failure);
+      }
 
       return;
     }
@@ -134,7 +136,7 @@ class _RegisterFormState extends State<_RegisterForm>
     final bool isBusy = notifier.isBusy;
 
     return DiscardGuard(
-      hasInput: _hasInput && !isBusy,
+      hasInput: _hasInput,
       child: AuthLayout(
         appBar: AppBar(),
         children: <Widget>[
@@ -168,6 +170,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     errorText: notifier.messageFor('firstName'),
                   ),
                   validator: Validators.firstName,
+                  onChanged: (_) => notifier.clearFailureFor('firstName'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
@@ -182,6 +185,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     errorText: notifier.messageFor('lastName'),
                   ),
                   validator: Validators.lastName,
+                  onChanged: (_) => notifier.clearFailureFor('lastName'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
@@ -195,6 +199,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     errorText: notifier.messageFor('username'),
                   ),
                   validator: Validators.accountUsername,
+                  onChanged: (_) => notifier.clearFailureFor('username'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
@@ -209,6 +214,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     errorText: notifier.messageFor('email'),
                   ),
                   validator: Validators.emailAddress,
+                  onChanged: (_) => notifier.clearFailureFor('email'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
@@ -224,6 +230,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     errorText: notifier.messageFor('phoneNumber'),
                   ),
                   validator: Validators.phoneNumber,
+                  onChanged: (_) => notifier.clearFailureFor('phoneNumber'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 PasswordField(
@@ -238,6 +245,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     value,
                     missing: 'Enter a password.',
                   ),
+                  onChanged: (_) => notifier.clearFailureFor('password'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 PasswordField(
@@ -252,6 +260,7 @@ class _RegisterFormState extends State<_RegisterForm>
                     _password.text,
                     missing: 'Repeat the password.',
                   ),
+                  onChanged: (_) => notifier.clearFailureFor('confirmPassword'),
                   onSubmitted: _submit,
                 ),
               ],

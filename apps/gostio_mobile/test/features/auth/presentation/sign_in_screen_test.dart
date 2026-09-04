@@ -77,6 +77,34 @@ void main() {
     expect(session.isSignedIn, isFalse);
   });
 
+  testWidgets('editing a server-faulted field removes its stale refusal', (
+    WidgetTester tester,
+  ) async {
+    final AuthDouble auth = AuthDouble(
+      failure: const ApiException(
+        message: 'The username or password is wrong.',
+        statusCode: 401,
+        errors: <String, List<String>>{
+          'Username': <String>['No account uses this username.'],
+        },
+      ),
+    );
+    await tester.pumpWidget(underTest(const SignInScreen(), auth: auth));
+
+    await _fillIn(tester, username: 'nobody', password: 'the-password');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('No account uses this username.'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Username'),
+      'emina.b',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No account uses this username.'), findsNothing);
+  });
+
   testWidgets('what the form can refuse itself is never sent', (
     WidgetTester tester,
   ) async {

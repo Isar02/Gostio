@@ -197,7 +197,7 @@ public sealed class AuthService(
         if (token is null || await SpendAsync(token.Id, usedAt, cancellationToken) != 1)
         {
             throw new ValidationException(
-                nameof(request.Token), "This reset link is no longer valid. Ask for a new one.");
+                nameof(request.Token), "This code is no longer valid. Ask for a new one.");
         }
 
         await db.Users

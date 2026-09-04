@@ -1,0 +1,48 @@
+name: gostio_mobile
+description: Gostio mobile client for guests.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  gostio_core:
+    path: ../../packages/gostio_core
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - packages/gostio_core/assets/fonts/Geist-OFL.txt
+    - packages/gostio_core/assets/fonts/Manrope-OFL.txt
+    - packages/gostio_core/assets/fonts/PlusJakartaSans-OFL.txt
+
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: packages/gostio_core/assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: packages/gostio_core/assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: packages/gostio_core/assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+    - family: PlusJakartaSans
+      fonts:
+        - asset: packages/gostio_core/assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: packages/gostio_core/assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+    - family: Manrope
+      fonts:
+        - asset: packages/gostio_core/assets/fonts/Manrope-Regular.ttf
+          weight: 400
+        - asset: packages/gostio_core/assets/fonts/Manrope-SemiBold.ttf
+          weight: 600

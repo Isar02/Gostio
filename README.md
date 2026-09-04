@@ -6,13 +6,14 @@ for it and talks to the host; a host manages their listings and the bookings
 made against them; an administrator manages the reference data, the host
 applications, the news and the reports.
 
-Gostio consists of a working backend and two planned clients:
+Gostio consists of a backend, a desktop client, and a mobile client that is not
+written yet:
 
-| Application | Audience | Location |
-| --- | --- | --- |
-| REST API and background worker | both clients | `src/` |
-| Desktop client | administrators and hosts | `apps/gostio_desktop` |
-| Mobile client | guests | `apps/gostio_mobile` |
+| Application | Audience | Location | State |
+| --- | --- | --- | --- |
+| REST API and background worker | both clients | `src/` | built |
+| Desktop client | administrators and hosts | `apps/gostio_desktop` | built |
+| Mobile client | guests | `apps/gostio_mobile` | not started |
 
 ## Test accounts
 
@@ -35,7 +36,7 @@ recommendations have data behind them. They use the same password.
 
 - Docker Desktop
 - .NET 10 SDK — only to build or test outside the containers
-- Flutter — only for the clients
+- Flutter 3.47 or later — only for the desktop client
 
 ## Running the stack
 
@@ -78,11 +79,47 @@ dotnet test
 
 The integration suite runs against the database container, so it has to be up.
 
-## Running the clients
+## Running the desktop client
 
-Neither client is built yet. The API above is what they are written against:
-the desktop client reaches it on `localhost` and the Android emulator reaches
-it on `10.0.2.2`, both through `API_BASE_URL`.
+The API address is a compile-time constant, read through
+`String.fromEnvironment`, so it is passed on every run and every build. A build
+made without it starts and then says it was given no address, which is the only
+thing it can honestly do.
+
+```bash
+cd apps/gostio_desktop
+flutter pub get
+flutter run -d windows --dart-define=API_BASE_URL=http://localhost:5000
+```
+
+Sign in as `desktop` / `test`. That account holds both roles, so it opens on
+the administrator panel with a switch to the host one beside the avatar.
+
+Its own checks:
+
+```bash
+dart format --set-exit-if-changed lib test
+flutter analyze
+flutter test
+```
+
+## Building for release
+
+The build carries the address the same way the run does, and the address is the
+one the machine running the build output will use — `localhost` for Windows,
+and the emulator's `10.0.2.2` for Android.
+
+```bash
+cd apps/gostio_desktop
+flutter clean
+flutter build windows --release --dart-define=API_BASE_URL=http://localhost:5000
+```
+
+That writes `build/windows/x64/runner/Release`. `Gostio.exe` is its entry
+point and the DLLs and the `data` folder beside it travel with it, so the
+folder is what gets distributed rather than the executable alone.
+
+Build output stays out of the repository; it belongs on a GitHub Release.
 
 ## Repository layout
 
@@ -95,7 +132,8 @@ src/
 tests/
   Gostio.Tests        unit and API tests
   Gostio.IntegrationTests   endpoint tests against SQL Server
-apps/                 desktop and mobile clients
+apps/
+  gostio_desktop      Flutter desktop client for administrators and hosts
 ```
 
 ## Technology
@@ -136,4 +174,11 @@ chat, and Docker Compose for the whole stack. The clients are Flutter.
 ## Configuration
 
 `.env` is gitignored and holds every secret the stack uses. `.env.example` is
-the template and documents each value.
+the template and documents each value. Nothing in `src/`, `apps/` or
+`appsettings.json` repeats any of them.
+
+When a build is published, the filled-in `.env` travels beside the template as
+a password-protected `.env-tajne.zip` in this folder — an encrypted archive, so
+the password is what carries it rather than the file. It is made at that point
+rather than kept in step with `.env` by hand, and it is not in the repository
+yet.

@@ -1,8 +1,12 @@
-import 'package:gostio_core/gostio_core.dart';
+import '../models/paged_result.dart';
+import 'api_client.dart';
 
-// A dropdown and a gallery are filled from the whole table rather than from
-// its first page. The API caps a page at a hundred rows, so the pages are
-// walked until the count the server answered is covered.
+// A dropdown, a gallery and a filter sheet are filled from the whole table
+// rather than from its first page. The API caps a page at a hundred rows, so
+// the pages are walked until the count the server answered is covered.
+//
+// This is a fact about the contract rather than about a screen, which is why
+// both clients read it from here instead of each holding the cap themselves.
 Future<List<T>> readEveryPage<T>(
   ApiClient client,
   String path, {

@@ -1,5 +1,7 @@
 package ba.gostio.mobile
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// The card sheet is an Android fragment, and a fragment needs a host that
+// carries the support fragment manager.
+class MainActivity : FlutterFragmentActivity()

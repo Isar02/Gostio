@@ -12,6 +12,8 @@ import 'package:gostio_mobile/features/listing/data/listing_repository.dart';
 import 'package:gostio_mobile/features/listing/presentation/favorite_edits.dart';
 import 'package:gostio_mobile/features/notifications/data/notifications_repository.dart';
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
+import 'package:gostio_mobile/features/payment/data/card_sheet.dart';
+import 'package:gostio_mobile/features/payment/data/payment_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -32,6 +34,8 @@ Widget underTest(
   FilterOptionsRepository? filterOptions,
   ListingRepository? listings,
   BookingRepository? bookings,
+  PaymentRepository? payments,
+  CardSheet? cardSheet,
   FavoriteEdits? favorites,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
@@ -51,6 +55,10 @@ Widget underTest(
       Provider<ListingRepository>.value(value: repository),
     if (bookings case final BookingRepository repository)
       Provider<BookingRepository>.value(value: repository),
+    if (payments case final PaymentRepository repository)
+      Provider<PaymentRepository>.value(value: repository),
+    if (cardSheet case final CardSheet sheet)
+      Provider<CardSheet>.value(value: sheet),
     // Every card draws a heart, so what has been saved is composed above the
     // whole client rather than beside the screens that write it.
     ChangeNotifierProvider<FavoriteEdits>.value(
@@ -85,6 +93,8 @@ Future<GlobalKey<NavigatorState>> pushOnto(
   Session? session,
   ListingRepository? listings,
   BookingRepository? bookings,
+  PaymentRepository? payments,
+  CardSheet? cardSheet,
 }) async {
   final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
 
@@ -96,6 +106,8 @@ Future<GlobalKey<NavigatorState>> pushOnto(
       navigator: navigator,
       listings: listings,
       bookings: bookings,
+      payments: payments,
+      cardSheet: cardSheet,
     ),
   );
 

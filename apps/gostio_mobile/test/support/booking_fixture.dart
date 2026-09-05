@@ -37,11 +37,13 @@ Reservation stayBooking({
   double accommodationTotal = 270,
   double cleaningFee = 15,
   Duration heldFor = const Duration(hours: 24),
+  bool isPaid = false,
 }) => _booking(
   id: id,
   guestCount: guestCount,
   totalPrice: accommodationTotal + cleaningFee,
   heldFor: heldFor,
+  isPaid: isPaid,
   accommodationId: 1,
   checkInDate: checkInDate ?? DateTime(2026, 6, 12),
   checkOutDate: checkOutDate ?? DateTime(2026, 6, 15),
@@ -71,6 +73,7 @@ Reservation _booking({
   required int guestCount,
   required double totalPrice,
   required Duration heldFor,
+  bool isPaid = false,
   String listingTitle = 'Loft over the river',
   int? accommodationId,
   int? experienceId,
@@ -89,7 +92,7 @@ Reservation _booking({
   reservationStatusId: 1,
   status: 'Pending',
   totalPrice: totalPrice,
-  isPaid: false,
+  isPaid: isPaid,
   expiresAt: DateTime.now().toUtc().add(heldFor),
   createdAt: DateTime.now().toUtc(),
   accommodationId: accommodationId,
@@ -100,4 +103,22 @@ Reservation _booking({
   accommodationTotal: accommodationTotal,
   cleaningFee: cleaningFee,
   pricePerPerson: pricePerPerson,
+);
+
+// A charge as the create answers one: open, and carrying the pair a card sheet
+// is opened with. A charge that is read rather than started answers neither.
+ReservationPayment openCharge({
+  int reservationId = 501,
+  double amount = 285,
+  String? clientSecret = 'pi_1_secret_9',
+  String? publishableKey = 'pk_test_9',
+}) => ReservationPayment(
+  id: 90,
+  reservationId: reservationId,
+  status: 'Pending',
+  amount: amount,
+  currency: 'bam',
+  clientSecret: clientSecret,
+  publishableKey: publishableKey,
+  createdAt: DateTime.now().toUtc(),
 );

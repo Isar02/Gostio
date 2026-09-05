@@ -9,6 +9,7 @@ import '../../../support/booking_double.dart';
 import '../../../support/booking_fixture.dart';
 import '../../../support/listing_double.dart';
 import '../../../support/listing_fixture.dart';
+import '../../../support/payment_double.dart';
 import '../../../support/phone.dart';
 import '../../../support/screens.dart';
 
@@ -40,6 +41,8 @@ void main() {
         nights: monthOfNights(month, taken: taken, priced: priced),
       ),
       bookings: bookings,
+      payments: PaymentDouble(),
+      cardSheet: CardSheetDouble(),
     );
 
     await tester.tap(find.byTooltip('Next month'));

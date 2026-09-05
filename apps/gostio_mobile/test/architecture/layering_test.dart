@@ -106,7 +106,11 @@ void main() {
 // from. What it reads of the listing is that feature's data and never its
 // screens, so the two are composed in one direction rather than into each
 // other.
-const Set<String> _shared = <String>{'listing', 'booking'};
+//
+// Paying is drawn under the booking it settles, and later under the trip that
+// reaches the same booking a second time. What it knows about is a charge and
+// the row that records one, which is neither of those screens' business.
+const Set<String> _shared = <String>{'listing', 'booking', 'payment'};
 
 String? _featureOf(String path) {
   if (!path.startsWith('features/')) {

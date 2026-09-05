@@ -9,6 +9,7 @@ import '../../../support/auth_double.dart';
 import '../../../support/booking_double.dart';
 import '../../../support/booking_fixture.dart';
 import '../../../support/listing_fixture.dart';
+import '../../../support/payment_double.dart';
 import '../../../support/phone.dart';
 import '../../../support/screens.dart';
 
@@ -40,6 +41,8 @@ void main() {
       BookTermScreen(experience(title: 'Old town walk')),
       auth: AuthDouble(),
       bookings: bookings,
+      payments: PaymentDouble(),
+      cardSheet: CardSheetDouble(),
     );
   }
 

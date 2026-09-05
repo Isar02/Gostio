@@ -14,6 +14,8 @@ ReservationPayment _$ReservationPaymentFromJson(Map<String, dynamic> json) =>
       amount: (json['amount'] as num).toDouble(),
       currency: json['currency'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      clientSecret: json['clientSecret'] as String?,
+      publishableKey: json['publishableKey'] as String?,
       processedAt: json['processedAt'] == null
           ? null
           : DateTime.parse(json['processedAt'] as String),

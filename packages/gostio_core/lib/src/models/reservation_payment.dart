@@ -2,9 +2,9 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'reservation_payment.g.dart';
 
-// What the processor did with the charge. The client secret and the key that
-// open a card sheet are the guest's alone, so nothing here reads them: this
-// client watches a charge rather than making one.
+// What the processor did with the charge. The two secrets a card sheet opens
+// on are handed out only to the guest who is paying and only while the charge
+// is still open, so a payment that is merely read answers neither of them.
 @JsonSerializable(createToJson: false)
 class ReservationPayment {
   const ReservationPayment({
@@ -14,6 +14,8 @@ class ReservationPayment {
     required this.amount,
     required this.currency,
     required this.createdAt,
+    this.clientSecret,
+    this.publishableKey,
     this.processedAt,
     this.failureReason,
   });
@@ -26,6 +28,8 @@ class ReservationPayment {
   final String status;
   final double amount;
   final String currency;
+  final String? clientSecret;
+  final String? publishableKey;
   final DateTime createdAt;
   final DateTime? processedAt;
   final String? failureReason;

@@ -10,6 +10,9 @@ import '../features/listing/data/listing_repository.dart';
 import '../features/listing/presentation/favorite_edits.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/notifications/presentation/unread_notices.dart';
+import '../features/payment/data/card_sheet.dart';
+import '../features/payment/data/payment_repository.dart';
+import '../features/payment/data/stripe_card_sheet.dart';
 import 'shell/app_shell.dart';
 
 // What only an account has. The unread count is created here rather than above
@@ -47,6 +50,17 @@ class SignedInApp extends StatelessWidget {
         // turns one are in different places.
         ChangeNotifierProvider<FavoriteEdits>(
           create: (BuildContext context) => FavoriteEdits(),
+        ),
+        Provider<PaymentRepository>(
+          create: (BuildContext context) =>
+              PaymentRepository(context.read<ApiClient>()),
+        ),
+        // The card sheet is composed here like a repository, because that is
+        // what it is: the one thing on this client that talks to the card
+        // processor. A screen is handed it rather than reaching for it, so a
+        // test draws paying without a processor behind it.
+        Provider<CardSheet>(
+          create: (BuildContext context) => const StripeCardSheet(),
         ),
         Provider<NotificationsRepository>(
           create: (BuildContext context) =>

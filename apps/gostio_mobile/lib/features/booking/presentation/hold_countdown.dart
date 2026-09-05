@@ -9,9 +9,13 @@ import '../../../core/widgets/app_notice.dart';
 // that quietly disappears, so it is counted down on the screen rather than
 // left as a date the reader has to subtract from.
 class HoldCountdown extends StatefulWidget {
-  const HoldCountdown(this.expiresAt, {super.key});
+  const HoldCountdown(this.expiresAt, {this.onRanOut, super.key});
 
   final DateTime expiresAt;
+
+  // Said once, when the place stops being held. What is offered beside this
+  // sentence changes at that moment, and only the clock knows when it comes.
+  final VoidCallback? onRanOut;
 
   @override
   State<HoldCountdown> createState() => _HoldCountdownState();
@@ -24,6 +28,14 @@ class _HoldCountdownState extends State<HoldCountdown> {
   @override
   void initState() {
     super.initState();
+
+    if (_left == Duration.zero) {
+      WidgetsBinding.instance.addPostFrameCallback((Duration _) {
+        if (mounted) {
+          widget.onRanOut?.call();
+        }
+      });
+    }
 
     _schedule();
   }
@@ -73,6 +85,11 @@ class _HoldCountdownState extends State<HoldCountdown> {
 
     _timer = Timer(_step, () {
       setState(() => _left = _remaining());
+
+      if (_left == Duration.zero) {
+        widget.onRanOut?.call();
+      }
+
       _schedule();
     });
   }

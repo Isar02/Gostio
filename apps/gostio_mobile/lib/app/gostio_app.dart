@@ -8,7 +8,7 @@ import '../core/theme/app_theme.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import 'session_check.dart';
-import 'signed_in_screen.dart';
+import 'shell/app_shell.dart';
 
 class GostioApp extends StatelessWidget {
   const GostioApp({required this.settings, super.key});
@@ -39,9 +39,7 @@ class GostioApp extends StatelessWidget {
         home: SessionCheck(
           child: Consumer<Session>(
             builder: (BuildContext context, Session session, Widget? child) =>
-                session.isSignedIn
-                ? const SignedInScreen()
-                : const SignInScreen(),
+                session.isSignedIn ? const AppShell() : const SignInScreen(),
           ),
         ),
       ),

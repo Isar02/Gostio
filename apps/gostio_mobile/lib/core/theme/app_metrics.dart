@@ -37,6 +37,10 @@ abstract final class AppSizes {
   static const double appBar = 56;
   static const double brandMark = 48;
 
+  // The bar the whole client is moved through. It is taller than a thumb
+  // target because it carries a label under every icon.
+  static const double navigationBar = 64;
+
   // A form is read down a single column, and a tablet is wide enough to
   // stretch one past the length an eye tracks.
   static const double formColumn = 480;

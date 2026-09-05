@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
-import 'package:gostio_mobile/app/signed_in_screen.dart';
+import 'package:gostio_mobile/app/shell/account_tab.dart';
 
-import '../support/account_fixture.dart';
-import '../support/auth_double.dart';
-import '../support/phone.dart';
-import '../support/screens.dart';
+import '../../support/account_fixture.dart';
+import '../../support/auth_double.dart';
+import '../../support/phone.dart';
+import '../../support/screens.dart';
 
 void main() {
   setUp(usePhoneScreen);
@@ -18,10 +18,11 @@ void main() {
       ..begin(account: account(), token: 'the-token');
 
     await tester.pumpWidget(
-      underTest(const SignedInScreen(), auth: auth, session: session),
+      underTest(const AccountTab(), auth: auth, session: session),
     );
 
     expect(find.text('Emina Begić'), findsOneWidget);
+    expect(find.text('emina.b@gostio.test'), findsOneWidget);
 
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
@@ -41,7 +42,7 @@ void main() {
       ..begin(account: account(), token: 'the-token');
 
     await tester.pumpWidget(
-      underTest(const SignedInScreen(), auth: auth, session: session),
+      underTest(const AccountTab(), auth: auth, session: session),
     );
 
     await tester.tap(find.text('Sign out'));

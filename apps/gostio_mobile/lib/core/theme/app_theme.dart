@@ -34,6 +34,7 @@ abstract final class AppTheme {
           size: AppSizes.icon,
         ),
       ),
+      navigationBarTheme: _navigationBar(text),
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
         thickness: AppSizes.hairline,
@@ -90,6 +91,37 @@ abstract final class AppTheme {
     outline: AppColors.borderStrong,
     outlineVariant: AppColors.border,
   );
+
+  // The bar the client is moved through. The chosen tab is said twice, in the
+  // ground behind its icon and in the weight of its label, because a colour
+  // alone is not read by everyone who reads the bar.
+  static NavigationBarThemeData _navigationBar(TextTheme text) {
+    return NavigationBarThemeData(
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: AppColors.selected,
+      elevation: 0,
+      height: AppSizes.navigationBar,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      indicatorShape: const RoundedRectangleBorder(borderRadius: AppRadii.pill),
+      iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
+        (Set<WidgetState> states) => IconThemeData(
+          size: AppSizes.icon,
+          color: states.contains(WidgetState.selected)
+              ? AppColors.indigo
+              : AppColors.inkMuted,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
+        (Set<WidgetState> states) => states.contains(WidgetState.selected)
+            ? text.labelSmall?.copyWith(
+                color: AppColors.indigo,
+                fontWeight: FontWeight.w600,
+              )
+            : text.labelSmall?.copyWith(color: AppColors.inkMuted),
+      ),
+    );
+  }
 
   // A field carries its own ground rather than a box drawn on the page: the
   // border is what a thumb aims at, and the fill is what it reads as empty.

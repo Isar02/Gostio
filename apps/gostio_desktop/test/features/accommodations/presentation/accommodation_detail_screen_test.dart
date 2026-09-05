@@ -210,6 +210,7 @@ final Accommodation _created = Accommodation(
   cleaningFee: 25,
   isActive: true,
   reviewCount: 0,
+  isFavorite: false,
   createdAt: _createdAt,
 );
 

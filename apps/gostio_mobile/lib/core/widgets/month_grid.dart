@@ -54,7 +54,8 @@ class MonthGrid extends StatelessWidget {
     required this.month,
     required this.isTakeable,
     required this.isSold,
-    required this.onChosen,
+    this.onChosen,
+    this.figureFor,
     this.from,
     this.to,
     super.key,
@@ -65,9 +66,22 @@ class MonthGrid extends StatelessWidget {
   final DateTime? to;
   final bool Function(DateTime day) isTakeable;
   final bool Function(DateTime day) isSold;
-  final ValueChanged<DateTime> onChosen;
+
+  // A month with nothing to answer is read rather than chosen from: the
+  // calendar on a listing says what is left, and the picker over it is where
+  // a stay is actually taken.
+  final ValueChanged<DateTime>? onChosen;
+
+  // What is written under the day. A month that prices its nights is taller
+  // for every cell rather than only for the ones that carry a figure, so the
+  // weeks stay square.
+  final String? Function(DateTime day)? figureFor;
 
   static const int _weeksDrawn = 6;
+
+  double get _cellHeight => figureFor == null
+      ? AppSizes.calendarCell
+      : AppSizes.calendarCellWithFigure;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +121,7 @@ class MonthGrid extends StatelessWidget {
   // and draw nothing, so the weeks stay square.
   Widget _cell(DateTime day, DateTime nextMonth) {
     if (day.isBefore(month) || !day.isBefore(nextMonth)) {
-      return const SizedBox(height: AppSizes.calendarCell);
+      return SizedBox(height: _cellHeight);
     }
 
     final DateTime? from = this.from;
@@ -115,12 +129,14 @@ class MonthGrid extends StatelessWidget {
 
     return _DayCell(
       day: day,
+      height: _cellHeight,
       isFirst: day == from,
       isLast: day == to,
       isBetween:
           from != null && to != null && day.isAfter(from) && day.isBefore(to),
       isTakeable: isTakeable(day),
       isSold: isSold(day),
+      figure: figureFor?.call(day),
       onChosen: onChosen,
     );
   }
@@ -154,69 +170,112 @@ class _WeekdayRow extends StatelessWidget {
 class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
+    required this.height,
     required this.isFirst,
     required this.isLast,
     required this.isBetween,
     required this.isTakeable,
     required this.isSold,
-    required this.onChosen,
+    this.figure,
+    this.onChosen,
   });
 
   final DateTime day;
+  final double height;
   final bool isFirst;
   final bool isLast;
   final bool isBetween;
   final bool isTakeable;
   final bool isSold;
-  final ValueChanged<DateTime> onChosen;
+  final String? figure;
+  final ValueChanged<DateTime>? onChosen;
 
   @override
   Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
     final bool isEnd = isFirst || isLast;
+    final ValueChanged<DateTime>? onChosen = this.onChosen;
+    final VoidCallback? gesture = isTakeable && onChosen != null
+        ? () => onChosen(day)
+        : null;
+    final Color ink = switch (<bool>[isEnd, isTakeable]) {
+      [true, _] => AppColors.surface,
+      [_, false] => AppColors.inkFaint,
+      _ => AppColors.ink,
+    };
 
     return Semantics(
       container: true,
-      button: isTakeable,
+      button: gesture != null,
       selected: isEnd || isBetween,
       enabled: isTakeable,
-      label: AppDates.day(day),
+      label: _spoken,
       excludeSemantics: true,
       child: SizedBox(
-        height: AppSizes.calendarCell,
+        height: height,
         child: Material(
           color: isBetween ? AppColors.selected : Colors.transparent,
           child: Ink(
             decoration: isEnd
-                ? const BoxDecoration(
+                ? BoxDecoration(
                     color: AppColors.indigo,
-                    shape: BoxShape.circle,
+                    // A circle over a cell that is taller than it is wide
+                    // would be drawn as an ellipse, so a priced month keeps
+                    // the corner radius the rest of the client is drawn in.
+                    shape: figure == null
+                        ? BoxShape.circle
+                        : BoxShape.rectangle,
+                    borderRadius: figure == null ? null : AppRadii.medium,
                   )
                 : null,
             child: InkResponse(
-              onTap: isTakeable ? () => onChosen(day) : null,
-              radius: AppSizes.calendarCell / 2,
-              child: Center(
-                child: Text(
-                  '${day.day}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: switch (<bool>[isEnd, isTakeable]) {
-                      [true, _] => AppColors.surface,
-                      [_, false] => AppColors.inkFaint,
-                      _ => AppColors.ink,
-                    },
-                    fontWeight: isEnd ? FontWeight.w600 : null,
-                    // A night already sold is struck through rather than
-                    // merely dimmed, which reads as a day that is simply late.
-                    // It stays struck where it can still be tapped as the day
-                    // of leaving, because the night is gone either way.
-                    decoration: isSold ? TextDecoration.lineThrough : null,
+              onTap: gesture,
+              radius: height / 2,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    '${day.day}',
+                    style: text.bodyMedium?.copyWith(
+                      color: ink,
+                      fontWeight: isEnd ? FontWeight.w600 : null,
+                      // A night already sold is struck through rather than
+                      // merely dimmed, which reads as a day that is simply
+                      // late. It stays struck where it can still be tapped as
+                      // the day of leaving, because the night is gone either
+                      // way.
+                      decoration: isSold ? TextDecoration.lineThrough : null,
+                    ),
                   ),
-                ),
+                  if (figure case final String figure)
+                    Text(
+                      figure,
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      style: text.labelSmall?.copyWith(
+                        color: isEnd ? AppColors.surface : AppColors.inkMuted,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  String get _spoken {
+    final StringBuffer spoken = StringBuffer(AppDates.day(day));
+
+    if (isSold) {
+      spoken.write(', taken');
+    }
+
+    if (figure case final String figure) {
+      spoken.write(', $figure');
+    }
+
+    return spoken.toString();
   }
 }

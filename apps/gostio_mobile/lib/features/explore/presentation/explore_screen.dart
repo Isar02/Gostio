@@ -7,13 +7,13 @@ import 'package:provider/single_child_widget.dart';
 
 import '../../../core/paging/paged_notifier.dart';
 import '../../../core/theme/app_metrics.dart';
-import '../../../core/widgets/listing_card.dart';
 import '../data/catalogue_repository.dart';
 import '../data/experience_filters.dart';
 import '../data/filter_options_repository.dart';
 import '../data/listing_filters.dart';
 import '../data/stay_filters.dart';
 import 'catalogue.dart';
+import 'catalogue_cards.dart';
 import 'catalogue_results.dart';
 import 'catalogue_results_view.dart';
 import 'experience_filter_sheet.dart';
@@ -112,32 +112,14 @@ class _ExploreState extends State<_Explore> {
                 results: context.read<StayResults>(),
                 onOpenFilters: _openStayFilters,
                 itemBuilder: (BuildContext context, Accommodation stay) =>
-                    ListingCard(
-                      title: stay.title,
-                      place: '${stay.cityName}, ${stay.countryName}',
-                      price: stay.pricePerNight,
-                      priceUnit: 'per night',
-                      coverPath: stay.coverPath,
-                      rating: stay.averageRating,
-                      reviewCount: stay.reviewCount,
-                      status: stay.accommodationTypeName,
-                    ),
+                    StayCard(stay),
               ),
               CatalogueResultsView<Experience, ExperienceFilters>(
                 catalogue: Catalogue.experiences,
                 results: context.read<ExperienceResults>(),
                 onOpenFilters: _openExperienceFilters,
                 itemBuilder: (BuildContext context, Experience term) =>
-                    ListingCard(
-                      title: term.title,
-                      place: '${term.cityName}, ${term.countryName}',
-                      price: term.pricePerPerson,
-                      priceUnit: 'per person',
-                      coverPath: term.coverPath,
-                      rating: term.averageRating,
-                      reviewCount: term.reviewCount,
-                      status: AppDurations.inWords(term.durationMinutes),
-                    ),
+                    TermCard(term),
               ),
             ],
           ),

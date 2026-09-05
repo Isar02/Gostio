@@ -96,8 +96,12 @@ void main() {
 }
 
 // The features another feature may compose from. A feature earns a place here
-// by being drawn on somebody else's screen, and none has yet.
-const Set<String> _shared = <String>{};
+// by being drawn on somebody else's screen.
+//
+// A listing is opened from every list that shows one — the catalogues today,
+// the recommendations, the favourites and the trips later — so it is the one
+// feature the others reach into rather than a screen each of them rebuilds.
+const Set<String> _shared = <String>{'listing'};
 
 String? _featureOf(String path) {
   if (!path.startsWith('features/')) {

@@ -128,7 +128,7 @@ class _RangeCalendarState extends State<_RangeCalendar> {
 
     return range == null
         ? 'Choose a last night'
-        : '${range.nights} ${range.nights == 1 ? "night" : "nights"}';
+        : AppNumbers.counted(range.nights, 'night');
   }
 
   String get _chosenDetail {

@@ -29,6 +29,7 @@ class Accommodation {
     required this.cleaningFee,
     required this.isActive,
     required this.reviewCount,
+    required this.isFavorite,
     required this.createdAt,
     this.coverPhotoId,
     this.averageRating,
@@ -61,6 +62,10 @@ class Accommodation {
   final int? coverPhotoId;
   final double? averageRating;
   final int reviewCount;
+
+  // Whether the account reading this has saved it, which the server answers
+  // against the caller rather than against the row.
+  final bool isFavorite;
   final DateTime createdAt;
 
   // No list carries bytes, so a row names the picture and the widget fetches it.

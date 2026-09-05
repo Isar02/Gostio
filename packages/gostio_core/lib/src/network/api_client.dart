@@ -81,6 +81,12 @@ class ApiClient {
   Future<JsonMap> get(String path, {JsonMap? query}) async =>
       _asObject(await _request('GET', path, query: query));
 
+  // A document rather than a page: the calendar answers an array of days over
+  // the window it was asked for, because it is bounded by that window rather
+  // than paged.
+  Future<List<dynamic>> getList(String path, {JsonMap? query}) async =>
+      _asArray(await _request('GET', path, query: query));
+
   Future<JsonMap> post(String path, {Object? body}) async =>
       _asObject(await _request('POST', path, body: body));
 

@@ -214,5 +214,6 @@ Experience _experience() => Experience(
   pricePerPerson: 85.5,
   isActive: true,
   reviewCount: 0,
+  isFavorite: false,
   createdAt: DateTime.utc(2026, 1, 1),
 );

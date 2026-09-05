@@ -5,6 +5,8 @@ import 'package:provider/single_child_widget.dart';
 
 import '../features/explore/data/catalogue_repository.dart';
 import '../features/explore/data/filter_options_repository.dart';
+import '../features/listing/data/listing_repository.dart';
+import '../features/listing/presentation/favorite_edits.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/notifications/presentation/unread_notices.dart';
 import 'shell/app_shell.dart';
@@ -30,6 +32,16 @@ class SignedInApp extends StatelessWidget {
         Provider<FilterOptionsRepository>(
           create: (BuildContext context) =>
               FilterOptionsRepository(context.read<ApiClient>()),
+        ),
+        Provider<ListingRepository>(
+          create: (BuildContext context) =>
+              ListingRepository(context.read<ApiClient>()),
+        ),
+        // What has been saved and unsaved since a list was read. It sits above
+        // the tabs because the list that shows a heart and the screen that
+        // turns one are in different places.
+        ChangeNotifierProvider<FavoriteEdits>(
+          create: (BuildContext context) => FavoriteEdits(),
         ),
         Provider<NotificationsRepository>(
           create: (BuildContext context) =>

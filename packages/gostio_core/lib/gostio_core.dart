@@ -37,6 +37,7 @@ export 'src/models/review_stars.dart';
 export 'src/models/user.dart';
 export 'src/network/api_client.dart';
 export 'src/network/api_exception.dart';
+export 'src/network/page_walk.dart';
 export 'src/network/uploaded_file.dart';
 export 'src/session/session.dart';
 export 'src/theme/app_colors.dart';

@@ -1,7 +1,5 @@
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/paging/page_walk.dart';
-
 class ListingPhotosRepository {
   const ListingPhotosRepository(this._client);
 

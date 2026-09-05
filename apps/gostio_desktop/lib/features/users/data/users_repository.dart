@@ -1,6 +1,5 @@
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/paging/page_walk.dart';
 import 'user_draft.dart';
 import 'user_query.dart';
 

@@ -1,6 +1,5 @@
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/paging/page_walk.dart';
 import 'availability_draft.dart';
 
 class AccommodationAvailabilityRepository {

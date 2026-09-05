@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'account_tab.dart';
+import 'explore_tab.dart';
 import 'pending_tab.dart';
 
 // The five places this client is read in, and what each one opens on. A tab is
@@ -24,11 +25,7 @@ enum ShellTab {
   static ShellTab get first => explore;
 
   Widget get root => switch (this) {
-    ShellTab.explore => const PendingTab(
-      tab: ShellTab.explore,
-      title: 'Stays and experiences',
-      message: 'The two catalogues and the search over them open in this tab.',
-    ),
+    ShellTab.explore => const ExploreTab(),
     ShellTab.forYou => const PendingTab(
       tab: ShellTab.forYou,
       title: 'Picked for you',

@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_mobile/core/theme/app_theme.dart';
 import 'package:gostio_mobile/features/auth/data/auth_repository.dart';
+import 'package:gostio_mobile/features/explore/data/catalogue_repository.dart';
+import 'package:gostio_mobile/features/explore/data/filter_options_repository.dart';
 import 'package:gostio_mobile/features/notifications/data/notifications_repository.dart';
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 import 'package:provider/provider.dart';
@@ -21,10 +23,18 @@ Widget underTest(
   Session? session,
   GlobalKey<NavigatorState>? navigator,
   NotificationsRepository? notifications,
+  CatalogueRepository? catalogue,
+  FilterOptionsRepository? filterOptions,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
     ChangeNotifierProvider<Session>.value(value: session ?? signedOutSession()),
     Provider<AuthRepository>.value(value: auth),
+    // The catalogues are composed above the shell rather than inside the tab
+    // that reads them, so a test draws that tab over rows it wrote itself.
+    if (catalogue case final CatalogueRepository repository)
+      Provider<CatalogueRepository>.value(value: repository),
+    if (filterOptions case final FilterOptionsRepository repository)
+      Provider<FilterOptionsRepository>.value(value: repository),
     // A screen that draws no bell is composed without one, so nothing polls
     // behind a test that is not about the count. The count is created by the
     // provider rather than handed to it, because what created it is what ends

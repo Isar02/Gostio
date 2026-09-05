@@ -24,6 +24,7 @@ class ListingCard extends StatelessWidget {
     this.reviewCount,
     this.status,
     this.statusTone = Tone.neutral,
+    this.isFavorite = false,
     this.onTap,
     super.key,
   });
@@ -37,6 +38,12 @@ class ListingCard extends StatelessWidget {
   final int? reviewCount;
   final String? status;
   final Tone statusTone;
+
+  // Saved by whoever is reading. It is drawn here and turned on the listing's
+  // own screen: a heart small enough to sit on a card is smaller than the
+  // thumb that would have to hit it.
+  final bool isFavorite;
+
   final VoidCallback? onTap;
 
   @override
@@ -65,6 +72,12 @@ class ListingCard extends StatelessWidget {
                   top: AppSpacing.md,
                   left: AppSpacing.md,
                   child: StatusChip(status, tone: statusTone),
+                ),
+              if (isFavorite)
+                const Positioned(
+                  top: AppSpacing.md,
+                  right: AppSpacing.md,
+                  child: _Saved(),
                 ),
             ],
           ),
@@ -119,7 +132,7 @@ class ListingCard extends StatelessWidget {
     if (rating case final double rating when reviewCount != 0) {
       spoken.write(', rated ${AppNumbers.rating(rating)}');
       if (reviewCount case final int count) {
-        spoken.write(' from $count ${count == 1 ? "review" : "reviews"}');
+        spoken.write(' from ${AppNumbers.counted(count, "review")}');
       }
     } else {
       spoken.write(', no reviews yet');
@@ -134,6 +147,32 @@ class ListingCard extends StatelessWidget {
       spoken.write(', $status');
     }
 
+    if (isFavorite) {
+      spoken.write(', saved');
+    }
+
     return spoken.toString();
+  }
+}
+
+// The mark on a saved listing. It answers nothing: it is the state the card
+// was read in, and it is turned where there is room for a control.
+class _Saved extends StatelessWidget {
+  const _Saved();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.9),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.favorite_rounded,
+        size: AppSizes.iconSmall,
+        color: AppColors.indigo,
+      ),
+    );
   }
 }

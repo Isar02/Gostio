@@ -22,7 +22,14 @@ class ListingAddress {
   final ListingKind kind;
   final int id;
 
-  String get photos => '${kind.root}/$id/photos';
+  // The row itself, which every collection under it is written against.
+  String get path => '${kind.root}/$id';
+
+  String get photos => '$path/photos';
+
+  // Saved by the account reading it. Both catalogues answer this one, which is
+  // why it is here rather than beside the collections only a stay has.
+  String get favorite => '$path/favorite';
 
   String photo(int photoId) => '$photos/$photoId';
 

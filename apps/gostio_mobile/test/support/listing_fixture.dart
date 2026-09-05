@@ -13,6 +13,7 @@ Accommodation stay({
   double? averageRating = 4.5,
   int reviewCount = 12,
   bool isActive = true,
+  bool isFavorite = false,
 }) => Accommodation(
   id: id,
   hostId: 7,
@@ -36,6 +37,7 @@ Accommodation stay({
   cleaningFee: 15,
   isActive: isActive,
   reviewCount: reviewCount,
+  isFavorite: isFavorite,
   createdAt: DateTime.utc(2026, 4, 2, 9),
   averageRating: averageRating,
 );
@@ -50,6 +52,7 @@ Experience experience({
   double? averageRating = 4.8,
   int reviewCount = 30,
   bool isActive = true,
+  bool isFavorite = false,
 }) => Experience(
   id: id,
   hostId: 9,
@@ -68,9 +71,77 @@ Experience experience({
   pricePerPerson: pricePerPerson,
   isActive: isActive,
   reviewCount: reviewCount,
+  isFavorite: isFavorite,
   createdAt: DateTime.utc(2026, 4, 4, 9),
   averageRating: averageRating,
 );
+
+// One picture of a gallery. The bytes are never here: a photo row is what a
+// gallery lays itself out from, and the picture is a request of its own.
+ListingPhoto listingPhoto({
+  int id = 1,
+  int listingId = 1,
+  bool isCover = false,
+  int displayOrder = 0,
+}) => ListingPhoto(
+  id: id,
+  listingId: listingId,
+  contentType: 'image/jpeg',
+  isCover: isCover,
+  displayOrder: displayOrder,
+  sizeInBytes: 240 * 1024,
+  uploadedAt: DateTime.utc(2026, 4, 2, 9),
+);
+
+Review review({
+  int id = 1,
+  String guestName = 'Selma Begić',
+  int rating = 5,
+  String? comment = 'Quiet street, ten minutes from the old bridge.',
+  DateTime? createdAt,
+  DateTime? modifiedAt,
+}) => Review(
+  id: id,
+  reservationId: 900 + id,
+  guestId: 42,
+  guestName: guestName,
+  accommodationId: 1,
+  listingTitle: 'Loft over the river',
+  rating: rating,
+  comment: comment,
+  createdAt: createdAt ?? DateTime.utc(2026, 5, 14, 10),
+  modifiedAt: modifiedAt,
+);
+
+List<Review> reviews(int count) => <Review>[
+  for (int index = 1; index <= count; index++)
+    review(id: index, guestName: 'Guest $index', comment: 'Review $index'),
+];
+
+// A whole month as the calendar answers it, priced the same each night unless
+// a day is named as taken or as costing something else.
+List<StayCalendarDay> monthOfNights(
+  DateTime month, {
+  double price = 90,
+  Set<int> taken = const <int>{},
+  Map<int, double> priced = const <int, double>{},
+}) {
+  final DateTime first = CalendarDays.firstOfMonth(month);
+  final DateTime next = CalendarDays.addMonths(first, 1);
+
+  return <StayCalendarDay>[
+    for (
+      DateTime day = first;
+      day.isBefore(next);
+      day = CalendarDays.addDays(day, 1)
+    )
+      StayCalendarDay(
+        date: day,
+        isBookable: !taken.contains(day.day),
+        price: priced[day.day] ?? price,
+      ),
+  ];
+}
 
 // A few rows of each lookup table, which is all a sheet needs to be drawn.
 FilterOptions filterOptions() => const FilterOptions(

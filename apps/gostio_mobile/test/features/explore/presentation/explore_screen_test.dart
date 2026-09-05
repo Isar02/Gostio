@@ -8,6 +8,7 @@ import 'package:gostio_mobile/features/explore/presentation/explore_screen.dart'
 
 import '../../../support/auth_double.dart';
 import '../../../support/catalogue_double.dart';
+import '../../../support/listing_double.dart';
 import '../../../support/listing_fixture.dart';
 import '../../../support/phone.dart';
 import '../../../support/screens.dart';
@@ -19,6 +20,7 @@ void main() {
     WidgetTester tester, {
     CatalogueDouble? catalogue,
     FilterOptionsDouble? filterOptions,
+    ListingDouble? listings,
   }) async {
     final CatalogueDouble double = catalogue ?? CatalogueDouble();
 
@@ -30,6 +32,7 @@ void main() {
         auth: AuthDouble(),
         catalogue: double,
         filterOptions: filterOptions ?? FilterOptionsDouble(),
+        listings: listings,
       ),
     );
     await tester.pumpAndSettle();
@@ -366,5 +369,63 @@ void main() {
     expect(find.widgetWithText(ListingCard, 'Old town walk'), findsOne);
     expect(find.text('per person'), findsOneWidget);
     expect(find.text('3 h'), findsOneWidget);
+  });
+
+  testWidgets('a card opens the listing it stands for', (
+    WidgetTester tester,
+  ) async {
+    final ListingDouble listings = ListingDouble();
+
+    await openExplore(
+      tester,
+      catalogue: CatalogueDouble(
+        stays: <Accommodation>[stay(id: 7, title: 'Loft over the river')],
+      ),
+      listings: listings,
+    );
+
+    await tester.tap(find.widgetWithText(ListingCard, 'Loft over the river'));
+    await tester.pumpAndSettle();
+
+    expect(listings.reads, <ListingAddress>[
+      const ListingAddress(ListingKind.accommodation, 7),
+    ]);
+    expect(find.text('Hosted by Amir Hodžić'), findsOneWidget);
+  });
+
+  testWidgets('a card draws the heart the row was read with', (
+    WidgetTester tester,
+  ) async {
+    await openExplore(
+      tester,
+      catalogue: CatalogueDouble(
+        stays: <Accommodation>[stay(isFavorite: true)],
+      ),
+    );
+
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+  });
+
+  // The list was read before the heart was turned, so what this reader has
+  // since done is what the card comes back to.
+  testWidgets('a listing saved on its own screen comes back to a saved card', (
+    WidgetTester tester,
+  ) async {
+    await openExplore(
+      tester,
+      catalogue: CatalogueDouble(stays: <Accommodation>[stay()]),
+      listings: ListingDouble(),
+    );
+
+    expect(find.byIcon(Icons.favorite_rounded), findsNothing);
+
+    await tester.tap(find.byType(ListingCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.favorite_border_rounded));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
   });
 }

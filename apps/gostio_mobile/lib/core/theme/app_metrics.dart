@@ -64,4 +64,13 @@ abstract final class AppSizes {
   // tall. Seven across a 360-pixel phone is what holds the grid's side
   // padding down to `AppSpacing.sm`.
   static const double calendarCell = touchTarget;
+
+  // A day carrying what it costs under its number, which is two lines rather
+  // than one and cannot be read in a thumb's height.
+  static const double calendarCellWithFigure = 60;
+
+  // A place shown rather than named. It is tall enough for the streets around
+  // a pin to be recognised and short enough to leave the words under it on
+  // the same screen.
+  static const double mapPreview = 180;
 }

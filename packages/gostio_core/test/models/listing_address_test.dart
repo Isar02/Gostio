@@ -13,6 +13,13 @@ void main() {
     expect(experience.photos, '/experiences/7/photos');
   });
 
+  test('the row itself is what every collection under it is written on', () {
+    const ListingAddress listing = ListingAddress(ListingKind.accommodation, 7);
+
+    expect(listing.path, '/accommodations/7');
+    expect(listing.favorite, '/accommodations/7/favorite');
+  });
+
   test('a photograph and its bytes hang off the listing that holds it', () {
     const ListingAddress listing = ListingAddress(ListingKind.experience, 12);
 

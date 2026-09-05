@@ -15,6 +15,12 @@ abstract final class AppNumbers {
 
   static String rating(num value) => _rating.format(value);
 
+  // A figure and the noun it counts, which is a figure printed with its unit
+  // like any other. Every noun this product counts — guests, rooms, nights,
+  // places, reviews — takes a plain s, and the one that does not can say so.
+  static String counted(int count, String noun, {String? plural}) =>
+      '$count ${count == 1 ? noun : plural ?? '${noun}s'}';
+
   // What a figure looks like inside a field rather than in a column: no
   // grouping, no mark, and no trailing zero the typist did not put there.
   static String typed(num value) =>

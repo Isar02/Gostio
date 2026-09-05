@@ -30,6 +30,7 @@ Accommodation _$AccommodationFromJson(Map<String, dynamic> json) =>
       cleaningFee: (json['cleaningFee'] as num).toDouble(),
       isActive: json['isActive'] as bool,
       reviewCount: (json['reviewCount'] as num).toInt(),
+      isFavorite: json['isFavorite'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
       coverPhotoId: (json['coverPhotoId'] as num?)?.toInt(),
       averageRating: (json['averageRating'] as num?)?.toDouble(),

@@ -138,6 +138,7 @@ Accommodation _listing() => Accommodation(
   cleaningFee: 25,
   isActive: true,
   reviewCount: 0,
+  isFavorite: false,
   createdAt: DateTime.utc(2026, 1, 1),
 );
 

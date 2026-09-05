@@ -34,6 +34,7 @@ export 'src/models/reservation_status.dart';
 export 'src/models/revenue_report.dart';
 export 'src/models/review.dart';
 export 'src/models/review_stars.dart';
+export 'src/models/stay_calendar_day.dart';
 export 'src/models/user.dart';
 export 'src/network/api_client.dart';
 export 'src/network/api_exception.dart';

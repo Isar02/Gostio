@@ -5,6 +5,7 @@ import '../calendar/date_range.dart';
 import '../theme/app_metrics.dart';
 import 'app_sheet.dart';
 import 'bottom_action_bar.dart';
+import 'discard_guard.dart';
 import 'month_grid.dart';
 
 // The dates for a stay, chosen over a month at a time. A night the listing
@@ -22,7 +23,6 @@ abstract final class DateRangePicker {
     context,
     title: title,
     isScrollable: false,
-    isDraggable: true,
     builder: (BuildContext context) => _RangeCalendar(
       selected: selected,
       firstDay: CalendarDays.of(firstDay ?? CalendarDays.today()),
@@ -51,6 +51,8 @@ class _RangeCalendar extends StatefulWidget {
 
 class _RangeCalendarState extends State<_RangeCalendar> {
   late DateTime _month = CalendarDays.firstOfMonth(widget.firstDay);
+  DateTime? _initialFrom;
+  DateTime? _initialTo;
   DateTime? _from;
   DateTime? _to;
 
@@ -63,49 +65,54 @@ class _RangeCalendarState extends State<_RangeCalendar> {
     // is dropped rather than handed back ready to be applied.
     final DateRange? selected = widget.selected;
     if (selected != null && _isStillOffered(selected)) {
-      _from = selected.from;
-      _to = selected.to;
+      _initialFrom = _from = selected.from;
+      _initialTo = _to = selected.to;
       _month = CalendarDays.firstOfMonth(selected.from);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        MonthBar(
-          month: _month,
-          onPrevious: _canGoBack ? () => _moveMonths(-1) : null,
-          onNext: _canGoForward ? () => _moveMonths(1) : null,
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: MonthGrid(
+    return DiscardGuard(
+      hasInput: _from != _initialFrom || _to != _initialTo,
+      title: 'Leave these dates?',
+      message: 'The dates you chose here will not be applied.',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          MonthBar(
             month: _month,
-            from: _from,
-            to: _to,
-            isTakeable: _isTakeable,
-            isSold: widget.unavailable.contains,
-            onChosen: _choose,
+            onPrevious: _canGoBack ? () => _moveMonths(-1) : null,
+            onNext: _canGoForward ? () => _moveMonths(1) : null,
           ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        BottomActionBar(
-          label: _from == null ? 'Choose a first night' : _chosenLabel,
-          detail: _from == null ? null : _chosenDetail,
-          secondary: TextButton(
-            onPressed: _from == null ? null : _clear,
-            child: const Text('Clear'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: MonthGrid(
+              month: _month,
+              from: _from,
+              to: _to,
+              isTakeable: _isTakeable,
+              isSold: widget.unavailable.contains,
+              onChosen: _choose,
+            ),
           ),
-          action: FilledButton(
-            onPressed: _range == null
-                ? null
-                : () => Navigator.of(context).pop(_range),
-            child: const Text('Apply'),
+          const SizedBox(height: AppSpacing.lg),
+          BottomActionBar(
+            label: _from == null ? 'Choose a first night' : _chosenLabel,
+            detail: _from == null ? null : _chosenDetail,
+            secondary: TextButton(
+              onPressed: _from == null ? null : _clear,
+              child: const Text('Clear'),
+            ),
+            action: FilledButton(
+              onPressed: _range == null
+                  ? null
+                  : () => Navigator.of(context).pop(_range),
+              child: const Text('Apply'),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -128,6 +128,39 @@ void main() {
     expect(find.text('Choose a day'), findsOneWidget);
   });
 
+  testWidgets('leaving changed days asks before discarding them', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_picker(june));
+    await _open(tester);
+
+    await tester.tap(find.text('12'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Leave these days?'), findsOneWidget);
+
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('One day'), findsOneWidget);
+  });
+
+  testWidgets('changed days cannot be dragged away', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_picker(june));
+    await _open(tester);
+
+    await tester.tap(find.text('12'));
+    await tester.pump();
+    await tester.drag(find.text('Choose your days'), const Offset(0, 600));
+    await tester.pumpAndSettle();
+
+    expect(find.text('One day'), findsOneWidget);
+  });
+
   testWidgets('a picker opened on a window comes up holding it', (
     WidgetTester tester,
   ) async {

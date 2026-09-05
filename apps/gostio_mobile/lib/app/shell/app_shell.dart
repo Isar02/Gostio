@@ -34,12 +34,11 @@ class _AppShellState extends State<AppShell> {
 
   ShellTab _current = ShellTab.first;
 
-  // The answer a route is waiting to give while a tab is being emptied.
-  Completer<bool>? _answer;
+  _PendingTabReset? _pendingTabReset;
 
   @override
   void dispose() {
-    _stopWaiting(isLeaving: false);
+    _cancelPendingTabReset();
 
     super.dispose();
   }
@@ -57,7 +56,7 @@ class _AppShellState extends State<AppShell> {
         // A route that refused a pop answers here rather than to the call that
         // asked, because the call was told the same thing either way.
         onNotification: (DiscardAnswered answered) {
-          _stopWaiting(isLeaving: answered.isLeaving);
+          _pendingTabReset?.answerDiscard(isLeaving: answered.isLeaving);
 
           return false;
         },
@@ -83,12 +82,25 @@ class _AppShellState extends State<AppShell> {
   // which is the only gesture a phone has for a stack several screens deep.
   void _choose(ShellTab chosen) {
     if (chosen != _current) {
+      _cancelPendingTabReset();
       setState(() => _current = chosen);
 
       return;
     }
 
-    unawaited(_toRootOf(chosen));
+    if (_pendingTabReset != null) {
+      return;
+    }
+
+    final _PendingTabReset reset = _PendingTabReset();
+    _pendingTabReset = reset;
+    unawaited(
+      _toRootOf(chosen, reset).whenComplete(() {
+        if (identical(_pendingTabReset, reset)) {
+          _pendingTabReset = null;
+        }
+      }),
+    );
   }
 
   // The stack is emptied one route at a time and each one is asked rather than
@@ -100,40 +112,36 @@ class _AppShellState extends State<AppShell> {
   // it. Yes carries on down the stack, because the reader asked for the top of
   // this tab and one route agreeing to go was not the whole of that. No stops
   // the gesture, and what is left standing is what they chose to keep.
-  Future<void> _toRootOf(ShellTab tab) async {
+  Future<void> _toRootOf(ShellTab tab, _PendingTabReset reset) async {
     final NavigatorState? navigator = _navigators[tab]?.currentState;
     final _StackDepth depth = _depths[tab]!;
 
-    _stopWaiting(isLeaving: false);
-
-    while (navigator != null && navigator.mounted && navigator.canPop()) {
+    while (reset.isActive &&
+        navigator != null &&
+        navigator.mounted &&
+        navigator.canPop()) {
       final int before = depth.routes;
+      final Completer<bool> discardAnswer = reset.armForDiscard();
       await navigator.maybePop();
 
-      if (!navigator.mounted) {
+      if (!reset.isActive || !navigator.mounted) {
         return;
       }
 
       if (depth.routes < before) {
+        reset.disarm(discardAnswer);
         continue;
       }
 
-      final Completer<bool> answer = Completer<bool>();
-      _answer = answer;
-
-      if (!await answer.future) {
+      if (!await discardAnswer.future) {
         return;
       }
     }
   }
 
-  void _stopWaiting({required bool isLeaving}) {
-    final Completer<bool>? answer = _answer;
-    _answer = null;
-
-    if (answer != null && !answer.isCompleted) {
-      answer.complete(isLeaving);
-    }
+  void _cancelPendingTabReset() {
+    _pendingTabReset?.cancel();
+    _pendingTabReset = null;
   }
 
   // Back is answered here because a tab is a stack of its own. It leaves the
@@ -207,4 +215,45 @@ class _StackDepth extends NavigatorObserver {
   @override
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) =>
       routes--;
+}
+
+// One request to return a tab to its root. A second tap shares the request
+// already in flight rather than starting another walk over the same routes,
+// and cancelling it also releases any guard answer it is waiting for.
+class _PendingTabReset {
+  bool _isActive = true;
+  Completer<bool>? _discardAnswer;
+
+  bool get isActive => _isActive;
+
+  Completer<bool> armForDiscard() {
+    final Completer<bool> answer = Completer<bool>();
+    _discardAnswer = answer;
+
+    return answer;
+  }
+
+  void answerDiscard({required bool isLeaving}) {
+    final Completer<bool>? answer = _discardAnswer;
+    _discardAnswer = null;
+
+    if (answer != null && !answer.isCompleted) {
+      answer.complete(isLeaving);
+    }
+  }
+
+  void disarm(Completer<bool> answer) {
+    if (identical(_discardAnswer, answer)) {
+      _discardAnswer = null;
+    }
+
+    if (!answer.isCompleted) {
+      answer.complete(false);
+    }
+  }
+
+  void cancel() {
+    _isActive = false;
+    answerDiscard(isLeaving: false);
+  }
 }

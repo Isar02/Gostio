@@ -181,6 +181,39 @@ void main() {
     expect(find.text('Choose a first night'), findsOneWidget);
   });
 
+  testWidgets('leaving changed dates asks before discarding them', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_picker(june));
+    await _open(tester);
+
+    await tester.tap(find.text('12'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Leave these dates?'), findsOneWidget);
+
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('12 Jun 2026'), findsOneWidget);
+  });
+
+  testWidgets('changed dates cannot be dragged away', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_picker(june));
+    await _open(tester);
+
+    await tester.tap(find.text('12'));
+    await tester.pump();
+    await tester.drag(find.text('Choose your dates'), const Offset(0, 600));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Choose a last night'), findsOneWidget);
+  });
+
   testWidgets('a picker opened on a range comes up holding it', (
     WidgetTester tester,
   ) async {

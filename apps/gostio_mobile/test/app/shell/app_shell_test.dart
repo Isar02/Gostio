@@ -249,6 +249,30 @@ void main() {
     expect(find.byType(ExploreScreen), findsOneWidget);
   });
 
+  testWidgets('a repeated root request shares the one already in flight', (
+    WidgetTester tester,
+  ) async {
+    await openShell(tester);
+    await pushInside(tester, ShellTab.explore);
+    await pushGuarded(tester, ShellTab.explore);
+
+    final NavigationBar bar = tester.widget<NavigationBar>(
+      find.byType(NavigationBar),
+    );
+    bar.onDestinationSelected!(ShellTab.explore.index);
+    bar.onDestinationSelected!(ShellTab.explore.index);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Leave this form?'), findsOneWidget);
+
+    await tester.tap(find.text('Leave'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('A guarded detail'), findsNothing);
+    expect(find.text('A pushed detail'), findsNothing);
+    expect(find.byType(ExploreScreen), findsOneWidget);
+  });
+
   testWidgets('a guard that is kept leaves the stack under it standing', (
     WidgetTester tester,
   ) async {

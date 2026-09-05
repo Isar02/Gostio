@@ -5,6 +5,7 @@ import '../calendar/day_window.dart';
 import '../theme/app_metrics.dart';
 import 'app_sheet.dart';
 import 'bottom_action_bar.dart';
+import 'discard_guard.dart';
 import 'month_grid.dart';
 
 // The days a term is looked for over. The first tap is already an answer — one
@@ -24,7 +25,6 @@ abstract final class DayWindowPicker {
     context,
     title: title,
     isScrollable: false,
-    isDraggable: true,
     builder: (BuildContext context) => _WindowCalendar(
       selected: selected,
       firstDay: CalendarDays.of(firstDay ?? CalendarDays.today()),
@@ -46,6 +46,8 @@ class _WindowCalendar extends StatefulWidget {
 
 class _WindowCalendarState extends State<_WindowCalendar> {
   late DateTime _month = CalendarDays.firstOfMonth(widget.firstDay);
+  DateTime? _initialFrom;
+  DateTime? _initialTo;
   DateTime? _from;
   DateTime? _to;
   bool _isWidened = false;
@@ -59,8 +61,8 @@ class _WindowCalendarState extends State<_WindowCalendar> {
     // rather than handed back ready to be applied.
     final DayWindow? selected = widget.selected;
     if (selected != null && _isStillOffered(selected)) {
-      _from = selected.from;
-      _to = selected.to;
+      _initialFrom = _from = selected.from;
+      _initialTo = _to = selected.to;
       _isWidened = !selected.isOneDay;
       _month = CalendarDays.firstOfMonth(selected.from);
     }
@@ -68,41 +70,46 @@ class _WindowCalendarState extends State<_WindowCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        MonthBar(
-          month: _month,
-          onPrevious: _canGoBack ? () => _moveMonths(-1) : null,
-          onNext: _canGoForward ? () => _moveMonths(1) : null,
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          child: MonthGrid(
+    return DiscardGuard(
+      hasInput: _from != _initialFrom || _to != _initialTo,
+      title: 'Leave these days?',
+      message: 'The days you chose here will not be applied.',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          MonthBar(
             month: _month,
-            from: _from,
-            to: _to,
-            isTakeable: _isTakeable,
-            isSold: (DateTime _) => false,
-            onChosen: _choose,
+            onPrevious: _canGoBack ? () => _moveMonths(-1) : null,
+            onNext: _canGoForward ? () => _moveMonths(1) : null,
           ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        BottomActionBar(
-          label: _window == null ? 'Choose a day' : _chosenLabel,
-          detail: _chosenDetail,
-          secondary: TextButton(
-            onPressed: _from == null ? null : _clear,
-            child: const Text('Clear'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: MonthGrid(
+              month: _month,
+              from: _from,
+              to: _to,
+              isTakeable: _isTakeable,
+              isSold: (DateTime _) => false,
+              onChosen: _choose,
+            ),
           ),
-          action: FilledButton(
-            onPressed: _window == null
-                ? null
-                : () => Navigator.of(context).pop(_window),
-            child: const Text('Apply'),
+          const SizedBox(height: AppSpacing.lg),
+          BottomActionBar(
+            label: _window == null ? 'Choose a day' : _chosenLabel,
+            detail: _chosenDetail,
+            secondary: TextButton(
+              onPressed: _from == null ? null : _clear,
+              child: const Text('Clear'),
+            ),
+            action: FilledButton(
+              onPressed: _window == null
+                  ? null
+                  : () => Navigator.of(context).pop(_window),
+              child: const Text('Apply'),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

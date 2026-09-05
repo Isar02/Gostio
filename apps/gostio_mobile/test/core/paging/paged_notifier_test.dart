@@ -100,6 +100,21 @@ void main() {
     expect(catalogue.query, 'Neum');
   });
 
+  // A write can land while an older refresh is still on its way. That older
+  // page may update the rest of the list, but it cannot put the changed row
+  // back into the state it held before the write.
+  test('a row changed during refresh survives its older answer', () async {
+    await _fill(catalogue, <String>['Pending'], total: 1);
+
+    final Future<void> refreshing = catalogue.reload();
+    catalogue.replace('Pending', 'Cancelled');
+    catalogue.answer(_page(1, <String>['Pending'], total: 1));
+    await refreshing;
+
+    expect(catalogue.items, <String>['Cancelled']);
+    expect(catalogue.isLoading, isFalse);
+  });
+
   test('a first page that was refused shows nothing and says why', () async {
     final Future<void> reading = catalogue.apply('Mostar');
     catalogue.refuse(
@@ -248,6 +263,9 @@ class _Catalogue extends PagedNotifier<String, String> {
   final List<String> queries = <String>[];
 
   int get reads => _pending.length;
+
+  void replace(String held, String replacement) =>
+      replaceWhere((String item) => item == held, replacement);
 
   void answer(PagedResult<String> result) =>
       answerAt(_pending.length - 1, result);

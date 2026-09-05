@@ -223,6 +223,7 @@ public class ReservationListTests(DatabaseFixture fixture)
         Assert.Equal(await workspace.TitleOfAsync(listing), row.ListingTitle);
         Assert.Equal("Integration Tests", row.GuestName);
         Assert.Null(row.ExperienceId);
+        Assert.Null(row.ExperienceSlotStartTime);
     }
 
     [Fact]
@@ -238,6 +239,49 @@ public class ReservationListTests(DatabaseFixture fixture)
 
         Assert.Equal(await workspace.ExperienceOfAsync(slot), row.ExperienceId);
         Assert.StartsWith("An experience ", row.ListingTitle);
+    }
+
+    // A guest reads their trips as two lists over one day, and a stay they are
+    // on is ahead of them rather than behind them: the day is asked from both
+    // sides, so a booking answers one side and never both.
+    [Fact]
+    public async Task TheDayTellsWhatIsStillAheadFromWhatIsBehind()
+    {
+        var (_, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var running = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+        var over = await workspace.BookStayAsync(guest, listing, Soon.AddDays(5), nights: 2);
+
+        await workspace.MoveTheStayAsync(running.Id, today.AddDays(1));
+        await workspace.MoveTheStayAsync(over.Id, today);
+
+        var ahead = await workspace.ListAsync(
+            guest, RoleNames.Guest, new ReservationSearchRequest { From = today });
+
+        var behind = await workspace.ListAsync(
+            guest, RoleNames.Guest, new ReservationSearchRequest { EndedBefore = today });
+
+        Assert.Equal([running.Id], ahead.Items.Select(item => item.Id));
+        Assert.Equal([over.Id], behind.Items.Select(item => item.Id));
+    }
+
+    // A booking against a term carries no dates of its own, so the row says
+    // when the term begins: a list of them would otherwise have to read each
+    // term back one at a time to say when any of them is.
+    [Fact]
+    public async Task ARowOnATermSaysWhenTheTermBegins()
+    {
+        var (_, slot) = await workspace.ATermAsync(capacity: 10, startsAt: TermStart);
+        var guest = await workspace.AGuestAsync();
+
+        await workspace.BookTermAsync(guest, slot, guestCount: 2);
+
+        var page = await workspace.ListAsync(guest, RoleNames.Guest, new ReservationSearchRequest());
+        var row = Assert.Single(page.Items);
+
+        Assert.Equal(TermStart, row.ExperienceSlotStartTime);
     }
 
     [Fact]

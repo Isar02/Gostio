@@ -52,25 +52,31 @@ class PagedList<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Nothing has been read yet, so there is nothing to keep on the screen
-    // while the answer is waited for.
+    // while the answer is waited for. A list with nothing in it is still a
+    // list, so the gesture that reads it again is still under the thumb: an
+    // empty answer is the one a reader most wants to pull on.
     if (items.isEmpty) {
       if (isLoading) {
-        return const LoadingState();
+        return _pullable(const LoadingState());
       }
 
       if (failureMessage case final String message) {
-        return ErrorState(
-          message: message,
-          traceId: failureTraceId,
-          onRetry: onRetry,
+        return _pullable(
+          ErrorState(
+            message: message,
+            traceId: failureTraceId,
+            onRetry: onRetry,
+          ),
         );
       }
 
-      return EmptyState(
-        title: emptyTitle,
-        message: emptyMessage,
-        icon: Icons.search_off_rounded,
-        action: emptyAction,
+      return _pullable(
+        EmptyState(
+          title: emptyTitle,
+          message: emptyMessage,
+          icon: Icons.search_off_rounded,
+          action: emptyAction,
+        ),
       );
     }
 
@@ -105,16 +111,36 @@ class PagedList<T> extends StatelessWidget {
       },
     );
 
-    if (onRefresh case final Future<void> Function() onRefresh) {
-      return RefreshIndicator(
-        onRefresh: onRefresh,
-        color: AppColors.indigo,
-        child: list,
-      );
-    }
-
-    return list;
+    return _refreshing(list) ?? list;
   }
+
+  // A screen state fills what it was given and scrolls nowhere, and a pull
+  // needs something that can be overscrolled. It is laid inside a list as tall
+  // as the space it was handed, so it reads exactly as it did and answers the
+  // gesture as the rows would.
+  Widget _pullable(Widget state) =>
+      _refreshing(
+        LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints space) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              ConstrainedBox(
+                constraints: BoxConstraints(minHeight: space.maxHeight),
+                child: state,
+              ),
+            ],
+          ),
+        ),
+      ) ??
+      state;
+
+  Widget? _refreshing(Widget child) => onRefresh == null
+      ? null
+      : RefreshIndicator(
+          onRefresh: onRefresh!,
+          color: AppColors.indigo,
+          child: child,
+        );
 }
 
 class _Footer extends StatelessWidget {

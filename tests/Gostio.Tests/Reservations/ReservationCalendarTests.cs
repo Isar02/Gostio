@@ -58,6 +58,42 @@ public class ReservationCalendarTests
             ReservationCalendar.OccupiesOnOrBefore(Day), ATerm(JustAfterMidnight.AddDays(1))));
 
     [Fact]
+    public void AStayThatEndsOnTheDayHasNoDayLeftOnOrAfterIt() =>
+        Assert.True(Matches(
+            ReservationCalendar.EndedBefore(Day), AStay(Day.AddDays(-2), nights: 2)));
+
+    [Fact]
+    public void AStayWhoseLastNightIsTheDayBeforeHasNotEndedYet() =>
+        Assert.False(Matches(
+            ReservationCalendar.EndedBefore(Day), AStay(Day.AddDays(-1), nights: 2)));
+
+    [Fact]
+    public void ATermIsBehindTheDayAfterTheOneItStartsOnLocally() =>
+        Assert.True(Matches(
+            ReservationCalendar.EndedBefore(Day.AddDays(1)), ATerm(JustAfterMidnight)));
+
+    [Fact]
+    public void ATermIsNotBehindTheDayItStartsOn() =>
+        Assert.False(Matches(ReservationCalendar.EndedBefore(Day), ATerm(JustAfterMidnight)));
+
+    // The two windows are read as one split, and a list drawn from both sides
+    // of it shows a booking once: never twice, and never not at all.
+    [Fact]
+    public void EveryBookingIsOnOneSideOfTheDayAndOnOnlyOne() =>
+        Assert.All(
+            new[]
+            {
+                AStay(Day.AddDays(-2), nights: 2),
+                AStay(Day.AddDays(-1), nights: 2),
+                AStay(Day, nights: 2),
+                ATerm(JustAfterMidnight),
+                ATerm(JustAfterMidnight.AddDays(-1)),
+            },
+            reservation => Assert.NotEqual(
+                Matches(ReservationCalendar.OccupiesOnOrAfter(Day), reservation),
+                Matches(ReservationCalendar.EndedBefore(Day), reservation)));
+
+    [Fact]
     public void AnArrivalIsTheDayTheStayBegins() =>
         Assert.True(Matches(ReservationCalendar.ArrivesOn(Day), AStay(Day, nights: 2)));
 

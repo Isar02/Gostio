@@ -17,6 +17,10 @@ public sealed class ReservationResponse : IIdentified
     // The accommodation's or the experience's, whichever the row names.
     public required string ListingTitle { get; init; }
 
+    // When the term begins, so that a booking against one says when it is
+    // without its screen reading the term back a row at a time.
+    public DateTime? ExperienceSlotStartTime { get; init; }
+
     public DateOnly? CheckInDate { get; init; }
 
     public DateOnly? CheckOutDate { get; init; }

@@ -19,7 +19,11 @@ class PayBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final PaymentNotifier payment = context.watch<PaymentNotifier>();
-    if (payment.isPaid) {
+
+    // A booking that is paid for, or one that has ended without being paid
+    // for, is not owed anything: there is no figure to carry and no button to
+    // carry it beside.
+    if (!payment.isOwed) {
       return const SizedBox.shrink();
     }
 

@@ -102,6 +102,11 @@ internal sealed class ReservationService(
             query = query.Where(ReservationCalendar.OccupiesOnOrBefore(to));
         }
 
+        if (search.EndedBefore is DateOnly ended)
+        {
+            query = query.Where(ReservationCalendar.EndedBefore(ended));
+        }
+
         if (search.ArrivesOn is DateOnly arrival)
         {
             query = query.Where(ReservationCalendar.ArrivesOn(arrival));

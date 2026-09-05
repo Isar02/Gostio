@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/state/live_notifier.dart';
@@ -17,6 +18,7 @@ class PaymentNotifier extends LiveNotifier {
     this._sheet,
     this._booking, {
     Duration? between,
+    this.onBooking,
   }) : _between = between ?? _pause;
 
   // How long a confirmation is left to arrive before the booking is read
@@ -30,10 +32,14 @@ class PaymentNotifier extends LiveNotifier {
   final CardSheet _sheet;
   final Duration _between;
 
+  // The row this holds, for whoever else is drawing the same booking. A list a
+  // trip was opened from is showing it too, and what the server answered here
+  // is what it should be showing.
+  final ValueChanged<Reservation>? onBooking;
+
   Reservation _booking;
   PaymentStage _stage = PaymentStage.idle;
   String? _refusal;
-  bool _holdRanOut = false;
 
   Reservation get booking => _booking;
 
@@ -43,17 +49,27 @@ class PaymentNotifier extends LiveNotifier {
 
   bool get isPaid => _booking.isPaid;
 
-  // A hold that has run out no longer holds a place, and the server refuses
-  // the charge. A button that has to be pressed to learn that is a button
-  // that lied, so the countdown says when it goes.
-  bool get isPayable => !isPaid && !_holdRanOut && _stage == PaymentStage.idle;
+  // Whether this booking is one there is still something to settle on. A
+  // booking that has ended is not, and neither is one that is paid for, so
+  // neither is drawn a bar at all.
+  bool get isOwed => !isPaid && !_booking.isOverAt(DateTime.now());
 
-  void holdRanOut() {
-    if (_holdRanOut) {
-      return;
-    }
+  // The server refuses a charge on a place that is no longer held, so what it
+  // would refuse is not offered: a button that has to be pressed to learn that
+  // is a button that lied.
+  bool get isPayable =>
+      _stage == PaymentStage.idle && _booking.canBePaidForAt(DateTime.now());
 
-    _holdRanOut = true;
+  // The clock reached the end of the hold while the screen was open. Nothing
+  // is recorded, because the booking already says when it stops holding its
+  // place; what changed is only that the answer is worth reading again.
+  void holdRanOut() => publish();
+
+  // The booking as somebody else read it back — a cancellation answers a row
+  // the way a payment does. Paid is still never set here: what is drawn is
+  // whichever row the server answered last.
+  void bookingChanged(Reservation booking) {
+    _hold(booking);
     publish();
   }
 
@@ -133,7 +149,7 @@ class PaymentNotifier extends LiveNotifier {
           return;
         }
 
-        _booking = read;
+        _hold(read);
         if (read.isPaid) {
           _moveTo(PaymentStage.idle);
 
@@ -145,6 +161,11 @@ class PaymentNotifier extends LiveNotifier {
     }
 
     _moveTo(PaymentStage.unconfirmed);
+  }
+
+  void _hold(Reservation booking) {
+    _booking = booking;
+    onBooking?.call(booking);
   }
 
   void _moveTo(PaymentStage stage, {String? refusal}) {

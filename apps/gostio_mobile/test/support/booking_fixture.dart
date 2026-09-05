@@ -27,8 +27,9 @@ ExperienceSlot experienceSlot({
 }
 
 // A booking as it comes back from the create: pending, unpaid and holding its
-// place until the deadline the server set. The hold is relative so that what
-// the countdown prints is stable whenever the suite is run.
+// place until the deadline the server set. Both the hold and the nights are
+// relative, so what the screen says about either is the same whenever the
+// suite is run and a booking is never one the reader has already been on.
 Reservation stayBooking({
   int id = 501,
   int guestCount = 2,
@@ -38,18 +39,25 @@ Reservation stayBooking({
   double cleaningFee = 15,
   Duration heldFor = const Duration(hours: 24),
   bool isPaid = false,
-}) => _booking(
-  id: id,
-  guestCount: guestCount,
-  totalPrice: accommodationTotal + cleaningFee,
-  heldFor: heldFor,
-  isPaid: isPaid,
-  accommodationId: 1,
-  checkInDate: checkInDate ?? DateTime(2026, 6, 12),
-  checkOutDate: checkOutDate ?? DateTime(2026, 6, 15),
-  accommodationTotal: accommodationTotal,
-  cleaningFee: cleaningFee,
-);
+  ReservationStatus standing = ReservationStatus.pending,
+}) {
+  final DateTime arrival =
+      checkInDate ?? CalendarDays.addDays(CalendarDays.today(), 30);
+
+  return _booking(
+    id: id,
+    guestCount: guestCount,
+    totalPrice: accommodationTotal + cleaningFee,
+    heldFor: heldFor,
+    isPaid: isPaid,
+    standing: standing,
+    accommodationId: 1,
+    checkInDate: arrival,
+    checkOutDate: checkOutDate ?? CalendarDays.addDays(arrival, 3),
+    accommodationTotal: accommodationTotal,
+    cleaningFee: cleaningFee,
+  );
+}
 
 Reservation termBooking({
   int id = 502,
@@ -57,14 +65,21 @@ Reservation termBooking({
   int experienceSlotId = 1,
   double pricePerPerson = 25,
   Duration heldFor = const Duration(hours: 24),
+  bool isPaid = false,
+  ReservationStatus standing = ReservationStatus.pending,
+  DateTime? startTime,
 }) => _booking(
   id: id,
   guestCount: guestCount,
   totalPrice: pricePerPerson * guestCount,
   heldFor: heldFor,
+  isPaid: isPaid,
+  standing: standing,
   listingTitle: 'Old town walk',
   experienceId: 1,
   experienceSlotId: experienceSlotId,
+  experienceSlotStartTime:
+      startTime ?? DateTime.now().toUtc().add(const Duration(days: 20)),
   pricePerPerson: pricePerPerson,
 );
 
@@ -74,12 +89,14 @@ Reservation _booking({
   required double totalPrice,
   required Duration heldFor,
   bool isPaid = false,
+  ReservationStatus standing = ReservationStatus.pending,
   String listingTitle = 'Loft over the river',
   int? accommodationId,
   int? experienceId,
   int? experienceSlotId,
   DateTime? checkInDate,
   DateTime? checkOutDate,
+  DateTime? experienceSlotStartTime,
   double? accommodationTotal,
   double? cleaningFee,
   double? pricePerPerson,
@@ -89,8 +106,8 @@ Reservation _booking({
   guestName: 'Emina Begić',
   listingTitle: listingTitle,
   guestCount: guestCount,
-  reservationStatusId: 1,
-  status: 'Pending',
+  reservationStatusId: _keyOf(standing),
+  status: _wordFor(standing),
   totalPrice: totalPrice,
   isPaid: isPaid,
   expiresAt: DateTime.now().toUtc().add(heldFor),
@@ -100,9 +117,46 @@ Reservation _booking({
   experienceSlotId: experienceSlotId,
   checkInDate: checkInDate,
   checkOutDate: checkOutDate,
+  experienceSlotStartTime: experienceSlotStartTime,
   accommodationTotal: accommodationTotal,
   cleaningFee: cleaningFee,
   pricePerPerson: pricePerPerson,
+);
+
+// The seeded key the API files a standing under, and the word it answers
+// beside it.
+int _keyOf(ReservationStatus standing) => switch (standing) {
+  ReservationStatus.pending => 1,
+  ReservationStatus.confirmed => 2,
+  ReservationStatus.cancelled => 3,
+  ReservationStatus.completed => 4,
+};
+
+String _wordFor(ReservationStatus standing) => switch (standing) {
+  ReservationStatus.pending => 'Pending',
+  ReservationStatus.confirmed => 'Confirmed',
+  ReservationStatus.cancelled => 'Cancelled',
+  ReservationStatus.completed => 'Completed',
+};
+
+// What calling a booking off would send back, as the server quotes it.
+RefundQuote owedBack({
+  int reservationId = 501,
+  bool isPaid = true,
+  double charged = 285,
+  double amount = 285,
+  int percentage = 100,
+  String reason = 'Cancelled inside the free grace period.',
+}) => RefundQuote(
+  reservationId: reservationId,
+  isPaid: isPaid,
+  charged: charged,
+  currency: 'bam',
+  percentage: percentage,
+  amount: amount,
+  reason: reason,
+  graceEndsAt: DateTime.now().toUtc().add(const Duration(hours: 20)),
+  asOf: DateTime.now().toUtc(),
 );
 
 // A charge as the create answers one: open, and carrying the pair a card sheet

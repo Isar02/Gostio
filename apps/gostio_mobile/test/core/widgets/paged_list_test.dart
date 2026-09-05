@@ -188,6 +188,59 @@ void main() {
       lessThan(tester.getCenter(find.text('Old town loft')).dy),
     );
   });
+  // A list with nothing in it is still a list, and a reader looking at an empty
+  // answer is the one most likely to want it read again.
+  testWidgets('a list with nothing in it can still be pulled on', (
+    WidgetTester tester,
+  ) async {
+    int reads = 0;
+
+    await tester.pumpWidget(
+      drawn(
+        _list(
+          <String>[],
+          total: 0,
+          emptyTitle: 'Nothing booked yet',
+          onRefresh: () async => reads++,
+        ),
+      ),
+    );
+
+    await tester.fling(
+      find.text('Nothing booked yet'),
+      const Offset(0, 300),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(reads, 1);
+  });
+
+  testWidgets('a refusal with nothing behind it can be pulled on too', (
+    WidgetTester tester,
+  ) async {
+    int reads = 0;
+
+    await tester.pumpWidget(
+      drawn(
+        _list(
+          <String>[],
+          total: 0,
+          failureMessage: 'The search could not be read.',
+          onRefresh: () async => reads++,
+        ),
+      ),
+    );
+
+    await tester.fling(
+      find.text('The search could not be read.'),
+      const Offset(0, 300),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(reads, 1);
+  });
 }
 
 Widget _list(
@@ -201,6 +254,7 @@ Widget _list(
   Widget? header,
   VoidCallback? onMore,
   VoidCallback? onRetry,
+  Future<void> Function()? onRefresh,
 }) => PagedList<String>(
   items: items,
   totalCount: total,
@@ -213,5 +267,6 @@ Widget _list(
   header: header,
   onMore: onMore ?? () {},
   onRetry: onRetry,
+  onRefresh: onRefresh,
   itemBuilder: (BuildContext context, String item) => Text(item),
 );

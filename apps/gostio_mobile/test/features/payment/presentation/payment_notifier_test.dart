@@ -135,9 +135,16 @@ void main() {
     },
   );
 
+  // The countdown says when the hold goes. What makes the booking unpayable
+  // from that moment is the deadline on the booking itself rather than
+  // anything this was told about the clock.
   test('a hold that ran out is not offered a payment', () async {
     final PaymentDouble payments = PaymentDouble();
-    final PaymentNotifier payment = paying(payments, CardSheetDouble());
+    final PaymentNotifier payment = paying(
+      payments,
+      CardSheetDouble(),
+      booking: stayBooking(heldFor: Duration.zero),
+    );
 
     payment.holdRanOut();
     await payment.pay();
@@ -145,4 +152,56 @@ void main() {
     expect(payment.isPayable, isFalse);
     expect(payments.started, isEmpty);
   });
+
+  // A booking that has ended owes nothing, so the bar over it has neither a
+  // figure to carry nor a button to carry it beside.
+  test('a booking that was called off is owed nothing', () {
+    final PaymentNotifier payment = paying(
+      PaymentDouble(),
+      CardSheetDouble(),
+      booking: stayBooking(standing: ReservationStatus.cancelled),
+    );
+
+    expect(payment.isOwed, isFalse);
+    expect(payment.isPayable, isFalse);
+  });
+
+  // A cancellation answers a row the way a payment does, and what is drawn is
+  // whichever row the server answered last.
+  test('a booking answered elsewhere replaces the one being drawn', () {
+    final List<Reservation> told = <Reservation>[];
+    final PaymentNotifier payment = PaymentNotifier(
+      PaymentDouble(),
+      CardSheetDouble(),
+      stayBooking(),
+      onBooking: told.add,
+    );
+
+    payment.bookingChanged(stayBooking(standing: ReservationStatus.cancelled));
+
+    expect(payment.booking.status, 'Cancelled');
+    expect(told.single.status, 'Cancelled');
+  });
+
+  // The list a trip was opened from is drawing the same booking, and it read
+  // that row before any of this happened.
+  test(
+    'a booking that comes back paid is handed to whoever else holds it',
+    () async {
+      final PaymentDouble payments = PaymentDouble(
+        reads: <Reservation>[stayBooking(isPaid: true)],
+      );
+      final List<Reservation> told = <Reservation>[];
+
+      await PaymentNotifier(
+        payments,
+        CardSheetDouble(),
+        stayBooking(),
+        between: Duration.zero,
+        onBooking: told.add,
+      ).pay();
+
+      expect(told.single.isPaid, isTrue);
+    },
+  );
 }

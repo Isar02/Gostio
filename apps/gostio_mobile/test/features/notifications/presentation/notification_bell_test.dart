@@ -11,6 +11,7 @@ import '../../../support/notice_fixture.dart';
 import '../../../support/notifications_double.dart';
 import '../../../support/phone.dart';
 import '../../../support/screens.dart';
+import '../../../support/trips_double.dart';
 
 void main() {
   setUp(usePhoneScreen);
@@ -30,6 +31,7 @@ void main() {
         notifications: notifications,
         catalogue: CatalogueDouble(),
         filterOptions: FilterOptionsDouble(),
+        trips: TripsDouble(),
       ),
     );
     await tester.pumpAndSettle();

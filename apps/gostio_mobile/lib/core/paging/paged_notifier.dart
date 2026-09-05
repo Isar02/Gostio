@@ -28,6 +28,8 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   TQuery _query;
   ApiException? _failure;
   List<T> _items = List<T>.empty();
+  final List<_PendingReplacement<T>> _pendingReplacements =
+      <_PendingReplacement<T>>[];
 
   List<T> get items => _items;
 
@@ -83,6 +85,29 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     return _load(page: _page + 1, query: _query);
   }
 
+  // One row the reader changed on a screen this list opened. What has already
+  // been read stays where it is: reading the list again would take one several
+  // pages deep back to its first page to show a single changed row.
+  @protected
+  void replaceWhere(bool Function(T item) matches, T item) {
+    final int at = _items.indexWhere(matches);
+    if (at < 0) {
+      return;
+    }
+
+    // A page already on its way was read before this row changed. Remember
+    // the replacement for that request so its older answer cannot put the
+    // previous row back after the write has landed.
+    if (_isLoading) {
+      _pendingReplacements.add(
+        _PendingReplacement<T>(_request, matches: matches, item: item),
+      );
+    }
+
+    _items = List<T>.unmodifiable(<T>[..._items]..[at] = item);
+    publish();
+  }
+
   Future<void> _load({required int page, required TQuery query}) async {
     final int request = ++_request;
     final bool isAppending = page > 1;
@@ -106,6 +131,9 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     }
 
     if (request != _request) {
+      _pendingReplacements.removeWhere(
+        (_PendingReplacement<T> replacement) => replacement.request == request,
+      );
       return;
     }
 
@@ -116,15 +144,47 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
       _totalCount = landed.totalCount;
       // A page that answers with nothing is the end of the list rather than a
       // reason to drop what has already been read.
-      _items = List<T>.unmodifiable(
+      _items = _reconcile(
         isAppending ? <T>[..._items, ...landed.items] : landed.items,
+        request,
       );
       _hasLanded = true;
     }
+
+    _pendingReplacements.removeWhere(
+      (_PendingReplacement<T> replacement) => replacement.request == request,
+    );
 
     _failure = failure;
     _isLoading = false;
     _isAppending = false;
     publish();
   }
+
+  List<T> _reconcile(List<T> landed, int request) {
+    final List<T> reconciled = List<T>.of(landed);
+
+    for (final _PendingReplacement<T> replacement in _pendingReplacements.where(
+      (_PendingReplacement<T> held) => held.request == request,
+    )) {
+      final int at = reconciled.indexWhere(replacement.matches);
+      if (at >= 0) {
+        reconciled[at] = replacement.item;
+      }
+    }
+
+    return List<T>.unmodifiable(reconciled);
+  }
+}
+
+class _PendingReplacement<T> {
+  const _PendingReplacement(
+    this.request, {
+    required this.matches,
+    required this.item,
+  });
+
+  final int request;
+  final bool Function(T item) matches;
+  final T item;
 }

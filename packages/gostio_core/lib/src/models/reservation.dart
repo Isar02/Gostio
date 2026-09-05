@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../time/calendar_days.dart';
 import 'reservation_status.dart';
 
 part 'reservation.g.dart';
@@ -23,6 +24,7 @@ class Reservation {
     this.experienceSlotId,
     this.checkInDate,
     this.checkOutDate,
+    this.experienceSlotStartTime,
     this.accommodationTotal,
     this.cleaningFee,
     this.pricePerPerson,
@@ -55,6 +57,10 @@ class Reservation {
   final DateTime? checkInDate;
   final DateTime? checkOutDate;
 
+  // When the term begins, answered beside the slot it names so that a list of
+  // bookings says when each of them is without reading a term back per row.
+  final DateTime? experienceSlotStartTime;
+
   // The three parts a total is made of, each of them the side of the catalogue
   // it belongs to: a stay is nights plus cleaning, a term is a price a head.
   final double? accommodationTotal;
@@ -73,6 +79,32 @@ class Reservation {
 
     return arrival == null || departure == null ? null : (arrival, departure);
   }
+
+  // A booking there is nothing left to do to: called off, finished, or a stay
+  // whose last night has gone. The two ends are read against the day the
+  // reader is standing in, because a stay is measured in days rather than in
+  // moments.
+  bool isOverAt(DateTime now) =>
+      standing == ReservationStatus.cancelled ||
+      standing == ReservationStatus.completed ||
+      (checkOutDate != null && !checkOutDate!.isAfter(CalendarDays.of(now)));
+
+  // Whether a charge is worth offering on this booking, read from the row's
+  // own fields against a clock: it is paid or not, over or not, and its hold
+  // stands or has run out. Nothing here decides anything — the server opens a
+  // charge or refuses one, and a refusal is shown as it comes — but a control
+  // that would only earn a refusal is not put in front of a reader.
+  //
+  // This is the same mirror as the moves in [ReservationStatus], and it is on
+  // the model rather than answered by the API because two thirds of it move
+  // with the clock: a booking answered as payable sits in a list while its
+  // hold runs out, and a row that carried the answer would be wrong by the
+  // time the countdown beside it reached zero.
+  bool canBePaidForAt(DateTime now) =>
+      !isPaid && !isOverAt(now) && !_holdRanOutBy(now);
+
+  bool _holdRanOutBy(DateTime now) =>
+      standing == ReservationStatus.pending && !expiresAt.isAfter(now.toUtc());
 
   // A booking takes the nights between its two dates, so the day it ends on
   // belongs to the next guest: counting it paints a night nobody bought.

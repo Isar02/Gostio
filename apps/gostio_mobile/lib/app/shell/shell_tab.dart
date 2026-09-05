@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'account_tab.dart';
 import 'explore_tab.dart';
 import 'pending_tab.dart';
+import 'trips_tab.dart';
 
 // The five places this client is read in, and what each one opens on. A tab is
 // a destination in the bar and the first route of its own navigator, so the
@@ -33,13 +34,7 @@ enum ShellTab {
           'Listings chosen from what you have booked and saved open in this '
           'tab, each with the reasons it was picked.',
     ),
-    ShellTab.trips => const PendingTab(
-      tab: ShellTab.trips,
-      title: 'Your bookings',
-      message:
-          'Bookings you have made open in this tab, with their dates, their '
-          'status and what has been paid.',
-    ),
+    ShellTab.trips => const TripsTab(),
     ShellTab.inbox => const PendingTab(
       tab: ShellTab.inbox,
       title: 'Messages',

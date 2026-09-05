@@ -37,12 +37,13 @@ void main() {
   testWidgets('a booked stay says its dates, its party and its figures', (
     WidgetTester tester,
   ) async {
-    await open(tester, stayBooking());
+    final Reservation booking = stayBooking();
+    await open(tester, booking);
 
     expect(find.text('Your booking'), findsOneWidget);
     expect(find.text('Loft over the river'), findsOneWidget);
-    expect(find.text('12 Jun 2026'), findsOneWidget);
-    expect(find.text('15 Jun 2026'), findsOneWidget);
+    expect(find.text(AppDates.day(booking.checkInDate!)), findsOneWidget);
+    expect(find.text(AppDates.day(booking.checkOutDate!)), findsOneWidget);
     expect(find.text('2 guests'), findsOneWidget);
     expect(find.text('3 nights'), findsOneWidget);
     expect(find.text('270.00 KM'), findsOneWidget);

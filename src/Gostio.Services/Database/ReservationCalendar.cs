@@ -35,6 +35,19 @@ public static class ReservationCalendar
                 && reservation.ExperienceSlot.StartTime < dayEnds);
     }
 
+    // The exact other side of the window above: a booking with no day left on
+    // or after this one. The two partition the table on the same day, so a list
+    // split between them shows every booking once and none of them twice.
+    public static Expression<Func<Reservation, bool>> EndedBefore(DateOnly day)
+    {
+        var dayBegins = StayTimes.StartOfDay(day);
+
+        return reservation =>
+            reservation.CheckOutDate <= day
+            || (reservation.ExperienceSlot != null
+                && reservation.ExperienceSlot.StartTime < dayBegins);
+    }
+
     // A term is attended rather than arrived at, and takes up one day either
     // way, so these answer for stays alone; a window is what asks after a term.
     public static Expression<Func<Reservation, bool>> ArrivesOn(DateOnly day) =>

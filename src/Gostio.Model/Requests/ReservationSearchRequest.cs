@@ -21,6 +21,11 @@ public sealed class ReservationSearchRequest : PagedRequest
 
     public DateOnly? To { get; set; }
 
+    // The other side of From on the same day: bookings with no day left to
+    // come. Sending both answers nothing, which is what asking for a booking
+    // that is at once ahead and over deserves.
+    public DateOnly? EndedBefore { get; set; }
+
     public DateOnly? ArrivesOn { get; set; }
 
     public DateOnly? DepartsOn { get; set; }

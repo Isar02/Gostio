@@ -13,6 +13,7 @@ import '../features/notifications/presentation/unread_notices.dart';
 import '../features/payment/data/card_sheet.dart';
 import '../features/payment/data/payment_repository.dart';
 import '../features/payment/data/stripe_card_sheet.dart';
+import '../features/trips/data/trips_repository.dart';
 import 'shell/app_shell.dart';
 
 // What only an account has. The unread count is created here rather than above
@@ -61,6 +62,10 @@ class SignedInApp extends StatelessWidget {
         // test draws paying without a processor behind it.
         Provider<CardSheet>(
           create: (BuildContext context) => const StripeCardSheet(),
+        ),
+        Provider<TripsRepository>(
+          create: (BuildContext context) =>
+              TripsRepository(context.read<ApiClient>()),
         ),
         Provider<NotificationsRepository>(
           create: (BuildContext context) =>

@@ -27,6 +27,9 @@ Reservation _$ReservationFromJson(Map<String, dynamic> json) => Reservation(
   checkOutDate: json['checkOutDate'] == null
       ? null
       : DateTime.parse(json['checkOutDate'] as String),
+  experienceSlotStartTime: json['experienceSlotStartTime'] == null
+      ? null
+      : DateTime.parse(json['experienceSlotStartTime'] as String),
   accommodationTotal: (json['accommodationTotal'] as num?)?.toDouble(),
   cleaningFee: (json['cleaningFee'] as num?)?.toDouble(),
   pricePerPerson: (json['pricePerPerson'] as num?)?.toDouble(),

@@ -17,6 +17,9 @@ sealed class ListingDetail {
 
   String get hostName;
 
+  // Who lets it, which is the one account that cannot book it.
+  int get hostId;
+
   String get cityName;
 
   String get countryName;
@@ -60,6 +63,9 @@ final class StayDetail extends ListingDetail {
 
   @override
   String get hostName => stay.hostName;
+
+  @override
+  int get hostId => stay.hostId;
 
   @override
   String get cityName => stay.cityName;
@@ -109,6 +115,9 @@ final class ExperienceDetail extends ListingDetail {
 
   @override
   String get hostName => experience.hostName;
+
+  @override
+  int get hostId => experience.hostId;
 
   @override
   String get cityName => experience.cityName;

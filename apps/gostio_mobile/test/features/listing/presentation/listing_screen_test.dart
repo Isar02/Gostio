@@ -6,7 +6,9 @@ import 'package:gostio_mobile/features/listing/data/listing_detail.dart';
 import 'package:gostio_mobile/features/listing/presentation/favorite_edits.dart';
 import 'package:gostio_mobile/features/listing/presentation/listing_screen.dart';
 
+import '../../../support/account_fixture.dart';
 import '../../../support/auth_double.dart';
+import '../../../support/booking_double.dart';
 import '../../../support/listing_double.dart';
 import '../../../support/listing_fixture.dart';
 import '../../../support/phone.dart';
@@ -23,13 +25,16 @@ void main() {
     ListingDouble listings, {
     ListingAddress address = _stay,
     FavoriteEdits? favorites,
+    Session? session,
   }) async {
     await tester.pumpWidget(
       underTest(
         ListingScreen(address),
         auth: AuthDouble(),
         listings: listings,
+        bookings: BookingDouble(),
         favorites: favorites,
+        session: session,
       ),
     );
     await tester.pumpAndSettle();
@@ -58,8 +63,9 @@ void main() {
 
     expect(find.text('Old town loft'), findsNWidgets(2));
     expect(find.text('Sarajevo, Bosnia and Herzegovina'), findsOneWidget);
-    expect(find.text('90.00 KM'), findsOneWidget);
-    expect(find.text('per night'), findsOneWidget);
+    // Once in the summary and once in the bar the booking is started from.
+    expect(find.text('90.00 KM'), findsNWidgets(2));
+    expect(find.text('per night'), findsNWidgets(2));
     expect(find.text('plus 15.00 KM cleaning fee'), findsOneWidget);
     expect(
       find.text('Apartment · City break · 4 guests · 2 bedrooms · 1 bathroom'),
@@ -84,13 +90,47 @@ void main() {
       address: _term,
     );
 
-    expect(find.text('25.00 KM'), findsOneWidget);
-    expect(find.text('per person'), findsOneWidget);
+    expect(find.text('25.00 KM'), findsNWidgets(2));
+    expect(find.text('per person'), findsNWidgets(2));
     expect(find.text('Walking tour · 3 h'), findsOneWidget);
     expect(find.text('What this place offers'), findsNothing);
     expect(find.text('Availability'), findsNothing);
     expect(find.text('Where you meet'), findsOneWidget);
     expect(find.text('Sebilj'), findsOneWidget);
+  });
+
+  // Booking is the one thing on this screen that must not scroll away, so it
+  // is drawn under the sections rather than at the end of them.
+  testWidgets('the bar under a listing opens the screen it is booked on', (
+    WidgetTester tester,
+  ) async {
+    await open(tester, ListingDouble());
+
+    await tester.tap(find.text('Book'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your dates'), findsOneWidget);
+  });
+
+  // The server refuses a host who books their own listing, and a button that
+  // has to be pressed to learn so is a button that lied.
+  testWidgets('a host is not offered a booking on their own listing', (
+    WidgetTester tester,
+  ) async {
+    final Session session = signedOutSession()
+      ..begin(account: account(id: 7), token: 'the-token');
+
+    await open(tester, ListingDouble(), session: session);
+
+    expect(find.text('Your listing'), findsOneWidget);
+    expect(
+      find.text('A host does not book their own listing.'),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
   });
 
   // The screen the coordinates exist for. The map on the page is a picture

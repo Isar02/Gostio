@@ -46,6 +46,19 @@ abstract class ScreenNotifier extends LiveNotifier {
     return false;
   }
 
+  // The refusal described a request that was made. Where the screen now holds
+  // something else, the sentence under its button is about nothing that is on
+  // it, so it goes with what it was about.
+  @protected
+  void clearFailure() {
+    if (_failure == null || isDisposed) {
+      return;
+    }
+
+    _failure = null;
+    publish();
+  }
+
   void clearFailureFor(String field) {
     final ApiException? failure = _failure;
     if (failure == null || isDisposed) {

@@ -3,6 +3,7 @@ import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import '../features/booking/data/booking_repository.dart';
 import '../features/explore/data/catalogue_repository.dart';
 import '../features/explore/data/filter_options_repository.dart';
 import '../features/listing/data/listing_repository.dart';
@@ -36,6 +37,10 @@ class SignedInApp extends StatelessWidget {
         Provider<ListingRepository>(
           create: (BuildContext context) =>
               ListingRepository(context.read<ApiClient>()),
+        ),
+        Provider<BookingRepository>(
+          create: (BuildContext context) =>
+              BookingRepository(context.read<ApiClient>()),
         ),
         // What has been saved and unsaved since a list was read. It sits above
         // the tabs because the list that shows a heart and the screen that

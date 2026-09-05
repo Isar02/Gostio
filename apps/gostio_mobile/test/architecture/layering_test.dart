@@ -101,7 +101,12 @@ void main() {
 // A listing is opened from every list that shows one — the catalogues today,
 // the recommendations, the favourites and the trips later — so it is the one
 // feature the others reach into rather than a screen each of them rebuilds.
-const Set<String> _shared = <String>{'listing'};
+//
+// Booking is drawn under a listing, which is the only screen a guest starts one
+// from. What it reads of the listing is that feature's data and never its
+// screens, so the two are composed in one direction rather than into each
+// other.
+const Set<String> _shared = <String>{'listing', 'booking'};
 
 String? _featureOf(String path) {
   if (!path.startsWith('features/')) {

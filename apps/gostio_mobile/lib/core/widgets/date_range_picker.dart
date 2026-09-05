@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 
 import '../calendar/date_range.dart';
+import '../calendar/range_choice.dart';
 import '../theme/app_metrics.dart';
 import 'app_sheet.dart';
 import 'bottom_action_bar.dart';
@@ -51,22 +52,35 @@ class _RangeCalendar extends StatefulWidget {
 
 class _RangeCalendarState extends State<_RangeCalendar> {
   late DateTime _month = CalendarDays.firstOfMonth(widget.firstDay);
-  DateTime? _initialFrom;
-  DateTime? _initialTo;
-  DateTime? _from;
-  DateTime? _to;
+  late RangeChoice _initial;
+  late RangeChoice _choice;
 
   @override
   void initState() {
     super.initState();
 
+    final RangeChoice empty = RangeChoice(
+      firstDay: widget.firstDay,
+      lastDay: widget.lastDay,
+    );
+
     // Availability moves while the reader is elsewhere. A range chosen before
     // one of its nights was sold is no longer one this listing can take, so it
     // is dropped rather than handed back ready to be applied.
     final DateRange? selected = widget.selected;
-    if (selected != null && _isStillOffered(selected)) {
-      _initialFrom = _from = selected.from;
-      _initialTo = _to = selected.to;
+    final bool isStillOffered =
+        selected != null && empty.holds(selected, isNight: _isNight);
+
+    _initial = _choice = isStillOffered
+        ? RangeChoice(
+            firstDay: widget.firstDay,
+            lastDay: widget.lastDay,
+            from: selected.from,
+            to: selected.to,
+          )
+        : empty;
+
+    if (isStillOffered) {
       _month = CalendarDays.firstOfMonth(selected.from);
     }
   }
@@ -74,7 +88,7 @@ class _RangeCalendarState extends State<_RangeCalendar> {
   @override
   Widget build(BuildContext context) {
     return DiscardGuard(
-      hasInput: _from != _initialFrom || _to != _initialTo,
+      hasInput: _choice != _initial,
       title: 'Leave these dates?',
       message: 'The dates you chose here will not be applied.',
       child: Column(
@@ -89,25 +103,26 @@ class _RangeCalendarState extends State<_RangeCalendar> {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             child: MonthGrid(
               month: _month,
-              from: _from,
-              to: _to,
-              isTakeable: _isTakeable,
+              from: _choice.from,
+              to: _choice.to,
+              isTakeable: (DateTime day) =>
+                  _choice.mayTake(day, isNight: _isNight),
               isSold: widget.unavailable.contains,
               onChosen: _choose,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
           BottomActionBar(
-            label: _from == null ? 'Choose a first night' : _chosenLabel,
-            detail: _from == null ? null : _chosenDetail,
+            label: _choice.from == null ? 'Choose a first night' : _chosenLabel,
+            detail: _choice.from == null ? null : _chosenDetail,
             secondary: TextButton(
-              onPressed: _from == null ? null : _clear,
+              onPressed: _choice.from == null ? null : _clear,
               child: const Text('Clear'),
             ),
             action: FilledButton(
-              onPressed: _range == null
+              onPressed: _choice.range == null
                   ? null
-                  : () => Navigator.of(context).pop(_range),
+                  : () => Navigator.of(context).pop(_choice.range),
               child: const Text('Apply'),
             ),
           ),
@@ -116,15 +131,8 @@ class _RangeCalendarState extends State<_RangeCalendar> {
     );
   }
 
-  DateRange? get _range {
-    final DateTime? from = _from;
-    final DateTime? to = _to;
-
-    return from == null || to == null ? null : DateRange(from: from, to: to);
-  }
-
   String get _chosenLabel {
-    final DateRange? range = _range;
+    final DateRange? range = _choice.range;
 
     return range == null
         ? 'Choose a last night'
@@ -132,8 +140,8 @@ class _RangeCalendarState extends State<_RangeCalendar> {
   }
 
   String get _chosenDetail {
-    final DateTime from = _from!;
-    final DateTime? to = _to;
+    final DateTime from = _choice.from!;
+    final DateTime? to = _choice.to;
 
     return to == null
         ? AppDates.day(from)
@@ -150,73 +158,15 @@ class _RangeCalendarState extends State<_RangeCalendar> {
         _month.isBefore(CalendarDays.firstOfMonth(lastDay));
   }
 
+  // Every day the sheet was handed as still on offer is a night that may be
+  // bought; the window it has to fall inside is the choice's own.
+  bool _isNight(DateTime day) => !widget.unavailable.contains(day);
+
   void _moveMonths(int months) =>
       setState(() => _month = CalendarDays.addMonths(_month, months));
 
-  void _clear() => setState(() {
-    _from = null;
-    _to = null;
-  });
+  void _clear() => setState(() => _choice = _choice.cleared);
 
-  bool _isStillOffered(DateRange range) {
-    if (range.from.isBefore(widget.firstDay)) {
-      return false;
-    }
-
-    final DateTime? lastDay = widget.lastDay;
-    if (lastDay != null && range.to.isAfter(lastDay)) {
-      return false;
-    }
-
-    return !widget.unavailable.any(range.holdsNight);
-  }
-
-  bool _isTakeable(DateTime day) {
-    if (day.isBefore(widget.firstDay)) {
-      return false;
-    }
-
-    final DateTime? lastDay = widget.lastDay;
-    if (lastDay != null && day.isAfter(lastDay)) {
-      return false;
-    }
-
-    // While a first night is held and a last one is not, the day the reader
-    // leaves may be a night somebody else has bought: they are gone by then.
-    final DateTime? from = _from;
-    if (from != null &&
-        _to == null &&
-        day.isAfter(from) &&
-        !_holdsSoldNight(from, day)) {
-      return true;
-    }
-
-    return !widget.unavailable.contains(day);
-  }
-
-  // The first tap opens a range and the second closes it. A second tap that
-  // cannot close one — before the first night, or across a night somebody
-  // else already holds — opens a new range instead of refusing the gesture.
-  void _choose(DateTime day) {
-    setState(() {
-      final DateTime? from = _from;
-
-      if (from == null ||
-          _to != null ||
-          !day.isAfter(from) ||
-          _holdsSoldNight(from, day)) {
-        _from = day;
-        _to = null;
-
-        return;
-      }
-
-      _to = day;
-    });
-  }
-
-  // A stay occupies the nights up to the day it ends on, so the day the
-  // reader leaves may be sold to somebody else and the ones before it may not.
-  bool _holdsSoldNight(DateTime from, DateTime to) =>
-      widget.unavailable.any(DateRange(from: from, to: to).holdsNight);
+  void _choose(DateTime day) =>
+      setState(() => _choice = _choice.take(day, isNight: _isNight));
 }

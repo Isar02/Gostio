@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_mobile/core/theme/app_theme.dart';
 import 'package:gostio_mobile/features/auth/data/auth_repository.dart';
+import 'package:gostio_mobile/features/booking/data/booking_repository.dart';
 import 'package:gostio_mobile/features/explore/data/catalogue_repository.dart';
 import 'package:gostio_mobile/features/explore/data/filter_options_repository.dart';
 import 'package:gostio_mobile/features/listing/data/listing_repository.dart';
@@ -30,6 +31,7 @@ Widget underTest(
   CatalogueRepository? catalogue,
   FilterOptionsRepository? filterOptions,
   ListingRepository? listings,
+  BookingRepository? bookings,
   FavoriteEdits? favorites,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
@@ -47,6 +49,8 @@ Widget underTest(
       Provider<FilterOptionsRepository>.value(value: repository),
     if (listings case final ListingRepository repository)
       Provider<ListingRepository>.value(value: repository),
+    if (bookings case final BookingRepository repository)
+      Provider<BookingRepository>.value(value: repository),
     // Every card draws a heart, so what has been saved is composed above the
     // whole client rather than beside the screens that write it.
     ChangeNotifierProvider<FavoriteEdits>.value(
@@ -74,11 +78,13 @@ Widget underTest(
 
 // A screen the client only ever reaches by pushing it is drawn over something
 // here too, so the arrow in its bar and the gesture behind it both exist.
-Future<void> pushOnto(
+Future<GlobalKey<NavigatorState>> pushOnto(
   WidgetTester tester,
   Widget screen, {
   required AuthRepository auth,
   Session? session,
+  ListingRepository? listings,
+  BookingRepository? bookings,
 }) async {
   final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
 
@@ -88,6 +94,8 @@ Future<void> pushOnto(
       auth: auth,
       session: session,
       navigator: navigator,
+      listings: listings,
+      bookings: bookings,
     ),
   );
 
@@ -98,4 +106,6 @@ Future<void> pushOnto(
   );
 
   await tester.pumpAndSettle();
+
+  return navigator;
 }

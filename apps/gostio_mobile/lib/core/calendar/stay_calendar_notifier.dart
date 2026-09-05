@@ -2,22 +2,29 @@ import 'dart:async';
 
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/state/live_notifier.dart';
-import '../data/listing_repository.dart';
+import '../state/live_notifier.dart';
 
-// The month a listing's calendar is showing. One month is asked for at a time,
+// The window a calendar is read over, which the API bounds rather than pages.
+typedef StayNightsReader = Future<List<StayCalendarDay>> Function(
+  DateTime from,
+  DateTime to,
+);
+
+// The month a stay's calendar is showing. One month is asked for at a time,
 // which is well inside the window the API answers at once, and a month already
 // read is kept: stepping back to it is not another request.
 //
-// Nothing here is chosen. This says what the listing has left and what each
-// night costs; taking a range is the booking screen's gesture.
+// What is drawn from it is the caller's. A listing reads it to say what is
+// left and what each night costs; the booking screen reads the same months to
+// take a range out of them and to price it from the figures the server will
+// use. Which listing the nights belong to is the reader function's business,
+// so nothing here knows a route.
 class StayCalendarNotifier extends LiveNotifier {
-  StayCalendarNotifier(this._repository, this._accommodationId) {
+  StayCalendarNotifier(this._readNights) {
     unawaited(show(firstMonth));
   }
 
-  final ListingRepository _repository;
-  final int _accommodationId;
+  final StayNightsReader _readNights;
 
   final Map<DateTime, Map<DateTime, StayCalendarDay>> _months =
       <DateTime, Map<DateTime, StayCalendarDay>>{};
@@ -41,20 +48,25 @@ class StayCalendarNotifier extends LiveNotifier {
 
   String? get failureMessage => _failure?.message;
 
-  StayCalendarDay? dayOf(DateTime day) =>
-      _months[_month]?[CalendarDays.of(day)];
+  // Filed under the month the day belongs to rather than the month on screen,
+  // so a stay that runs over a month end is priced from both of them.
+  StayCalendarDay? nightOf(DateTime day) =>
+      _months[CalendarDays.firstOfMonth(day)]?[CalendarDays.of(day)];
 
   // A night before today is gone whatever the server says about it. The window
   // starts at the first of the month so that the grid is drawn whole, which
   // means the days already behind the reader come back with it.
+  //
+  // A month that has not landed answers no, which is what keeps a range from
+  // being taken across nights nobody has been told the price of.
   bool isBookable(DateTime day) =>
       !CalendarDays.of(day).isBefore(CalendarDays.today()) &&
-      (dayOf(day)?.isBookable ?? false);
+      (nightOf(day)?.isBookable ?? false);
 
   // Somebody else holds this night, or the host has closed it. A night that
   // has merely gone by is not this: it is dimmed rather than struck, because
   // nothing was sold.
-  bool isTaken(DateTime day) => dayOf(day)?.isBookable == false;
+  bool isTaken(DateTime day) => nightOf(day)?.isBookable == false;
 
   Future<void> show(DateTime month) {
     _month = CalendarDays.firstOfMonth(month);
@@ -84,10 +96,9 @@ class StayCalendarNotifier extends LiveNotifier {
     ApiException? failure;
 
     try {
-      days = await _repository.calendar(
-        _accommodationId,
-        from: month,
-        to: CalendarDays.addDays(CalendarDays.addMonths(month, 1), -1),
+      days = await _readNights(
+        month,
+        CalendarDays.addDays(CalendarDays.addMonths(month, 1), -1),
       );
     } on ApiException catch (refused) {
       failure = refused;

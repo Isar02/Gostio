@@ -5,6 +5,7 @@ import 'package:provider/single_child_widget.dart';
 
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/screen_states.dart';
+import '../../booking/presentation/book_bar.dart';
 import '../data/listing_detail.dart';
 import '../data/listing_repository.dart';
 import 'favorite_edits.dart';
@@ -68,21 +69,27 @@ class _Listing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<ListingDetailNotifier>(
-      builder:
-          (BuildContext context, ListingDetailNotifier listing, Widget? _) =>
-              Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    listing.overview?.detail.title ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  actions: <Widget>[
-                    if (listing.overview != null) _Heart(listing),
-                  ],
-                ),
-                body: SafeArea(child: _body(listing)),
-              ),
+      builder: (BuildContext context, ListingDetailNotifier listing, Widget? _) {
+        final ListingOverview? overview = listing.overview;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              overview?.detail.title ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            actions: <Widget>[if (overview != null) _Heart(listing)],
+          ),
+          body: SafeArea(child: _body(listing)),
+          // Booking is offered once there is a listing to book. It is the one
+          // thing on this screen that must not scroll away, so it sits over
+          // the tabs rather than at the end of the sections.
+          bottomNavigationBar: overview == null
+              ? null
+              : BookBar(overview.detail),
+        );
+      },
     );
   }
 

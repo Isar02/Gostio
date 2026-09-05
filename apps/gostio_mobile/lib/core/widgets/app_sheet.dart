@@ -14,11 +14,21 @@ abstract final class AppSheet {
     Widget? footer,
     bool isDismissible = true,
     bool isScrollable = true,
+    bool isDraggable = false,
   }) => showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
     isDismissible: isDismissible,
-    enableDrag: isDismissible,
+    // A drag closes the sheet by popping its route outright, which is the one
+    // way out of here that asks nothing. Every other way — the cross, the
+    // barrier and the system gesture — goes through `maybePop` and reaches
+    // whatever the content registered.
+    //
+    // So the drag is off unless a sheet asks for it, rather than on until a
+    // sheet remembers to refuse it. A sheet whose content can hold something
+    // unapplied and forgets to say so loses nothing by this; the other way
+    // round, it loses what the reader chose without asking.
+    enableDrag: isDismissible && isDraggable,
     backgroundColor: AppColors.surface,
     barrierColor: AppColors.ink.withValues(alpha: 0.32),
     shape: const RoundedRectangleBorder(borderRadius: AppRadii.sheet),
@@ -124,7 +134,9 @@ class _Title extends StatelessWidget {
           ),
           if (canClose)
             IconButton(
-              onPressed: () => Navigator.of(context).pop(),
+              // Asked for rather than taken, so a sheet holding something
+              // unapplied answers this cross the way it answers Back.
+              onPressed: () => Navigator.of(context).maybePop(),
               icon: const Icon(Icons.close),
               tooltip: 'Close',
             )

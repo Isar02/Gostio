@@ -6,6 +6,7 @@ import 'package:gostio_mobile/features/notifications/presentation/notifications_
 
 import '../../../support/account_fixture.dart';
 import '../../../support/auth_double.dart';
+import '../../../support/catalogue_double.dart';
 import '../../../support/notice_fixture.dart';
 import '../../../support/notifications_double.dart';
 import '../../../support/phone.dart';
@@ -27,6 +28,8 @@ void main() {
         auth: AuthDouble(),
         session: session,
         notifications: notifications,
+        catalogue: CatalogueDouble(),
+        filterOptions: FilterOptionsDouble(),
       ),
     );
     await tester.pumpAndSettle();

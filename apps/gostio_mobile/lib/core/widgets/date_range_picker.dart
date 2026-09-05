@@ -22,6 +22,7 @@ abstract final class DateRangePicker {
     context,
     title: title,
     isScrollable: false,
+    isDraggable: true,
     builder: (BuildContext context) => _RangeCalendar(
       selected: selected,
       firstDay: CalendarDays.of(firstDay ?? CalendarDays.today()),

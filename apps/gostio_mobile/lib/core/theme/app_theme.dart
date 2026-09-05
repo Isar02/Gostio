@@ -46,6 +46,7 @@ abstract final class AppTheme {
         style: _outlinedButton(text),
       ),
       textButtonTheme: TextButtonThemeData(style: _textButton(text)),
+      segmentedButtonTheme: SegmentedButtonThemeData(style: _segmented(text)),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
@@ -184,6 +185,34 @@ abstract final class AppTheme {
           ? AppColors.inkFaint
           : AppColors.ink,
     ),
+    textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
+    minimumSize: const WidgetStatePropertyAll<Size>(
+      Size.fromHeight(AppSizes.touchTarget),
+    ),
+    side: const WidgetStatePropertyAll<BorderSide>(
+      BorderSide(color: AppColors.borderStrong),
+    ),
+    shape: const WidgetStatePropertyAll<OutlinedBorder>(
+      RoundedRectangleBorder(borderRadius: AppRadii.medium),
+    ),
+  );
+
+  // The toggle between two catalogues, which is a switch rather than a pair of
+  // buttons: the chosen half carries the ground so that what is being read is
+  // said in the same weight the tab bar says it in. Its corners match the field
+  // above it, because the two are one block of header rather than two controls.
+  static ButtonStyle _segmented(TextTheme text) => ButtonStyle(
+    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+      (Set<WidgetState> states) => states.contains(WidgetState.selected)
+          ? AppColors.indigo
+          : AppColors.surface,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith<Color>(
+      (Set<WidgetState> states) => states.contains(WidgetState.selected)
+          ? AppColors.surface
+          : AppColors.ink,
+    ),
+    overlayColor: const WidgetStatePropertyAll<Color>(AppColors.selected),
     textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
     minimumSize: const WidgetStatePropertyAll<Size>(
       Size.fromHeight(AppSizes.touchTarget),

@@ -3,6 +3,8 @@ import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import '../features/explore/data/catalogue_repository.dart';
+import '../features/explore/data/filter_options_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/notifications/presentation/unread_notices.dart';
 import 'shell/app_shell.dart';
@@ -10,6 +12,10 @@ import 'shell/app_shell.dart';
 // What only an account has. The unread count is created here rather than above
 // the session so that it begins when a session does and ends with it: nothing
 // asks the server what an account that is not signed in has waiting.
+//
+// The repositories a tab reads through are made here for the same reason: a
+// screen composes the state it holds, and what that state reads is handed to
+// it, so a test draws the screen over an answer instead of over a socket.
 class SignedInApp extends StatelessWidget {
   const SignedInApp({super.key});
 
@@ -17,6 +23,14 @@ class SignedInApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: <SingleChildWidget>[
+        Provider<CatalogueRepository>(
+          create: (BuildContext context) =>
+              CatalogueRepository(context.read<ApiClient>()),
+        ),
+        Provider<FilterOptionsRepository>(
+          create: (BuildContext context) =>
+              FilterOptionsRepository(context.read<ApiClient>()),
+        ),
         Provider<NotificationsRepository>(
           create: (BuildContext context) =>
               NotificationsRepository(context.read<ApiClient>()),

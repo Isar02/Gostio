@@ -9,6 +9,7 @@ import 'package:gostio_mobile/app/shell/tab_navigator.dart';
 
 import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
+import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
 import '../../support/screens.dart';
 
@@ -20,7 +21,12 @@ void main() {
       ..begin(account: account(), token: 'the-token');
 
     await tester.pumpWidget(
-      underTest(const AppShell(), auth: AuthDouble(), session: session),
+      underTest(
+        const AppShell(),
+        auth: AuthDouble(),
+        session: session,
+        notifications: NotificationsDouble(),
+      ),
     );
     await tester.pumpAndSettle();
   }

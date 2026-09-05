@@ -4,6 +4,7 @@ import 'package:gostio_mobile/app/shell/account_tab.dart';
 
 import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
+import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
 import '../../support/screens.dart';
 
@@ -18,7 +19,12 @@ void main() {
       ..begin(account: account(), token: 'the-token');
 
     await tester.pumpWidget(
-      underTest(const AccountTab(), auth: auth, session: session),
+      underTest(
+        const AccountTab(),
+        auth: auth,
+        session: session,
+        notifications: NotificationsDouble(),
+      ),
     );
 
     expect(find.text('Emina Begić'), findsOneWidget);
@@ -42,7 +48,12 @@ void main() {
       ..begin(account: account(), token: 'the-token');
 
     await tester.pumpWidget(
-      underTest(const AccountTab(), auth: auth, session: session),
+      underTest(
+        const AccountTab(),
+        auth: auth,
+        session: session,
+        notifications: NotificationsDouble(),
+      ),
     );
 
     await tester.tap(find.text('Sign out'));

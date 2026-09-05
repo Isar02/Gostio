@@ -37,6 +37,14 @@ abstract final class AppSizes {
   static const double appBar = 56;
   static const double brandMark = 48;
 
+  // A square holding one icon, which is how a row says what it is before its
+  // words are read. It answers no gesture, so it is not measured as a control.
+  static const double iconTile = 44;
+
+  // A count drawn over the icon it belongs to, so it is measured to sit in a
+  // corner of one rather than to be read on its own.
+  static const double badge = 18;
+
   // The bar the whole client is moved through. It is taller than a thumb
   // target because it carries a label under every icon.
   static const double navigationBar = 64;

@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_mobile/core/theme/app_theme.dart';
 import 'package:gostio_mobile/features/auth/data/auth_repository.dart';
+import 'package:gostio_mobile/features/notifications/data/notifications_repository.dart';
+import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -18,10 +20,23 @@ Widget underTest(
   required AuthRepository auth,
   Session? session,
   GlobalKey<NavigatorState>? navigator,
+  NotificationsRepository? notifications,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
     ChangeNotifierProvider<Session>.value(value: session ?? signedOutSession()),
     Provider<AuthRepository>.value(value: auth),
+    // A screen that draws no bell is composed without one, so nothing polls
+    // behind a test that is not about the count. The count is created by the
+    // provider rather than handed to it, because what created it is what ends
+    // its poll when the tree goes.
+    if (notifications
+        case final NotificationsRepository repository) ...<SingleChildWidget>[
+      Provider<NotificationsRepository>.value(value: repository),
+      ChangeNotifierProvider<UnreadNotices>(
+        create: (BuildContext context) =>
+            UnreadNotices(context.read<NotificationsRepository>()),
+      ),
+    ],
   ],
   child: MaterialApp(
     theme: AppTheme.light,

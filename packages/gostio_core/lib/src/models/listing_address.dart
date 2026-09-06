@@ -1,15 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 enum ListingKind {
-  accommodation('/accommodations', 'Accommodations'),
-  experience('/experiences', 'Experiences');
+  @JsonValue(_accommodations)
+  accommodation('/accommodations', _accommodations),
+  @JsonValue(_experiences)
+  experience('/experiences', _experiences);
 
   const ListingKind(this.root, this.catalogueName);
 
+  static const String _accommodations = 'Accommodations';
+  static const String _experiences = 'Experiences';
+
   final String root;
 
-  // What the API calls this whole side of the catalogue, where a request names
-  // the side rather than a listing on it.
+  // What the API calls this whole side of the catalogue, both where a request
+  // names the side rather than a listing on it and where an answer says which
+  // side a row came from.
   final String catalogueName;
 
   String get slug => root.substring(1);

@@ -25,6 +25,7 @@ class ListingCard extends StatelessWidget {
     this.status,
     this.statusTone = Tone.neutral,
     this.isFavorite = false,
+    this.notes = const <String>[],
     this.onTap,
     super.key,
   });
@@ -43,6 +44,12 @@ class ListingCard extends StatelessWidget {
   // own screen: a heart small enough to sit on a card is smaller than the
   // thumb that would have to hit it.
   final bool isFavorite;
+
+  // What the list this card came from has to add under the facts, ruled off
+  // from them. Lines rather than a widget, because the card is announced as
+  // one sentence and anything drawn inside it that it cannot say would be
+  // read by an eye and by nothing else.
+  final List<String> notes;
 
   final VoidCallback? onTap;
 
@@ -118,6 +125,16 @@ class ListingCard extends StatelessWidget {
                     ],
                   ],
                 ),
+                if (notes.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.md),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.md),
+                  for (final String note in notes)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                      child: _Note(note),
+                    ),
+                ],
               ],
             ),
           ),
@@ -159,7 +176,46 @@ class ListingCard extends StatelessWidget {
       spoken.write(', saved');
     }
 
+    for (final String note in notes) {
+      spoken.write(', $note');
+    }
+
     return spoken.toString();
+  }
+}
+
+// One line the list added under the facts. The dot marks it as one of several
+// rather than standing for anything, which is why it is a shape and not an
+// icon a reader would have to learn.
+class _Note extends StatelessWidget {
+  const _Note(this.words);
+
+  final String words;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          margin: const EdgeInsets.only(top: AppSpacing.sm),
+          width: AppSizes.noteDot,
+          height: AppSizes.noteDot,
+          decoration: const BoxDecoration(
+            color: AppColors.iris,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            words,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.inkMuted),
+          ),
+        ),
+      ],
+    );
   }
 }
 

@@ -15,6 +15,7 @@ import 'package:gostio_mobile/features/notifications/data/notifications_reposito
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 import 'package:gostio_mobile/features/payment/data/card_sheet.dart';
 import 'package:gostio_mobile/features/payment/data/payment_repository.dart';
+import 'package:gostio_mobile/features/recommendations/data/recommendations_repository.dart';
 import 'package:gostio_mobile/features/reviews/data/reviews_repository.dart';
 import 'package:gostio_mobile/features/trips/data/trips_repository.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +43,7 @@ Widget underTest(
   TripsRepository? trips,
   ReviewsRepository? reviews,
   FavoritesRepository? saved,
+  RecommendationsRepository? suggestions,
   FavoriteEdits? favorites,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
@@ -71,6 +73,8 @@ Widget underTest(
       Provider<ReviewsRepository>.value(value: repository),
     if (saved case final FavoritesRepository repository)
       Provider<FavoritesRepository>.value(value: repository),
+    if (suggestions case final RecommendationsRepository repository)
+      Provider<RecommendationsRepository>.value(value: repository),
     // Every card draws a heart, so what has been saved is composed above the
     // whole client rather than beside the screens that write it.
     ChangeNotifierProvider<FavoriteEdits>.value(

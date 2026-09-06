@@ -60,6 +60,11 @@ abstract final class AppSizes {
 
   static const double sheetHandle = 36;
 
+  // The mark before a line a card adds under its facts. It is a bullet rather
+  // than an icon, so it is measured to sit on the first line of the words
+  // beside it and nothing else.
+  static const double noteDot = 5;
+
   // A day in the month grid is a control like any other, so it is a thumb
   // tall. Seven across a 360-pixel phone is what holds the grid's side
   // padding down to `AppSpacing.sm`.

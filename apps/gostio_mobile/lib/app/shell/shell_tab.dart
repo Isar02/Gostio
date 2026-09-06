@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'account_tab.dart';
 import 'explore_tab.dart';
+import 'for_you_tab.dart';
 import 'pending_tab.dart';
 import 'trips_tab.dart';
 
@@ -27,13 +28,7 @@ enum ShellTab {
 
   Widget get root => switch (this) {
     ShellTab.explore => const ExploreTab(),
-    ShellTab.forYou => const PendingTab(
-      tab: ShellTab.forYou,
-      title: 'Picked for you',
-      message:
-          'Listings chosen from what you have booked and saved open in this '
-          'tab, each with the reasons it was picked.',
-    ),
+    ShellTab.forYou => const ForYouTab(),
     ShellTab.trips => const TripsTab(),
     ShellTab.inbox => const PendingTab(
       tab: ShellTab.inbox,

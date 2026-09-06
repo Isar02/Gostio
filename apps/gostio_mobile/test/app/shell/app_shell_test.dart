@@ -14,6 +14,8 @@ import '../../support/auth_double.dart';
 import '../../support/catalogue_double.dart';
 import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
+import '../../support/recommendation_fixture.dart';
+import '../../support/recommendations_double.dart';
 import '../../support/screens.dart';
 import '../../support/trips_double.dart';
 
@@ -33,6 +35,9 @@ void main() {
         catalogue: CatalogueDouble(),
         filterOptions: FilterOptionsDouble(),
         trips: TripsDouble(),
+        suggestions: RecommendationsDouble(
+          stays: <Recommendation>[pick(title: 'Cottage by the Pliva lakes')],
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -131,6 +136,19 @@ void main() {
     await chooseTab(tester, ShellTab.profile);
 
     expect(find.text('Emina Begić'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  // The suggestions are the tab rather than a screen inside it, so the wiring
+  // that draws them is the shell's and is checked here.
+  testWidgets('the For you tab draws what the server suggests', (
+    WidgetTester tester,
+  ) async {
+    await openShell(tester);
+
+    await chooseTab(tester, ShellTab.forYou);
+
+    expect(find.text('Cottage by the Pliva lakes'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
   });
 

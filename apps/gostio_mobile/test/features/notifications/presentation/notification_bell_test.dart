@@ -10,6 +10,7 @@ import '../../../support/catalogue_double.dart';
 import '../../../support/notice_fixture.dart';
 import '../../../support/notifications_double.dart';
 import '../../../support/phone.dart';
+import '../../../support/recommendations_double.dart';
 import '../../../support/screens.dart';
 import '../../../support/trips_double.dart';
 
@@ -32,6 +33,7 @@ void main() {
         catalogue: CatalogueDouble(),
         filterOptions: FilterOptionsDouble(),
         trips: TripsDouble(),
+        suggestions: RecommendationsDouble(),
       ),
     );
     await tester.pumpAndSettle();

@@ -27,7 +27,12 @@ import 'standing_tone.dart';
 // Both writes answer with the booking as the server then holds it, and that
 // row is what is drawn from there on and what the list behind is told.
 class TripScreen extends StatelessWidget {
-  const TripScreen(this.booking, {this.onChanged, super.key});
+  const TripScreen(
+    this.booking, {
+    this.onChanged,
+    this.completedContent,
+    super.key,
+  });
 
   static Future<void> open(
     BuildContext context,
@@ -45,6 +50,11 @@ class TripScreen extends StatelessWidget {
   // What the server answered here, for the list this was opened from: it is
   // showing the same booking, and it read it before either write happened.
   final ValueChanged<Reservation>? onChanged;
+
+  // Content another module composes under a finished booking. Trips owns the
+  // booking and its standing; the application owns which feature is drawn
+  // beside it.
+  final Widget? completedContent;
 
   @override
   Widget build(BuildContext context) {
@@ -66,13 +76,15 @@ class TripScreen extends StatelessWidget {
           ),
         ),
       ],
-      child: const _Trip(),
+      child: _Trip(completedContent: completedContent),
     );
   }
 }
 
 class _Trip extends StatelessWidget {
-  const _Trip();
+  const _Trip({this.completedContent});
+
+  final Widget? completedContent;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +112,15 @@ class _Trip extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             BookingSummary(booking, standing: _standing(payment)),
+            // A booking is reviewed once it is behind the guest, which is the
+            // server's rule and is mirrored rather than reproduced: what it
+            // decides is still the server's, and a section that would only
+            // earn a refusal is not put in front of a reader.
+            if (booking.standing == ReservationStatus.completed &&
+                completedContent != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.xxl),
+              completedContent!,
+            ],
             // A booking the server would refuse to move is not offered the
             // move: what has ended has ended, and a payment still in the air
             // is not a booking to call off while it lands.

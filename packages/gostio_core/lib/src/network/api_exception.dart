@@ -31,6 +31,12 @@ class ApiException implements Exception {
 
   bool get isUnauthorized => statusCode == 401;
 
+  // A row the caller may not have, and a row that is not there, answer the
+  // same way. Where the caller already knows the row exists, this is the
+  // API saying it holds nothing under it, which is an answer rather than a
+  // fault.
+  bool get isMissing => statusCode == 404;
+
   bool get faultsAField => errors.isNotEmpty;
 
   // The API keys these by the property it bound, which is PascalCase, while a

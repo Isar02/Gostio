@@ -6,6 +6,8 @@ import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
 import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
+import '../../support/review_fixture.dart';
+import '../../support/reviews_double.dart';
 import '../../support/screens.dart';
 
 void main() {
@@ -61,5 +63,34 @@ void main() {
 
     expect(find.text('The API could not be reached.'), findsOneWidget);
     expect(session.isSignedIn, isFalse);
+  });
+
+  // The profile is the second way to a review. The first is the trip it was
+  // written against, and a guest who remembers the listing rather than the
+  // booking would otherwise have to walk the past trips to find one.
+  testWidgets('the profile opens what this account has written', (
+    WidgetTester tester,
+  ) async {
+    final ReviewsDouble reviews = ReviewsDouble(
+      written: <Review>[review(listingTitle: 'Cottage by the Pliva lakes')],
+    );
+    final Session session = signedOutSession()
+      ..begin(account: account(), token: 'the-token');
+
+    await tester.pumpWidget(
+      underTest(
+        const AccountTab(),
+        auth: AuthDouble(),
+        session: session,
+        notifications: NotificationsDouble(),
+        reviews: reviews,
+      ),
+    );
+
+    await tester.tap(find.text('What you have written'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your reviews'), findsOneWidget);
+    expect(find.text('Cottage by the Pliva lakes'), findsOneWidget);
   });
 }

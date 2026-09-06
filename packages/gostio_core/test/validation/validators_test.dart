@@ -132,4 +132,16 @@ void main() {
       'A reason is at most ${Validators.reasonMaximum} characters long.',
     );
   });
+
+  // The rating is the review. Words beside it are the guest's to leave out,
+  // and the server holds them to a length rather than to a presence.
+  test('a review comment is optional and only measured', () {
+    expect(Validators.reviewComment(null), isNull);
+    expect(Validators.reviewComment('   '), isNull);
+    expect(Validators.reviewComment('Quiet street, warm host.'), isNull);
+    expect(
+      Validators.reviewComment('c' * (Validators.commentMaximum + 1)),
+      'A comment is at most ${Validators.commentMaximum} characters long.',
+    );
+  });
 }

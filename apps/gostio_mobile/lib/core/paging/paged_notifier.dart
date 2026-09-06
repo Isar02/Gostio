@@ -25,11 +25,12 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   bool _isAppending = false;
   bool _hasLanded = false;
   int? _refusedPage;
+  bool _refusedSharesItems = false;
+  bool _activeLoadSharesItems = false;
   TQuery _query;
   ApiException? _failure;
   List<T> _items = List<T>.empty();
-  final List<_PendingReplacement<T>> _pendingReplacements =
-      <_PendingReplacement<T>>[];
+  final List<_PendingEdit<T>> _pendingEdits = <_PendingEdit<T>>[];
 
   List<T> get items => _items;
 
@@ -61,9 +62,10 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   @protected
   Future<PagedResult<T>> fetch({required int page, required TQuery query});
 
-  Future<void> apply(TQuery query) => _load(page: 1, query: query);
+  Future<void> apply(TQuery query) =>
+      _load(page: 1, query: query, sharesItems: false);
 
-  Future<void> reload() => _load(page: 1, query: _query);
+  Future<void> reload() => _load(page: 1, query: _query, sharesItems: true);
 
   // Another go at the read that was refused, which is not the same as asking
   // for more. A filter that failed left the list showing the results of the
@@ -74,7 +76,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
 
     return refused == null
         ? Future<void>.value()
-        : _load(page: refused, query: _query);
+        : _load(page: refused, query: _query, sharesItems: _refusedSharesItems);
   }
 
   Future<void> more() {
@@ -82,7 +84,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
       return Future<void>.value();
     }
 
-    return _load(page: _page + 1, query: _query);
+    return _load(page: _page + 1, query: _query, sharesItems: true);
   }
 
   // One row the reader changed on a screen this list opened. What has already
@@ -95,25 +97,54 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
       return;
     }
 
-    // A page already on its way was read before this row changed. Remember
-    // the replacement for that request so its older answer cannot put the
-    // previous row back after the write has landed.
-    if (_isLoading) {
-      _pendingReplacements.add(
-        _PendingReplacement<T>(_request, matches: matches, item: item),
-      );
-    }
-
+    _remember(matches, item: item);
     _items = List<T>.unmodifiable(<T>[..._items]..[at] = item);
     publish();
   }
 
-  Future<void> _load({required int page, required TQuery query}) async {
+  // One row the reader took down on a screen this list opened. The whole is
+  // one shorter as well, so the footer says how much of it is being held
+  // rather than counting a row nobody can reach any more.
+  @protected
+  void removeWhere(bool Function(T item) matches) {
+    final int at = _items.indexWhere(matches);
+    if (at < 0) {
+      return;
+    }
+
+    _remember(matches);
+    _items = List<T>.unmodifiable(<T>[..._items]..removeAt(at));
+    _shrink();
+    publish();
+  }
+
+  // A page already on its way was read before this row changed. Remember what
+  // happened to it for that request, so its older answer cannot put the row
+  // back the way it was after the write has landed.
+  void _remember(bool Function(T item) matches, {T? item}) {
+    if (_isLoading) {
+      _pendingEdits.add(
+        _PendingEdit<T>(
+          _request,
+          matches: matches,
+          item: item,
+          decrementsLandedTotal: item == null && _activeLoadSharesItems,
+        ),
+      );
+    }
+  }
+
+  Future<void> _load({
+    required int page,
+    required TQuery query,
+    required bool sharesItems,
+  }) async {
     final int request = ++_request;
     final bool isAppending = page > 1;
 
     _isLoading = true;
     _isAppending = isAppending;
+    _activeLoadSharesItems = sharesItems;
     _failure = null;
     // The query is in force from the moment it is asked for, so a refusal
     // leaves another go retrying the filter the reader chose rather than the
@@ -131,13 +162,13 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     }
 
     if (request != _request) {
-      _pendingReplacements.removeWhere(
-        (_PendingReplacement<T> replacement) => replacement.request == request,
-      );
+      _forget(request);
+
       return;
     }
 
     _refusedPage = result == null ? page : null;
+    _refusedSharesItems = result == null ? sharesItems : false;
 
     if (result case final PagedResult<T> landed) {
       _page = landed.page;
@@ -151,9 +182,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
       _hasLanded = true;
     }
 
-    _pendingReplacements.removeWhere(
-      (_PendingReplacement<T> replacement) => replacement.request == request,
-    );
+    _forget(request);
 
     _failure = failure;
     _isLoading = false;
@@ -164,27 +193,56 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   List<T> _reconcile(List<T> landed, int request) {
     final List<T> reconciled = List<T>.of(landed);
 
-    for (final _PendingReplacement<T> replacement in _pendingReplacements.where(
-      (_PendingReplacement<T> held) => held.request == request,
+    for (final _PendingEdit<T> edit in _pendingEdits.where(
+      (_PendingEdit<T> held) => held.request == request,
     )) {
-      final int at = reconciled.indexWhere(replacement.matches);
-      if (at >= 0) {
-        reconciled[at] = replacement.item;
+      final int at = reconciled.indexWhere(edit.matches);
+      final T? item = edit.item;
+      if (item == null) {
+        if (at >= 0) {
+          reconciled.removeAt(at);
+        }
+
+        // A refresh or append reports the count from before the deletion even
+        // when the deleted row is not part of the page that arrived.
+        if (edit.decrementsLandedTotal || at >= 0) {
+          _shrink();
+        }
+      } else {
+        if (at >= 0) {
+          reconciled[at] = item;
+        }
       }
     }
 
     return List<T>.unmodifiable(reconciled);
   }
+
+  void _forget(int request) => _pendingEdits.removeWhere(
+    (_PendingEdit<T> edit) => edit.request == request,
+  );
+
+  void _shrink() {
+    if (_totalCount > 0) {
+      _totalCount--;
+    }
+  }
 }
 
-class _PendingReplacement<T> {
-  const _PendingReplacement(
+// What a screen this list opened did to one of its rows: handed back a newer
+// row, or took the row away. A pending edit carries the request that was in
+// flight when it happened, so an older answer can be reconciled with it rather
+// than replacing it.
+class _PendingEdit<T> {
+  const _PendingEdit(
     this.request, {
     required this.matches,
-    required this.item,
+    required this.decrementsLandedTotal,
+    this.item,
   });
 
   final int request;
   final bool Function(T item) matches;
-  final T item;
+  final bool decrementsLandedTotal;
+  final T? item;
 }

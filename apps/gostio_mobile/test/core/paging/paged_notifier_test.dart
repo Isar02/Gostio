@@ -115,6 +115,55 @@ void main() {
     expect(catalogue.isLoading, isFalse);
   });
 
+  // A row taken down on a screen this list opened leaves the list one shorter
+  // at both ends: the rows it draws, and the whole it says it holds part of.
+  test('a row taken down leaves the list and the count it was in', () async {
+    await _fill(catalogue, <String>['Kept', 'Taken down'], total: 43);
+
+    catalogue.remove('Taken down');
+
+    expect(catalogue.items, <String>['Kept']);
+    expect(catalogue.totalCount, 42);
+  });
+
+  test('a row that is not held is taken down from nothing', () async {
+    await _fill(catalogue, <String>['Kept'], total: 43);
+
+    catalogue.remove('Never read');
+
+    expect(catalogue.items, <String>['Kept']);
+    expect(catalogue.totalCount, 43);
+  });
+
+  // The same guard as a changed row, on the other write: an older page cannot
+  // put a row back that the reader has since taken down.
+  test('a row taken down during refresh stays down', () async {
+    await _fill(catalogue, <String>['Kept', 'Taken down'], total: 2);
+
+    final Future<void> refreshing = catalogue.reload();
+    catalogue.remove('Taken down');
+    catalogue.answer(_page(1, <String>['Kept', 'Taken down'], total: 2));
+    await refreshing;
+
+    expect(catalogue.items, <String>['Kept']);
+    expect(catalogue.totalCount, 1);
+  });
+
+  test(
+    'a row taken down while appending still reduces the landed count',
+    () async {
+      await _fill(catalogue, <String>['Taken down'], total: 43);
+
+      final Future<void> appending = catalogue.more();
+      catalogue.remove('Taken down');
+      catalogue.answer(_page(2, <String>['New page'], total: 43));
+      await appending;
+
+      expect(catalogue.items, <String>['New page']);
+      expect(catalogue.totalCount, 42);
+    },
+  );
+
   test('a first page that was refused shows nothing and says why', () async {
     final Future<void> reading = catalogue.apply('Mostar');
     catalogue.refuse(
@@ -266,6 +315,8 @@ class _Catalogue extends PagedNotifier<String, String> {
 
   void replace(String held, String replacement) =>
       replaceWhere((String item) => item == held, replacement);
+
+  void remove(String held) => removeWhere((String item) => item == held);
 
   void answer(PagedResult<String> result) =>
       answerAt(_pending.length - 1, result);

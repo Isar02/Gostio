@@ -20,10 +20,21 @@ import 'trips_notifier.dart';
 //
 // This is the tab's body rather than its screen: the bar over it is the
 // shell's, because the bell in it belongs to every tab and not to this one.
+typedef TripOpener = Future<void> Function(
+  BuildContext context,
+  Reservation booking,
+  ValueChanged<Reservation> onChanged,
+);
+
 class TripsScreen extends StatelessWidget {
-  const TripsScreen({required this.guestId, super.key});
+  const TripsScreen({
+    required this.guestId,
+    this.openTrip = _openTrip,
+    super.key,
+  });
 
   final int guestId;
+  final TripOpener openTrip;
 
   @override
   Widget build(BuildContext context) {
@@ -38,13 +49,15 @@ class TripsScreen extends StatelessWidget {
               PastTrips(context.read<TripsRepository>(), guestId),
         ),
       ],
-      child: const _Trips(),
+      child: _Trips(openTrip: openTrip),
     );
   }
 }
 
 class _Trips extends StatefulWidget {
-  const _Trips();
+  const _Trips({required this.openTrip});
+
+  final TripOpener openTrip;
 
   @override
   State<_Trips> createState() => _TripsState();
@@ -79,8 +92,11 @@ class _TripsState extends State<_Trips> {
           child: IndexedStack(
             index: _window.index,
             children: <Widget>[
-              _TripList(context.read<UpcomingTrips>()),
-              _TripList(context.read<PastTrips>()),
+              _TripList(
+                context.read<UpcomingTrips>(),
+                openTrip: widget.openTrip,
+              ),
+              _TripList(context.read<PastTrips>(), openTrip: widget.openTrip),
             ],
           ),
         ),
@@ -140,9 +156,10 @@ class _Toggle extends StatelessWidget {
 // client is drawn as. A card opens the booking it stands for, and what that
 // screen changes comes back here as the one row it changed.
 class _TripList extends StatelessWidget {
-  const _TripList(this.trips);
+  const _TripList(this.trips, {required this.openTrip});
 
   final TripsNotifier trips;
+  final TripOpener openTrip;
 
   @override
   Widget build(BuildContext context) {
@@ -163,11 +180,15 @@ class _TripList extends StatelessWidget {
         emptyMessage: trips.window.emptyMessage,
         itemBuilder: (BuildContext context, Reservation booking) => TripCard(
           booking,
-          onTap: () => unawaited(
-            TripScreen.open(context, booking, onChanged: trips.tripChanged),
-          ),
+          onTap: () => unawaited(openTrip(context, booking, trips.tripChanged)),
         ),
       ),
     );
   }
 }
+
+Future<void> _openTrip(
+  BuildContext context,
+  Reservation booking,
+  ValueChanged<Reservation> onChanged,
+) => TripScreen.open(context, booking, onChanged: onChanged);

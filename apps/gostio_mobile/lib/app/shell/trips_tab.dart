@@ -3,6 +3,7 @@ import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/trips/presentation/trips_screen.dart';
+import '../reviewed_trip_screen.dart';
 import 'tab_app_bar.dart';
 
 // The bookings this account has made. Who is signed in is the shell's to know,
@@ -26,7 +27,12 @@ class TripsTab extends StatelessWidget {
 
     return Scaffold(
       appBar: const TabAppBar('Trips'),
-      body: SafeArea(child: TripsScreen(guestId: account.id)),
+      body: SafeArea(
+        child: TripsScreen(
+          guestId: account.id,
+          openTrip: ReviewedTripScreen.open,
+        ),
+      ),
     );
   }
 }

@@ -23,6 +23,7 @@ abstract final class Validators {
   static const int phoneMaximum = 30;
   static const int codeMaximum = 30;
   static const int reasonMaximum = 1000;
+  static const int commentMaximum = 1000;
   static const int messageBodyMaximum = 2000;
   static const double smallestAmount = 0.01;
   static const double largestAmount = 1000000;
@@ -223,6 +224,13 @@ abstract final class Validators {
     noun: 'A reason',
     longest: reasonMaximum,
   );
+
+  // A rating is the review; the words beside it are optional, so only their
+  // length is checked.
+  static String? reviewComment(String? value) =>
+      _isBlank(value) || value!.trim().length <= commentMaximum
+      ? null
+      : 'A comment is at most $commentMaximum characters long.';
 
   static String? guests(String? value) => _counted(
     value,

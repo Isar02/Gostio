@@ -13,6 +13,7 @@ import '../features/notifications/presentation/unread_notices.dart';
 import '../features/payment/data/card_sheet.dart';
 import '../features/payment/data/payment_repository.dart';
 import '../features/payment/data/stripe_card_sheet.dart';
+import '../features/reviews/data/reviews_repository.dart';
 import '../features/trips/data/trips_repository.dart';
 import 'shell/app_shell.dart';
 
@@ -66,6 +67,10 @@ class SignedInApp extends StatelessWidget {
         Provider<TripsRepository>(
           create: (BuildContext context) =>
               TripsRepository(context.read<ApiClient>()),
+        ),
+        Provider<ReviewsRepository>(
+          create: (BuildContext context) =>
+              ReviewsRepository(context.read<ApiClient>()),
         ),
         Provider<NotificationsRepository>(
           create: (BuildContext context) =>

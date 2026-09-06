@@ -264,6 +264,58 @@ void main() {
     expect(catalogue.reads, 1);
   });
 
+  // A filter narrows a list and a caller may leave the previous results up
+  // while the narrower ones arrive. A caller that cannot mix two queries — one
+  // catalogue drawn under the other's name — asks this instead.
+  test('rows are disowned by a new query until its own page lands', () async {
+    await _fill(catalogue, <String>['Old town loft'], total: 43);
+
+    expect(catalogue.itemsBelongToQuery, isTrue);
+
+    final Future<void> reading = catalogue.apply('Neum');
+
+    expect(catalogue.items, <String>['Old town loft']);
+    expect(catalogue.itemsBelongToQuery, isFalse);
+
+    catalogue.answer(_page(1, <String>['Stone villa above Neum'], total: 2));
+    await reading;
+
+    expect(catalogue.itemsBelongToQuery, isTrue);
+  });
+
+  test('a new query that was refused never owns the rows it left up', () async {
+    await _fill(catalogue, <String>['Old town loft'], total: 43);
+
+    final Future<void> reading = catalogue.apply('Neum');
+    catalogue.refuse(const ApiException(message: 'That did not work.'));
+    await reading;
+
+    expect(catalogue.items, <String>['Old town loft']);
+    expect(catalogue.itemsBelongToQuery, isFalse);
+  });
+
+  // Refreshing and adding a page read the query already in force, so what is
+  // held is still the answer to it while they are out.
+  test('a refresh and a further page never disown what is held', () async {
+    await _fill(catalogue, <String>['Old town loft'], total: 43);
+
+    final Future<void> refreshing = catalogue.reload();
+
+    expect(catalogue.itemsBelongToQuery, isTrue);
+
+    catalogue.answer(_page(1, <String>['Old town loft'], total: 43));
+    await refreshing;
+
+    final Future<void> appending = catalogue.more();
+
+    expect(catalogue.itemsBelongToQuery, isTrue);
+
+    catalogue.answer(_page(2, <String>['Stone villa above Neum'], total: 43));
+    await appending;
+
+    expect(catalogue.itemsBelongToQuery, isTrue);
+  });
+
   test('a page that answers with nothing ends the list', () async {
     await _fill(catalogue, <String>['Old town loft'], total: 43);
 

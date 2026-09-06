@@ -37,6 +37,9 @@ class _ForYou extends StatelessWidget {
   Widget build(BuildContext context) {
     final RecommendationsNotifier picks = context
         .watch<RecommendationsNotifier>();
+    final List<Recommendation> ranking = picks.itemsBelongToQuery
+        ? picks.items
+        : const <Recommendation>[];
 
     return Column(
       children: <Widget>[
@@ -55,7 +58,10 @@ class _ForYou extends StatelessWidget {
           // a place in a list that is no longer there.
           child: PagedList<Recommendation>(
             key: ValueKey<ListingKind>(picks.query),
-            items: picks.items,
+            // `apply` keeps the last successful page while the next query is
+            // in flight or refused. That is useful for a narrower search, but
+            // one catalogue must never be drawn under the other's name.
+            items: ranking,
             totalCount: picks.totalCount,
             noun: 'suggestions',
             isLoading: picks.isLoading,

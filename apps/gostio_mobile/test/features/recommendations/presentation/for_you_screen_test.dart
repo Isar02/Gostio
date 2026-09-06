@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_mobile/core/widgets/listing_card.dart';
@@ -108,6 +110,27 @@ void main() {
     expect(find.textContaining('where you have been looking'), findsNothing);
   });
 
+  testWidgets('a numeric reason uses the shared figure format', (
+    WidgetTester tester,
+  ) async {
+    await open(
+      tester,
+      RecommendationsDouble(
+        stays: <Recommendation>[
+          pick(
+            reasons: <RecommendationReason>[
+              because(RecommendationReasonKind.rating, '4.72'),
+              because(RecommendationReasonKind.rating, 'not-a-rating'),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    expect(find.text('Rated 4.7, above average here'), findsOneWidget);
+    expect(find.textContaining('not-a-rating'), findsNothing);
+  });
+
   testWidgets('one keeping is a time rather than one times', (
     WidgetTester tester,
   ) async {
@@ -167,6 +190,36 @@ void main() {
     await reveal(tester, 'Experiences');
 
     expect(find.text('Term 1'), findsOneWidget);
+  });
+
+  testWidgets('a refused catalogue never leaves the other ranking under it', (
+    WidgetTester tester,
+  ) async {
+    final Completer<PagedResult<Recommendation>> terms =
+        Completer<PagedResult<Recommendation>>();
+    await open(
+      tester,
+      RecommendationsDouble(
+        stays: picks(1, target: ListingKind.accommodation),
+        termsResponse: terms.future,
+      ),
+    );
+
+    await tester.tap(find.text('Experiences'));
+    await tester.pump();
+
+    expect(find.text('Stay 1'), findsNothing);
+
+    terms.completeError(
+      const ApiException(message: 'The experience ranking could not be read.'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stay 1'), findsNothing);
+    expect(
+      find.text('The experience ranking could not be read.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a suggestion opens the listing it stands for', (

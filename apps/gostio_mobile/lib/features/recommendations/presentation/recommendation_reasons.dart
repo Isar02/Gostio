@@ -43,7 +43,11 @@ String? _worded(RecommendationReason reason) => switch (reason.kind) {
   RecommendationReasonKind.capacity => 'Room for the party you book for',
   RecommendationReasonKind.rating => _about(
     reason,
-    (String rating) => 'Rated $rating, above average here',
+    (String rating) => switch (double.tryParse(rating)) {
+      final double value =>
+        'Rated ${AppNumbers.rating(value)}, above average here',
+      null => null,
+    },
   ),
   // The one reason whose value is a figure rather than a name. A count that
   // is not a figure is a value this client cannot read, which is the same

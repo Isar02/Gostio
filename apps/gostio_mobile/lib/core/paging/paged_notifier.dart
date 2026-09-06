@@ -24,6 +24,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   bool _isLoading = false;
   bool _isAppending = false;
   bool _hasLanded = false;
+  bool _itemsBelongToQuery = false;
   int? _refusedPage;
   bool _refusedSharesItems = false;
   bool _activeLoadSharesItems = false;
@@ -52,6 +53,12 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   bool get isAppending => _isAppending;
 
   bool get hasLanded => _hasLanded;
+
+  // Whether the rows being held were read for the query now in force. A new
+  // query deliberately keeps the previous rows so filter screens can leave
+  // them visible behind a refusal, but a caller that cannot mix two queries
+  // can use this to withhold them until the replacement lands.
+  bool get itemsBelongToQuery => _itemsBelongToQuery;
 
   bool get hasMore => _items.length < _totalCount;
 
@@ -145,6 +152,9 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     _isLoading = true;
     _isAppending = isAppending;
     _activeLoadSharesItems = sharesItems;
+    if (!sharesItems) {
+      _itemsBelongToQuery = false;
+    }
     _failure = null;
     // The query is in force from the moment it is asked for, so a refusal
     // leaves another go retrying the filter the reader chose rather than the
@@ -180,6 +190,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
         request,
       );
       _hasLanded = true;
+      _itemsBelongToQuery = true;
     }
 
     _forget(request);

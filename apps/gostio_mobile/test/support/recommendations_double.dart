@@ -8,11 +8,15 @@ class RecommendationsDouble implements RecommendationsRepository {
   RecommendationsDouble({
     this.stays = const <Recommendation>[],
     this.terms = const <Recommendation>[],
+    this.termsResponse,
     this.failure,
   });
 
   final List<Recommendation> stays;
   final List<Recommendation> terms;
+  // The experience ranking as a future rather than as rows, for a test that
+  // has to hold the answer or refuse it rather than let it land.
+  final Future<PagedResult<Recommendation>>? termsResponse;
   final ApiException? failure;
 
   final List<({ListingKind catalogue, int page})> asked =
@@ -28,6 +32,11 @@ class RecommendationsDouble implements RecommendationsRepository {
 
     if (failure case final ApiException refused) {
       throw refused;
+    }
+
+    if (termsResponse case final Future<PagedResult<Recommendation>> answer
+        when catalogue == ListingKind.experience) {
+      return answer;
     }
 
     final List<Recommendation> ranked = switch (catalogue) {

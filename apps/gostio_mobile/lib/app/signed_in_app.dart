@@ -9,6 +9,9 @@ import '../features/explore/data/filter_options_repository.dart';
 import '../features/favorites/data/favorites_repository.dart';
 import '../features/listing/data/listing_repository.dart';
 import '../features/listing/presentation/favorite_edits.dart';
+import '../features/messages/data/conversations_repository.dart';
+import '../features/messages/data/messages_repository.dart';
+import '../features/messages/presentation/unread_messages.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/notifications/presentation/unread_notices.dart';
 import '../features/payment/data/card_sheet.dart';
@@ -89,6 +92,21 @@ class SignedInApp extends StatelessWidget {
         ChangeNotifierProvider<UnreadNotices>(
           create: (BuildContext context) =>
               UnreadNotices(context.read<NotificationsRepository>()),
+        ),
+        Provider<ConversationsRepository>(
+          create: (BuildContext context) =>
+              ConversationsRepository(context.read<ApiClient>()),
+        ),
+        Provider<MessagesRepository>(
+          create: (BuildContext context) =>
+              MessagesRepository(context.read<ApiClient>()),
+        ),
+        // What is waiting in the inbox is drawn over the tab from every screen
+        // in the client, so it is counted here beside the bell's count and for
+        // the same reason.
+        ChangeNotifierProvider<UnreadMessages>(
+          create: (BuildContext context) =>
+              UnreadMessages(context.read<MessagesRepository>()),
         ),
       ],
       child: const AppShell(),

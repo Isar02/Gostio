@@ -31,12 +31,16 @@ internal static class EngagementSeed
     {
         var administrator = users.Administrator;
 
+        // The last lines a thread leaves unread for the account that opened it,
+        // so a seeded inbox has something waiting in it rather than only a
+        // history somebody has already been through.
         Conversation Thread(
             ConversationType type,
             Reservation? reservation,
             User first,
             User second,
             DateTime opened,
+            int unreadForFirst,
             params string[] lines)
         {
             var conversation = new Conversation
@@ -51,7 +55,8 @@ internal static class EngagementSeed
                     {
                         User = first,
                         JoinedAt = opened,
-                        LastReadAt = opened.AddMinutes(lines.Length * 7),
+                        LastReadAt =
+                            opened.AddMinutes((lines.Length - unreadForFirst) * 7),
                     },
                     new ConversationParticipant
                     {
@@ -75,7 +80,11 @@ internal static class EngagementSeed
             return conversation;
         }
 
-        Conversation AboutBooking(string key, TimeSpan afterOpening, params string[] lines)
+        Conversation AboutBooking(
+            string key,
+            TimeSpan afterOpening,
+            int unreadForGuest,
+            params string[] lines)
         {
             var booking = bookings.Bookings[key];
 
@@ -85,12 +94,14 @@ internal static class EngagementSeed
                 booking.Reservation.User,
                 booking.Host,
                 booking.Reservation.CreatedAt.Add(afterOpening),
+                unreadForGuest,
                 lines);
         }
 
         yield return AboutBooking(
             "loft-completed-stay",
             TimeSpan.FromHours(5),
+            0,
             "Hello, we land around nine in the evening. Is a late check-in possible?",
             "Of course. I will leave the key in the box by the door and send you the code.",
             "That works, thank you.");
@@ -98,6 +109,7 @@ internal static class EngagementSeed
         yield return AboutBooking(
             "villa-parking-stay",
             TimeSpan.FromHours(2),
+            0,
             "Is there parking at the villa, or should we leave the car down in the town?",
             "There is room for two cars inside the gate. The road up is narrow but "
                 + "paved the whole way, so an ordinary car manages it.",
@@ -107,12 +119,14 @@ internal static class EngagementSeed
         yield return AboutBooking(
             "villa-terrace-stay",
             TimeSpan.FromHours(9),
+            0,
             "Does the roof terrace get much wind in the evening?",
             "The west wall shelters it in the evening, but bring a layer after sunset.");
 
         yield return AboutBooking(
             "konjic-refunded-stay",
             TimeSpan.FromDays(1),
+            0,
             "Something came up at work and we have to cancel. What happens with the payment?",
             "Sorry to hear it. You are well inside the notice period, so the full amount "
                 + "goes back to the same card.",
@@ -121,12 +135,14 @@ internal static class EngagementSeed
         yield return AboutBooking(
             "tunnel-completed-term",
             TimeSpan.FromHours(4),
+            0,
             "How much walking is there in total?",
             "About four kilometres, all of it flat except the last stretch up to Kovači.");
 
         yield return AboutBooking(
             "wine-confirmed-term",
             TimeSpan.FromHours(6),
+            0,
             "Do you collect us at the accommodation or do we meet at the bridge?",
             "At the bridge, by the bus stop. We leave at eight sharp.");
 
@@ -137,6 +153,7 @@ internal static class EngagementSeed
             users.ByUsername["ivana.matic"],
             users.ByUsername["lejla.begic"],
             now.AddDays(-9),
+            0,
             "Is the Konjic apartment free for the first week of next month?",
             "It is, and the price drops after the season ends. Send me the dates and I "
                 + "will hold it for a day.");
@@ -147,6 +164,7 @@ internal static class EngagementSeed
             users.ByUsername["tarik.mujic"],
             users.ByUsername["marko.perisic"],
             now.AddDays(-4),
+            0,
             "Would the cottage take a dog?",
             "Yes, no extra charge, only keep it off the beds.");
 
@@ -156,6 +174,7 @@ internal static class EngagementSeed
             users.ByUsername["maja.popovic"],
             administrator,
             now.AddDays(-6),
+            0,
             "My refund is showing as processed but the money is not on my card yet.",
             "It left us on Tuesday. Card refunds take up to five working days on the "
                 + "bank side; write again on Friday if it has not arrived.",
@@ -167,9 +186,46 @@ internal static class EngagementSeed
             users.ByUsername["denis.softic"],
             administrator,
             now.AddDays(-3),
+            0,
             "I applied to become a host last week. How long does the check usually take?",
             "Two to three working days. Yours is in the queue and nothing is missing "
                 + "from it.");
+
+        // The guest account the phone is read on. It has bookings, saved listings
+        // and reviews of its own, and an inbox is one more of those: one thread
+        // about a booking still ahead of it with the host's last answer waiting,
+        // one enquiry about a place it has kept, and one question to support.
+        yield return AboutBooking(
+            "tuzla-confirmed-stay",
+            TimeSpan.FromHours(3),
+            1,
+            "We arrive by the afternoon bus. Is the flat ready before four?",
+            "It is ready from one, and I live two streets away, so ring me when you "
+                + "are close and I will come with the keys.");
+
+        yield return Thread(
+            ConversationType.Direct,
+            null,
+            users.ByUsername["mobile"],
+            users.ByUsername["lejla.begic"],
+            now.AddDays(-5),
+            0,
+            "We stayed in Neum with you in the summer. Is the terrace shaded in the "
+                + "afternoon in September as well?",
+            "It is, the awning stays up until the end of October. September is the "
+                + "quietest month there.",
+            "Good to know, thank you.");
+
+        yield return Thread(
+            ConversationType.Support,
+            null,
+            users.ByUsername["mobile"],
+            administrator,
+            now.AddDays(-2),
+            1,
+            "Can I change the card a booking was paid with after it is confirmed?",
+            "The card that paid is the one a refund goes back to, so it cannot be "
+                + "swapped. Cancelling and booking again is the way to change it.");
     }
 
     private static IEnumerable<Notification> Notifications(

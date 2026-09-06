@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
+import 'package:gostio_mobile/core/state/unread_count.dart';
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 
 import '../../../support/notifications_double.dart';
@@ -33,7 +34,7 @@ void main() {
     final UnreadNotices notices = UnreadNotices(notifications);
 
     await tester.pump();
-    await tester.pump(UnreadNotices.pollInterval);
+    await tester.pump(UnreadCount.pollInterval);
 
     expect(notifications.countCalls, 2);
 
@@ -50,7 +51,7 @@ void main() {
 
     await tester.pump();
     notices.didChangeAppLifecycleState(AppLifecycleState.paused);
-    await tester.pump(UnreadNotices.pollInterval * 3);
+    await tester.pump(UnreadCount.pollInterval * 3);
 
     expect(notifications.countCalls, 1);
 

@@ -3,8 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gostio_core/gostio_core.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/theme/app_metrics.dart';
+import '../../core/widgets/count_badge.dart';
 import '../../core/widgets/discard_guard.dart';
+import '../../features/messages/presentation/unread_messages.dart';
 import 'shell_tab.dart';
 import 'tab_navigator.dart';
 
@@ -190,12 +194,46 @@ class _Bar extends StatelessWidget {
         destinations: <Widget>[
           for (final ShellTab tab in ShellTab.values)
             NavigationDestination(
-              icon: Icon(tab.icon),
-              selectedIcon: Icon(tab.selectedIcon),
+              icon: _Destination(tab: tab, icon: tab.icon),
+              selectedIcon: _Destination(tab: tab, icon: tab.selectedIcon),
               label: tab.label,
             ),
         ],
       ),
+    );
+  }
+}
+
+// One icon in the bar. The inbox carries what is waiting in it, because the
+// tab is where a reader would go to answer it and the bar is on every screen
+// they could be reading instead.
+class _Destination extends StatelessWidget {
+  const _Destination({required this.tab, required this.icon});
+
+  final ShellTab tab;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tab != ShellTab.inbox) {
+      return Icon(icon);
+    }
+
+    final int unread = context.select<UnreadMessages, int>(
+      (UnreadMessages messages) => messages.unread,
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        Icon(icon),
+        if (unread > 0)
+          Positioned(
+            top: -AppSpacing.sm,
+            right: -AppSpacing.sm,
+            child: CountBadge(unread),
+          ),
+      ],
     );
   }
 }

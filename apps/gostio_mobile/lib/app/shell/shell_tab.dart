@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'account_tab.dart';
 import 'explore_tab.dart';
 import 'for_you_tab.dart';
-import 'pending_tab.dart';
+import 'inbox_tab.dart';
 import 'trips_tab.dart';
 
 // The five places this client is read in, and what each one opens on. A tab is
@@ -30,11 +30,7 @@ enum ShellTab {
     ShellTab.explore => const ExploreTab(),
     ShellTab.forYou => const ForYouTab(),
     ShellTab.trips => const TripsTab(),
-    ShellTab.inbox => const PendingTab(
-      tab: ShellTab.inbox,
-      title: 'Messages',
-      message: 'Conversations with hosts and with support open in this tab.',
-    ),
+    ShellTab.inbox => const InboxTab(),
     ShellTab.profile => const AccountTab(),
   };
 }

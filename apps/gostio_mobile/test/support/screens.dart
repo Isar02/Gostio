@@ -11,6 +11,9 @@ import 'package:gostio_mobile/features/explore/data/filter_options_repository.da
 import 'package:gostio_mobile/features/favorites/data/favorites_repository.dart';
 import 'package:gostio_mobile/features/listing/data/listing_repository.dart';
 import 'package:gostio_mobile/features/listing/presentation/favorite_edits.dart';
+import 'package:gostio_mobile/features/messages/data/conversations_repository.dart';
+import 'package:gostio_mobile/features/messages/data/messages_repository.dart';
+import 'package:gostio_mobile/features/messages/presentation/unread_messages.dart';
 import 'package:gostio_mobile/features/notifications/data/notifications_repository.dart';
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 import 'package:gostio_mobile/features/payment/data/card_sheet.dart';
@@ -44,6 +47,8 @@ Widget underTest(
   ReviewsRepository? reviews,
   FavoritesRepository? saved,
   RecommendationsRepository? suggestions,
+  ConversationsRepository? conversations,
+  MessagesRepository? messages,
   FavoriteEdits? favorites,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
@@ -92,6 +97,19 @@ Widget underTest(
             UnreadNotices(context.read<NotificationsRepository>()),
       ),
     ],
+    if (conversations case final ConversationsRepository repository)
+      Provider<ConversationsRepository>.value(value: repository),
+    // The count over the inbox tab is created by the provider for the same
+    // reason the bell's is: what created it is what ends its poll when the
+    // tree goes.
+    if (messages
+        case final MessagesRepository repository) ...<SingleChildWidget>[
+      Provider<MessagesRepository>.value(value: repository),
+      ChangeNotifierProvider<UnreadMessages>(
+        create: (BuildContext context) =>
+            UnreadMessages(context.read<MessagesRepository>()),
+      ),
+    ],
   ],
   child: MaterialApp(
     theme: AppTheme.light,
@@ -114,6 +132,8 @@ Future<GlobalKey<NavigatorState>> pushOnto(
   TripsRepository? trips,
   ReviewsRepository? reviews,
   FavoritesRepository? saved,
+  ConversationsRepository? conversations,
+  MessagesRepository? messages,
   FavoriteEdits? favorites,
 }) async {
   final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
@@ -131,6 +151,8 @@ Future<GlobalKey<NavigatorState>> pushOnto(
       trips: trips,
       reviews: reviews,
       saved: saved,
+      conversations: conversations,
+      messages: messages,
       favorites: favorites,
     ),
   );

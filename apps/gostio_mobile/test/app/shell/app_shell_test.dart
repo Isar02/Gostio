@@ -12,6 +12,7 @@ import 'package:gostio_mobile/features/explore/presentation/explore_screen.dart'
 import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
 import '../../support/catalogue_double.dart';
+import '../../support/messages_double.dart';
 import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
 import '../../support/recommendation_fixture.dart';
@@ -32,6 +33,8 @@ void main() {
         auth: AuthDouble(),
         session: session,
         notifications: NotificationsDouble(),
+        conversations: ConversationsDouble(),
+        messages: MessagesDouble(),
         catalogue: CatalogueDouble(),
         filterOptions: FilterOptionsDouble(),
         trips: TripsDouble(),

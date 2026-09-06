@@ -99,8 +99,10 @@ class ListingCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: text.bodySmall?.copyWith(color: AppColors.inkMuted),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                RatingStars(rating: rating, reviewCount: reviewCount),
+                if (_hasReviewFigures) ...<Widget>[
+                  const SizedBox(height: AppSpacing.md),
+                  RatingStars(rating: rating, reviewCount: reviewCount),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: <Widget>[
@@ -124,6 +126,12 @@ class ListingCard extends StatelessWidget {
     );
   }
 
+  // Whether the list this card came from carried anything about the reviews.
+  // A row that carries neither figure — a saved listing is one — knows nothing
+  // about them rather than knowing there are none, and saying the second would
+  // be a figure the card invented.
+  bool get _hasReviewFigures => rating != null || reviewCount != null;
+
   // The card is one thing, and this is it said once rather than as the four
   // fragments it is drawn from.
   String get _spoken {
@@ -134,7 +142,7 @@ class ListingCard extends StatelessWidget {
       if (reviewCount case final int count) {
         spoken.write(' from ${AppNumbers.counted(count, "review")}');
       }
-    } else {
+    } else if (_hasReviewFigures) {
       spoken.write(', no reviews yet');
     }
 

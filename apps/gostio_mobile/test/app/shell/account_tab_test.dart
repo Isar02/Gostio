@@ -4,6 +4,8 @@ import 'package:gostio_mobile/app/shell/account_tab.dart';
 
 import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
+import '../../support/favorite_fixture.dart';
+import '../../support/favorites_double.dart';
 import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
 import '../../support/review_fixture.dart';
@@ -92,5 +94,33 @@ void main() {
 
     expect(find.text('Your reviews'), findsOneWidget);
     expect(find.text('Cottage by the Pliva lakes'), findsOneWidget);
+  });
+
+  // The profile is where a saved listing is looked for. The heart that put it
+  // there is on the listing, and nothing else in the client gathers the two
+  // catalogues into one list.
+  testWidgets('the profile opens what this account has kept', (
+    WidgetTester tester,
+  ) async {
+    final Session session = signedOutSession()
+      ..begin(account: account(), token: 'the-token');
+
+    await tester.pumpWidget(
+      underTest(
+        const AccountTab(),
+        auth: AuthDouble(),
+        session: session,
+        notifications: NotificationsDouble(),
+        saved: FavoritesDouble(
+          kept: <Favorite>[favorite(listingTitle: 'Stone villa above Neum')],
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Stays and experiences you have kept'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Stone villa above Neum'), findsOneWidget);
   });
 }

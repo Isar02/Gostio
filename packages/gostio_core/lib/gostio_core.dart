@@ -15,6 +15,7 @@ export 'src/models/conversation_participant.dart';
 export 'src/models/conversation_type.dart';
 export 'src/models/experience.dart';
 export 'src/models/experience_slot.dart';
+export 'src/models/favorite.dart';
 export 'src/models/host_application.dart';
 export 'src/models/host_application_status.dart';
 export 'src/models/image_upload.dart';

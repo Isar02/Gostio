@@ -40,7 +40,42 @@ void main() {
 
     expect(find.byType(ApiImage), findsOneWidget);
     expect(find.text('Cottage by the Pliva lakes'), findsOneWidget);
+  });
+
+  testWidgets('a listing nobody has reviewed yet says so', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _card(
+        title: 'Open-plan attic above the rooftops of Bihać',
+        place: 'Bihać',
+        price: 110,
+        reviewCount: 0,
+      ),
+    );
+
     expect(find.text('No reviews yet'), findsOneWidget);
+  });
+
+  // A saved listing is one such row: its list carries the title, the place and
+  // the price and nothing about the reviews, and *No reviews yet* under it
+  // would be a figure the card invented.
+  testWidgets('a card told neither figure says nothing about the reviews', (
+    WidgetTester tester,
+  ) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      _card(title: 'Stone villa above Neum', place: 'Neum', price: 240),
+    );
+
+    expect(find.text('No reviews yet'), findsNothing);
+    expect(
+      find.bySemanticsLabel('Stone villa above Neum, Neum, 240.00 KM'),
+      findsOneWidget,
+    );
+
+    semantics.dispose();
   });
 
   testWidgets('a card opens the listing it stands for', (

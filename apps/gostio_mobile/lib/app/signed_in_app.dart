@@ -6,6 +6,7 @@ import 'package:provider/single_child_widget.dart';
 import '../features/booking/data/booking_repository.dart';
 import '../features/explore/data/catalogue_repository.dart';
 import '../features/explore/data/filter_options_repository.dart';
+import '../features/favorites/data/favorites_repository.dart';
 import '../features/listing/data/listing_repository.dart';
 import '../features/listing/presentation/favorite_edits.dart';
 import '../features/notifications/data/notifications_repository.dart';
@@ -52,6 +53,10 @@ class SignedInApp extends StatelessWidget {
         // turns one are in different places.
         ChangeNotifierProvider<FavoriteEdits>(
           create: (BuildContext context) => FavoriteEdits(),
+        ),
+        Provider<FavoritesRepository>(
+          create: (BuildContext context) =>
+              FavoritesRepository(context.read<ApiClient>()),
         ),
         Provider<PaymentRepository>(
           create: (BuildContext context) =>

@@ -145,6 +145,7 @@ class MessagesDouble implements MessagesRepository {
     this.failure,
     this.sendFailure,
     this.holdsTheSend = false,
+    this.holdsTheFirstRead = false,
   });
 
   // Newest first, which is the order the API answers them in.
@@ -157,8 +158,10 @@ class MessagesDouble implements MessagesRepository {
   // A send that does not answer until a test says so, which is how a thread is
   // looked at while it is sending.
   final bool holdsTheSend;
+  final bool holdsTheFirstRead;
 
   final Completer<void> _sent = Completer<void>();
+  final Completer<void> _firstRead = Completer<void>();
 
   int countCalls = 0;
   int nextId = 900;
@@ -167,6 +170,8 @@ class MessagesDouble implements MessagesRepository {
   final List<int> markedRead = <int>[];
 
   void answerSend() => _sent.complete();
+
+  void answerFirstRead() => _firstRead.complete();
 
   @override
   Future<PagedResult<Message>> search({
@@ -182,12 +187,18 @@ class MessagesDouble implements MessagesRepository {
 
     final int from = ((page - 1) * pageSize).clamp(0, lines.length);
     final int to = (from + pageSize).clamp(0, lines.length);
+    final List<Message> answered = lines.sublist(from, to);
+    final int totalCount = lines.length;
+
+    if (holdsTheFirstRead && pagesAsked.length == 1) {
+      await _firstRead.future;
+    }
 
     return PagedResult<Message>(
-      items: lines.sublist(from, to),
+      items: answered,
       page: page,
       pageSize: pageSize,
-      totalCount: lines.length,
+      totalCount: totalCount,
     );
   }
 

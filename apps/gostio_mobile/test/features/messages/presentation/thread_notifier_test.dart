@@ -251,6 +251,40 @@ void main() {
     thread.dispose();
   });
 
+  testWidgets('joining while a read is running queues one newest-page read', (
+    WidgetTester tester,
+  ) async {
+    final List<Message> lines = saidOver(2);
+    final MessagesDouble messages = MessagesDouble(
+      lines: lines,
+      holdsTheFirstRead: true,
+    );
+    final ChatHubDouble hub = ChatHubDouble();
+    final ThreadNotifier thread = open(messages, hub: hub);
+
+    final Future<void> opening = thread.open();
+    await tester.pump();
+    lines.insert(
+      0,
+      line(
+        id: 90,
+        body: 'Between the read and the join.',
+        sentAt: DateTime.utc(2026, 9, 5, 12),
+      ),
+    );
+    hub.say(const ChatJoined());
+    await tester.pump();
+
+    messages.answerFirstRead();
+    await opening;
+    await tester.pump();
+
+    expect(messages.pagesAsked, <int>[1, 1]);
+    expect(thread.lines.first.body, 'Between the read and the join.');
+
+    thread.dispose();
+  });
+
   // A thread the hub is not carrying is still a thread the reader is watching.
   testWidgets('a thread with no hub behind it reads itself on a timer', (
     WidgetTester tester,
@@ -262,6 +296,33 @@ void main() {
     await tester.pump(ThreadLiveness.refreshInterval);
 
     expect(messages.pagesAsked, <int>[1, 1]);
+
+    thread.dispose();
+  });
+
+  testWidgets('a quietly found line from this account is not marked read', (
+    WidgetTester tester,
+  ) async {
+    final List<Message> lines = saidOver(2);
+    final MessagesDouble messages = MessagesDouble(lines: lines);
+    final ThreadNotifier thread = open(messages);
+
+    await thread.open();
+    lines.insert(
+      0,
+      line(
+        id: 90,
+        senderUserId: reader,
+        senderName: 'Emina Begić',
+        body: 'Sent from another phone.',
+        sentAt: DateTime.utc(2026, 9, 5, 12),
+      ),
+    );
+    await tester.pump(ThreadLiveness.refreshInterval);
+    await tester.pump();
+
+    expect(thread.lines.first.body, 'Sent from another phone.');
+    expect(messages.markedRead, isEmpty);
 
     thread.dispose();
   });

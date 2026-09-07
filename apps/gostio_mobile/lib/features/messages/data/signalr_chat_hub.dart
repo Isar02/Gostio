@@ -53,15 +53,20 @@ class SignalRChatHub implements ChatHub {
   }
 
   Future<void> _start(_Watch watch) async {
-    await _giveUp(_take());
+    // Claim the watch before yielding. Two listeners can otherwise both see
+    // an empty slot in the same event-loop turn and each open a connection.
+    final _Watch? previous = _take();
+    _held = watch;
+    await _giveUp(previous);
 
-    if (_isClosed) {
+    if (!_isHeld(watch) || _isClosed) {
+      if (_isHeld(watch)) {
+        _take();
+      }
       await watch.events.close();
 
       return;
     }
-
-    _held = watch;
 
     final ChatConnection connection = _open()
       ..listen(

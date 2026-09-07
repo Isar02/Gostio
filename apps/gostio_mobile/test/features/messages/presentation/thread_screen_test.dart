@@ -186,6 +186,21 @@ void main() {
     expect(find.text('A message needs something in it.'), findsNothing);
   });
 
+  testWidgets('the body keeps validating on edits after a refusal', (
+    WidgetTester tester,
+  ) async {
+    await openThread(
+      tester,
+      messages: MessagesDouble(lines: <Message>[line()]),
+    );
+    await write(tester, '   ');
+    await pressSend(tester);
+
+    await write(tester, '    ');
+
+    expect(find.text('A message needs something in it.'), findsOneWidget);
+  });
+
   testWidgets('a server body refusal clears when the body is corrected', (
     WidgetTester tester,
   ) async {

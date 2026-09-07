@@ -37,6 +37,7 @@ class _MessageComposerState extends State<MessageComposer> {
   final FocusNode _writing = FocusNode();
 
   String? _refusal;
+  bool _validatesOnInteraction = false;
 
   @override
   void dispose() {
@@ -90,9 +91,13 @@ class _MessageComposerState extends State<MessageComposer> {
     );
   }
 
-  void _changed(String _) {
-    if (_refusal != null) {
-      setState(() => _refusal = null);
+  void _changed(String written) {
+    if (_validatesOnInteraction || _refusal != null || widget.refusal != null) {
+      _validatesOnInteraction = true;
+      final String? refusal = Validators.messageBody(written.trim());
+      if (refusal != _refusal) {
+        setState(() => _refusal = refusal);
+      }
     }
 
     widget.onChanged();
@@ -117,7 +122,10 @@ class _MessageComposerState extends State<MessageComposer> {
     final String? refusal = Validators.messageBody(body);
 
     if (refusal != null) {
-      setState(() => _refusal = refusal);
+      setState(() {
+        _refusal = refusal;
+        _validatesOnInteraction = true;
+      });
 
       return;
     }

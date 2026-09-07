@@ -219,4 +219,29 @@ void main() {
 
     await hub.close();
   });
+
+  test('two listens in one turn open only the newest connection', () async {
+    final List<ConnectionDouble> made = <ConnectionDouble>[];
+    final SignalRChatHub hub = SignalRChatHub(
+      ApiClient(baseUrl: Uri.parse('http://10.0.2.2:5000')),
+      baseUrl: Uri.parse('http://10.0.2.2:5000'),
+      open: () {
+        final ConnectionDouble connection = ConnectionDouble();
+        made.add(connection);
+
+        return connection;
+      },
+    );
+
+    hub.watch(7).listen((ChatEvent _) {});
+    hub.watch(8).listen((ChatEvent _) {});
+    await pumpEventQueue();
+
+    expect(made, hasLength(1));
+    expect(made.single.invoked, <List<Object>>[
+      <Object>['Join', 8],
+    ]);
+
+    await hub.close();
+  });
 }

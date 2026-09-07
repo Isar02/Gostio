@@ -6,7 +6,9 @@ import '../../../core/state/live_notifier.dart';
 import '../data/chat_hub.dart';
 import '../data/conversations_repository.dart';
 import '../data/messages_repository.dart';
+import 'thread_history.dart';
 import 'thread_liveness.dart';
+import 'thread_read_receipt.dart';
 
 // One thread being read: the lines in it, newest first as the API answers
 // them, and the one being written. Earlier lines are a page further back
@@ -22,12 +24,12 @@ import 'thread_liveness.dart';
 class ThreadNotifier extends LiveNotifier {
   ThreadNotifier(
     this._messages,
-    this._conversations,
+    ConversationsRepository conversations,
     ChatHub hub,
     this._thread, {
     required this.callerId,
     this.onThreadChanged,
-    this.onUnread,
+    Future<void> Function(Future<int> unread)? onUnread,
   }) {
     _liveness = ThreadLiveness(
       hub,
@@ -35,10 +37,16 @@ class ThreadNotifier extends LiveNotifier {
       onEvent: _heard,
       onRefresh: _refreshQuietly,
     );
+    _receipt = ThreadReadReceipt(
+      _messages,
+      conversations,
+      conversationId: _thread.id,
+      onThread: _acceptThread,
+      onUnread: onUnread,
+    );
   }
 
   final MessagesRepository _messages;
-  final ConversationsRepository _conversations;
 
   final int callerId;
 
@@ -46,30 +54,23 @@ class ThreadNotifier extends LiveNotifier {
   // server has answered a newer one.
   final void Function(Conversation thread)? onThreadChanged;
 
-  // What the account has waiting across every thread, which marking this one
-  // read answers on the way.
-  final Future<void> Function(Future<int> unread)? onUnread;
-
-  final List<Message> _lines = <Message>[];
-  final Set<int> _held = <int>{};
+  final ThreadHistory _history = ThreadHistory();
 
   late final ThreadLiveness _liveness;
+  late final ThreadReadReceipt _receipt;
 
   Conversation _thread;
   bool _isRefreshing = false;
   bool _isLoading = true;
   bool _isReadingEarlier = false;
   bool _isSending = false;
-  bool _isMarkingRead = false;
-  bool _readAgain = false;
-  int _pagesRead = 0;
-  int _totalCount = 0;
+  bool _refreshAgain = false;
   ApiException? _failure;
   ApiException? _sendFailure;
 
   Conversation get thread => _thread;
 
-  List<Message> get lines => _lines;
+  List<Message> get lines => _history.lines;
 
   bool get isLoading => _isLoading;
 
@@ -77,7 +78,7 @@ class ThreadNotifier extends LiveNotifier {
 
   bool get isSending => _isSending;
 
-  bool get hasEarlier => _lines.length < _totalCount;
+  bool get hasEarlier => _history.hasEarlier;
 
   String? get failureMessage => _failure?.message;
 
@@ -100,7 +101,7 @@ class ThreadNotifier extends LiveNotifier {
     // Nothing is written where nothing is waiting: a thread the reader has
     // already seen through does not need to be marked read a second time.
     if (_thread.holdsUnread && !isDisposed) {
-      await _markRead();
+      await _receipt.markRead();
     }
   }
 
@@ -112,7 +113,7 @@ class ThreadNotifier extends LiveNotifier {
     _isReadingEarlier = true;
     publish();
 
-    await _read(page: _pagesRead + 1);
+    await _read(page: _history.nextPage);
 
     if (!isDisposed) {
       _isReadingEarlier = false;
@@ -126,7 +127,9 @@ class ThreadNotifier extends LiveNotifier {
     publish();
 
     try {
-      _hold(await _messages.send(conversationId: _thread.id, body: body));
+      _history.add(
+        await _messages.send(conversationId: _thread.id, body: body),
+      );
     } on ApiException catch (refused) {
       if (!isDisposed) {
         _sendFailure = refused;
@@ -146,7 +149,7 @@ class ThreadNotifier extends LiveNotifier {
 
     // Answering is reading, and it is also what makes this thread's row say
     // what was last said in it.
-    await _markRead();
+    await _receipt.markRead();
 
     return true;
   }
@@ -161,7 +164,7 @@ class ThreadNotifier extends LiveNotifier {
   }
 
   Future<void> _read({required int page}) async {
-    _isLoading = _lines.isEmpty;
+    _isLoading = _history.lines.isEmpty;
     _failure = null;
     publish();
 
@@ -172,9 +175,7 @@ class ThreadNotifier extends LiveNotifier {
         return;
       }
 
-      _merge(read);
-      _totalCount = read.totalCount;
-      _pagesRead = page > _pagesRead ? page : _pagesRead;
+      _history.addPage(read);
     } on ApiException catch (refused) {
       if (isDisposed) {
         return;
@@ -185,6 +186,7 @@ class ThreadNotifier extends LiveNotifier {
 
     _isLoading = false;
     publish();
+    _repeatRefreshIfNeeded();
   }
 
   Future<PagedResult<Message>> _fetchPage(int page) => _messages.search(
@@ -193,96 +195,14 @@ class ThreadNotifier extends LiveNotifier {
     pageSize: PagedResult.defaultPageSize,
   );
 
-  bool _merge(PagedResult<Message> page) {
-    var arrived = false;
-    for (final Message line in page.items) {
-      arrived = _hold(line) || arrived;
-    }
-
-    return arrived;
-  }
-
-  // Newest first, and each line filed once however many times it arrives: a
-  // line sent is held by its answer and could be read again by the next page.
-  bool _hold(Message message) {
-    if (!_held.add(message.id)) {
-      return false;
-    }
-
-    var at = 0;
-    while (at < _lines.length && _isAfter(_lines[at], message)) {
-      at++;
-    }
-
-    _lines.insert(at, message);
-
-    // A line newer than everything already read is one the server had not
-    // counted when it answered the page this list was built from.
-    if (at == 0 && _pagesRead > 0) {
-      _totalCount++;
-    }
-
-    return true;
-  }
-
-  // Several things ask for this — opening the thread, and every line sent — so
-  // only one is out at a time and a request made while one is out is repeated
-  // after it rather than raced against it.
-  Future<void> _markRead() async {
-    if (_isMarkingRead) {
-      _readAgain = true;
-
+  void _acceptThread(Conversation read) {
+    if (isDisposed) {
       return;
     }
 
-    _isMarkingRead = true;
-    _readAgain = false;
-
-    try {
-      // The write is started here and the count is handed the answer to wait
-      // on, so it registers the write when it begins rather than when it lands
-      // — a poll that started later may already have seen more than this did.
-      // It is started outside the call because inside one that may be null it
-      // would be short-circuited away, and a thread nobody counts for would
-      // never be marked read at all.
-      final Future<int> marking = _messages.markRead(_thread.id);
-      final Future<void> Function(Future<int>)? report = onUnread;
-      if (report == null) {
-        await marking;
-      } else {
-        await report(marking);
-      }
-    } on ApiException {
-      // The count stands as it was. The row is still read back afterwards,
-      // because a line just sent has changed it whether or not the read mark
-      // landed.
-    } finally {
-      _isMarkingRead = false;
-    }
-
-    await _readThread();
-
-    if (_readAgain && !isDisposed) {
-      await _markRead();
-    }
-  }
-
-  // The row as the server then holds it. The list this thread was opened from
-  // is showing the same row and read it before any of this happened.
-  Future<void> _readThread() async {
-    try {
-      final Conversation read = await _conversations.get(_thread.id);
-
-      if (isDisposed) {
-        return;
-      }
-
-      _thread = read;
-      onThreadChanged?.call(read);
-      publish();
-    } on ApiException {
-      // Nobody asked for this read, so nobody is told it did not happen.
-    }
+    _thread = read;
+    onThreadChanged?.call(read);
+    publish();
   }
 
   void _heard(ChatEvent event) {
@@ -290,26 +210,28 @@ class ThreadNotifier extends LiveNotifier {
       case ChatJoined():
         // A connection made after something was said would never be told about
         // it, so the newest page is read again rather than trusted.
-        unawaited(_refreshQuietly());
+        unawaited(_refreshQuietly(repeatWhenBusy: true));
       case ChatDropped():
         break;
       case ChatSaid(:final Message message):
-        if (message.conversationId != _thread.id || !_hold(message)) {
+        if (message.conversationId != _thread.id || !_history.add(message)) {
           return;
         }
 
         publish();
 
         if (message.senderUserId != callerId) {
-          unawaited(_markRead());
+          unawaited(_receipt.markRead());
         }
     }
   }
 
   // Nobody asked for this read, so nobody is told it did not happen and the
   // thread is only redrawn where something actually arrived.
-  Future<void> _refreshQuietly() async {
+  Future<void> _refreshQuietly({bool repeatWhenBusy = false}) async {
     if (_isRefreshing || _isLoading) {
+      _refreshAgain = _refreshAgain || repeatWhenBusy;
+
       return;
     }
 
@@ -322,30 +244,35 @@ class ThreadNotifier extends LiveNotifier {
         return;
       }
 
-      final bool arrived = _merge(read);
+      final List<Message> arrived = _history.refresh(read);
 
-      if (read.totalCount > _totalCount) {
-        _totalCount = read.totalCount;
-      }
-
-      if (arrived) {
+      if (arrived.isNotEmpty) {
         publish();
-        await _markRead();
+        if (arrived.any((Message line) => line.senderUserId != callerId)) {
+          await _receipt.markRead();
+        }
       }
     } on ApiException {
       return;
     } finally {
       _isRefreshing = false;
+      _repeatRefreshIfNeeded();
     }
   }
 
-  static bool _isAfter(Message one, Message other) =>
-      one.sentAt.isAfter(other.sentAt) ||
-      (one.sentAt == other.sentAt && one.id > other.id);
+  void _repeatRefreshIfNeeded() {
+    if (!_refreshAgain || _isLoading || _isRefreshing || isDisposed) {
+      return;
+    }
+
+    _refreshAgain = false;
+    unawaited(_refreshQuietly(repeatWhenBusy: true));
+  }
 
   @override
   void dispose() {
     _liveness.dispose();
+    _receipt.dispose();
 
     super.dispose();
   }

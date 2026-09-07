@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:gostio_mobile/app/shell/account_tab.dart';
@@ -8,6 +11,7 @@ import '../../support/favorite_fixture.dart';
 import '../../support/favorites_double.dart';
 import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
+import '../../support/push_double.dart';
 import '../../support/review_fixture.dart';
 import '../../support/reviews_double.dart';
 import '../../support/screens.dart';
@@ -123,4 +127,102 @@ void main() {
     expect(find.text('Saved'), findsOneWidget);
     expect(find.text('Stone villa above Neum'), findsOneWidget);
   });
+
+  // A phone is handed between people. A registration left behind delivers this
+  // account's bookings to whoever holds the phone next, and the call that
+  // removes it is made with this account's token — so it happens before the
+  // session ends rather than after it.
+  testWidgets('signing out gives up the device before it ends the session', (
+    WidgetTester tester,
+  ) async {
+    final NotificationsDouble notifications = NotificationsDouble();
+    final PushMessagingDouble messaging = PushMessagingDouble(
+      token: 'device-token',
+    );
+    final Session session = signedOutSession()
+      ..begin(account: account(), token: 'the-token');
+
+    await tester.pumpWidget(
+      underTest(
+        const AccountTab(),
+        auth: AuthDouble(),
+        session: session,
+        notifications: notifications,
+        messaging: messaging,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(notifications.registered, <String>['device-token']);
+
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+
+    expect(notifications.forgotten, <String>['device-token']);
+    expect(session.isSignedIn, isFalse);
+
+    await messaging.close();
+  });
+
+  // A sign-out the reader pressed is not one to abandon halfway. Everything
+  // the session needs is read before the device is given up, so a screen that
+  // goes while that call is still out cannot leave the account signed in.
+  testWidgets(
+    'a screen that goes while the device is given up still signs out',
+    (WidgetTester tester) async {
+      final _HeldRemoval notifications = _HeldRemoval();
+      final PushMessagingDouble messaging = PushMessagingDouble(
+        token: 'device-token',
+      );
+      final Session session = signedOutSession()
+        ..begin(account: account(), token: 'the-token');
+
+      await tester.pumpWidget(
+        underTest(
+          const AccountTab(),
+          auth: AuthDouble(),
+          session: session,
+          notifications: notifications,
+          messaging: messaging,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Sign out'));
+      await tester.pump();
+      await notifications.reached;
+
+      // The screen the reader pressed the button on is gone before the removal
+      // has been answered.
+      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      notifications.answer();
+      await tester.pumpAndSettle();
+
+      expect(session.isSignedIn, isFalse);
+      expect(session.lastEnding, SessionEnding.signedOut);
+
+      await messaging.close();
+    },
+  );
+}
+
+// Holds the removal until a test says the server answered, which is what lets
+// the screen that asked for it go while the call is still out.
+class _HeldRemoval extends NotificationsDouble {
+  final Completer<void> _reached = Completer<void>();
+  final Completer<void> _answer = Completer<void>();
+
+  Future<void> get reached => _reached.future;
+
+  void answer() => _answer.complete();
+
+  @override
+  Future<void> forgetDevice(String token) async {
+    if (!_reached.isCompleted) {
+      _reached.complete();
+    }
+
+    await _answer.future;
+    await super.forgetDevice(token);
+  }
 }

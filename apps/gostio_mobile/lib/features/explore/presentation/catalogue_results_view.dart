@@ -22,6 +22,7 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
     required this.results,
     required this.itemBuilder,
     required this.onOpenFilters,
+    this.resultsHeader,
     super.key,
   });
 
@@ -29,6 +30,9 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
   final PagedNotifier<TItem, TQuery> results;
   final Widget Function(BuildContext context, TItem item) itemBuilder;
   final VoidCallback onOpenFilters;
+
+  // Carried through to the list, which scrolls it away with the first cards.
+  final Widget? resultsHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +54,7 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
                 items: results.items,
                 totalCount: results.totalCount,
                 itemBuilder: itemBuilder,
+                header: resultsHeader,
                 onMore: results.more,
                 isLoading: results.isLoading,
                 isAppending: results.isAppending,

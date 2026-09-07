@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
-import 'package:gostio_mobile/core/state/unread_count.dart';
+import 'package:gostio_mobile/core/push/push_notice.dart';
+import 'package:gostio_mobile/core/state/foreground_poll.dart';
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 
 import '../../../support/notifications_double.dart';
 import '../../../support/phone.dart';
+import '../../../support/push_double.dart';
 
 // The count is built inside a widget test because its poll runs on the clock
 // the test binding controls, and it is ended inside the test body because the
@@ -34,7 +36,7 @@ void main() {
     final UnreadNotices notices = UnreadNotices(notifications);
 
     await tester.pump();
-    await tester.pump(UnreadCount.pollInterval);
+    await tester.pump(ForegroundPoll.interval);
 
     expect(notifications.countCalls, 2);
 
@@ -50,8 +52,8 @@ void main() {
     final UnreadNotices notices = UnreadNotices(notifications);
 
     await tester.pump();
-    notices.didChangeAppLifecycleState(AppLifecycleState.paused);
-    await tester.pump(UnreadCount.pollInterval * 3);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump(ForegroundPoll.interval * 3);
 
     expect(notifications.countCalls, 1);
 
@@ -67,9 +69,9 @@ void main() {
     final UnreadNotices notices = UnreadNotices(notifications);
 
     await tester.pump();
-    notices
-      ..didChangeAppLifecycleState(AppLifecycleState.paused)
-      ..didChangeAppLifecycleState(AppLifecycleState.resumed);
+    tester.binding
+      ..handleAppLifecycleStateChanged(AppLifecycleState.paused)
+      ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
 
     expect(notifications.countCalls, 2);
@@ -94,5 +96,28 @@ void main() {
     expect(notices.unread, 0);
 
     notices.dispose();
+  });
+
+  // A delivery that arrives while the reader is in front of the application
+  // draws nothing over what they are reading. What it is worth is this figure,
+  // which is the bar telling them there is something new.
+  testWidgets('a delivery that arrives in the foreground moves the count', (
+    WidgetTester tester,
+  ) async {
+    final NotificationsDouble notifications = NotificationsDouble(unread: 2);
+    final PushMessagingDouble messaging = PushMessagingDouble();
+    final UnreadNotices notices = UnreadNotices(
+      notifications,
+      messaging: messaging,
+    );
+
+    await tester.pump();
+    messaging.arriving.add(const PushNotice(reservationId: 314));
+    await tester.pump();
+
+    expect(notifications.countCalls, 2);
+
+    notices.dispose();
+    await messaging.close();
   });
 }

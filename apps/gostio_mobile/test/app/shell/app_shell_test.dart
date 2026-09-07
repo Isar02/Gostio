@@ -3,18 +3,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
+import 'package:gostio_mobile/app/named_trip_screen.dart';
 import 'package:gostio_mobile/app/shell/app_shell.dart';
 import 'package:gostio_mobile/app/shell/shell_tab.dart';
 import 'package:gostio_mobile/app/shell/tab_navigator.dart';
+import 'package:gostio_mobile/core/push/push_notice.dart';
 import 'package:gostio_mobile/core/widgets/discard_guard.dart';
 import 'package:gostio_mobile/features/explore/presentation/explore_screen.dart';
+import 'package:gostio_mobile/features/notifications/presentation/notifications_screen.dart';
 
 import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
 import '../../support/catalogue_double.dart';
 import '../../support/messages_double.dart';
+import '../../support/news_double.dart';
 import '../../support/notifications_double.dart';
+import '../../support/payment_double.dart';
 import '../../support/phone.dart';
+import '../../support/push_double.dart';
 import '../../support/recommendation_fixture.dart';
 import '../../support/recommendations_double.dart';
 import '../../support/screens.dart';
@@ -23,7 +29,10 @@ import '../../support/trips_double.dart';
 void main() {
   setUp(usePhoneScreen);
 
-  Future<void> openShell(WidgetTester tester) async {
+  Future<void> openShell(
+    WidgetTester tester, {
+    PushMessagingDouble? messaging,
+  }) async {
     final Session session = signedOutSession()
       ..begin(account: account(), token: 'the-token');
 
@@ -32,12 +41,18 @@ void main() {
         const AppShell(),
         auth: AuthDouble(),
         session: session,
+        messaging: messaging,
+        news: NewsDouble(),
         notifications: NotificationsDouble(),
         conversations: ConversationsDouble(),
         messages: MessagesDouble(),
         catalogue: CatalogueDouble(),
         filterOptions: FilterOptionsDouble(),
         trips: TripsDouble(),
+        // A notice opens a booking inside a tab, and a booking draws what it
+        // would cost to settle, so the shell is composed over both.
+        payments: PaymentDouble(),
+        cardSheet: CardSheetDouble(),
         suggestions: RecommendationsDouble(
           stays: <Recommendation>[pick(title: 'Cottage by the Pliva lakes')],
         ),
@@ -330,5 +345,40 @@ void main() {
 
     expect(find.text('A pushed detail'), findsNothing);
     expect(find.byType(ExploreScreen), findsOneWidget);
+  });
+
+  // A delivery the reader tapped opens inside the tab they are in, like every
+  // other screen: a push is a way back into the client rather than a place of
+  // its own beside it.
+  testWidgets('a delivery that was tapped opens the booking it names', (
+    WidgetTester tester,
+  ) async {
+    final PushMessagingDouble messaging = PushMessagingDouble();
+    await openShell(tester, messaging: messaging);
+
+    await chooseTab(tester, ShellTab.trips);
+    messaging.taps.add(const PushNotice(reservationId: 314));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NamedTripScreen), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+
+    await messaging.close();
+  });
+
+  // A host verification carries no reservation, and a tap that arrived
+  // nowhere would be a gesture that sometimes does nothing.
+  testWidgets('a delivery that names no booking opens the notices', (
+    WidgetTester tester,
+  ) async {
+    final PushMessagingDouble messaging = PushMessagingDouble();
+    await openShell(tester, messaging: messaging);
+
+    messaging.taps.add(const PushNotice());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NotificationsScreen), findsOneWidget);
+
+    await messaging.close();
   });
 }

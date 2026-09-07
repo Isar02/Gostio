@@ -332,6 +332,36 @@ void main() {
 
     expect(catalogue.reads, 0);
   });
+
+  // A newest-page poll can move the boundary of every later offset page. The
+  // row repeated at that boundary is still one row, not a second copy appended
+  // when the reader asks for more.
+  test(
+    'a newest-page merge does not duplicate the next page boundary',
+    () async {
+      final List<String> original = <String>[
+        for (int index = 1; index <= 45; index++) 'Row $index',
+      ];
+      await _fill(catalogue, original.take(20).toList(), total: 45);
+
+      final Future<void> second = catalogue.more();
+      catalogue.answer(
+        _page(2, original.skip(20).take(20).toList(), total: 45),
+      );
+      await second;
+
+      catalogue.merge(
+        _page(1, <String>['New row', ...original.take(19)], total: 46),
+      );
+
+      final Future<void> third = catalogue.more();
+      catalogue.answer(_page(3, original.skip(39).toList(), total: 46));
+      await third;
+
+      expect(catalogue.items.toSet().length, catalogue.items.length);
+      expect(catalogue.items.length, 46);
+    },
+  );
 }
 
 Future<void> _fill(
@@ -369,6 +399,11 @@ class _Catalogue extends PagedNotifier<String, String> {
       replaceWhere((String item) => item == held, replacement);
 
   void remove(String held) => removeWhere((String item) => item == held);
+
+  void merge(PagedResult<String> newest) => mergeNewest(
+    newest,
+    isSame: (String held, String arrived) => held == arrived,
+  );
 
   void answer(PagedResult<String> result) =>
       answerAt(_pending.length - 1, result);

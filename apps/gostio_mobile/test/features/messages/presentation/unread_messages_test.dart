@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gostio_mobile/core/state/unread_count.dart';
+import 'package:gostio_mobile/core/state/foreground_poll.dart';
 import 'package:gostio_mobile/features/messages/presentation/unread_messages.dart';
 
 import '../../../support/messages_double.dart';
@@ -49,7 +49,7 @@ void main() {
 
     await tester.pump();
     await waiting.report(Future<int>.value(2));
-    await tester.pump(UnreadCount.pollInterval - const Duration(seconds: 1));
+    await tester.pump(ForegroundPoll.interval - const Duration(seconds: 1));
 
     expect(waiting.unread, 2);
 
@@ -67,7 +67,7 @@ void main() {
 
     final Completer<int> write = Completer<int>();
     final Future<void> reporting = waiting.report(write.future);
-    await tester.pump(UnreadCount.pollInterval);
+    await tester.pump(ForegroundPoll.interval);
     messages.answers.last.complete(4);
     await tester.pump();
 

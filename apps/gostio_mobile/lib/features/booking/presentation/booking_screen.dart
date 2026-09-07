@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/push/push_messaging.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../payment/data/card_sheet.dart';
@@ -14,7 +17,12 @@ import 'hold_countdown.dart';
 // The booking that was just made: what it is for, who is coming, what it costs
 // and how long it keeps its place. Nothing has been paid for at this point, and
 // the hold above the figures is what says so.
-class BookingScreen extends StatelessWidget {
+//
+// This is also the first moment in the client that there is something to be
+// notified about — a hold that lapses, a host who confirms — so it is where
+// the phone is asked whether it may draw a notice. Asked on the first frame of
+// the first launch instead, the only honest answer would be no.
+class BookingScreen extends StatefulWidget {
   const BookingScreen(this.booking, {this.term, super.key});
 
   // The screen that made the booking is replaced rather than left underneath
@@ -38,6 +46,21 @@ class BookingScreen extends StatelessWidget {
   final ExperienceSlot? term;
 
   @override
+  State<BookingScreen> createState() => _BookingScreenState();
+}
+
+class _BookingScreenState extends State<BookingScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Asking again after it has been answered does not trouble the reader, so
+    // a booking opened a second time costs nothing and a first booking made
+    // after the ask was dismissed gets another one.
+    unawaited(context.read<PushMessaging>().askToDrawNotices());
+  }
+
+  @override
   Widget build(BuildContext context) {
     // The booking this screen draws is the notifier's from here on: paying
     // reads it back, and what comes back is what the reader is shown.
@@ -45,9 +68,9 @@ class BookingScreen extends StatelessWidget {
       create: (BuildContext context) => PaymentNotifier(
         context.read<PaymentRepository>(),
         context.read<CardSheet>(),
-        booking,
+        widget.booking,
       ),
-      child: _Booking(term: term),
+      child: _Booking(term: widget.term),
     );
   }
 }

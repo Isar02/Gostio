@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../core/config/app_settings.dart';
+import '../core/push/firebase_push_messaging.dart';
+import '../core/push/push_messaging.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
@@ -31,6 +35,15 @@ class GostioApp extends StatelessWidget {
         Provider<AuthRepository>(
           create: (BuildContext context) =>
               AuthRepository(context.read<ApiClient>()),
+        ),
+        // The phone's own delivery service, which belongs to the device rather
+        // than to whoever is signed in on it. What is tied to a session is the
+        // registration that says this device is theirs, and that is made with
+        // the session further in.
+        Provider<PushMessaging>(
+          create: (BuildContext context) => FirebasePushMessaging(),
+          dispose: (BuildContext context, PushMessaging messaging) =>
+              unawaited(messaging.close()),
         ),
       ],
       child: MaterialApp(

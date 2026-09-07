@@ -28,6 +28,10 @@ abstract final class AppDates {
   static String weekday(DateTime value) => _weekday.format(value);
 
   // Read against now rather than printed as a date the reader has to subtract.
+  //
+  // Only within the day, where the relative form says the time better than a
+  // clock would. Past that it is the moment itself, hour included: a row that
+  // has to say when something happened may not stop at the day it happened on.
   static String age(DateTime value) {
     final Duration age = DateTime.now().difference(value.toLocal());
 
@@ -35,8 +39,7 @@ abstract final class AppDates {
       _ when age.inMinutes < 1 => 'Just now',
       _ when age.inHours < 1 => '${age.inMinutes} min ago',
       _ when age.inDays < 1 => '${age.inHours} h ago',
-      _ when age.inDays < 7 => '${age.inDays} d ago',
-      _ => date(value),
+      _ => dateTime(value),
     };
   }
 }

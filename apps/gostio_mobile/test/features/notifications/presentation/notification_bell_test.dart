@@ -8,6 +8,7 @@ import '../../../support/account_fixture.dart';
 import '../../../support/auth_double.dart';
 import '../../../support/catalogue_double.dart';
 import '../../../support/messages_double.dart';
+import '../../../support/news_double.dart';
 import '../../../support/notice_fixture.dart';
 import '../../../support/notifications_double.dart';
 import '../../../support/phone.dart';
@@ -30,6 +31,7 @@ void main() {
         const AppShell(),
         auth: AuthDouble(),
         session: session,
+        news: NewsDouble(),
         notifications: notifications,
         conversations: ConversationsDouble(),
         messages: MessagesDouble(),

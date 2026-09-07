@@ -10,7 +10,12 @@ import 'unread_notices.dart';
 // behind it is the shell's, so moving between tabs neither loses it nor asks
 // the server for it a second time.
 class NotificationBell extends StatelessWidget {
-  const NotificationBell({super.key});
+  const NotificationBell({this.openBooking, super.key});
+
+  // What a notice opens. It is carried through rather than reached for: this
+  // feature draws the bell and the trips are somebody else's.
+  final Future<void> Function(BuildContext context, int reservationId)?
+  openBooking;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,8 @@ class NotificationBell extends StatelessWidget {
       // it stays and closing it comes back to where the reader was.
       onPressed: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (BuildContext context) => const NotificationsScreen(),
+          builder: (BuildContext context) =>
+              NotificationsScreen(openBooking: openBooking),
         ),
       ),
       tooltip: unread == 0 ? 'Notifications' : '$unread unread notifications',

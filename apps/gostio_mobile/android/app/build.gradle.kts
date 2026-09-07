@@ -39,3 +39,12 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// The messaging configuration is a secret and is not in the repository, so the
+// plugin that reads it is applied only where the file is. Applied
+// unconditionally, a checkout without that file fails to build; applied this
+// way it builds and runs with push delivery off, which is what the client
+// already answers when no service is configured.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

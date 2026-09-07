@@ -8,10 +8,16 @@ import '../../../core/widgets/status_chip.dart';
 // One notice as a row. What raised it is said in an icon, when it arrived is
 // read against now rather than printed as a date to subtract, and one that has
 // not been read yet says so in a word as well as in a colour.
+//
+// A tap does what there is to do with a notice: it opens what the notice names
+// and it reads it. A notice that names nothing and has already been read has
+// neither left, so it answers no tap rather than offering one that does
+// nothing.
 class NotificationCard extends StatelessWidget {
-  const NotificationCard(this.notice, {super.key});
+  const NotificationCard(this.notice, {this.onTap, super.key});
 
   final AppNotification notice;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +25,13 @@ class NotificationCard extends StatelessWidget {
     final String age = AppDates.age(notice.createdAt);
 
     return AppCard(
+      onTap: onTap,
       semanticLabel: <String>[
         if (!notice.isRead) 'Unread',
         notice.title,
         notice.body,
         age,
+        if (_gesture case final String gesture) gesture,
       ].join('. '),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,6 +64,17 @@ class NotificationCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // What the tap actually does, said to a reader who cannot see the card
+  // change. A notice that names a booking opens it; one that names nothing is
+  // only read, and one that is neither answers no tap at all.
+  String? get _gesture {
+    if (onTap == null) {
+      return null;
+    }
+
+    return notice.reservationId == null ? 'Marks it read' : 'Opens the booking';
   }
 }
 

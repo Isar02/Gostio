@@ -40,6 +40,11 @@ class TripsRepository {
     );
   }
 
+  // A notice names a booking by its id and carries nothing else about it, so
+  // the row is read before the trip it opens can be drawn.
+  Future<Reservation> trip(int reservationId) async =>
+      Reservation.fromJson(await _client.get('$_reservations/$reservationId'));
+
   // Read while calling the booking off is still a choice. It moves with the
   // clock until the cancellation, so it is asked for as the sheet opens rather
   // than carried down from the list.

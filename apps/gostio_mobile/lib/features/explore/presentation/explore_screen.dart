@@ -28,7 +28,12 @@ import 'stay_filter_sheet.dart';
 // This is the tab's body rather than its screen: the bar over it is the shell's,
 // because the bell in it belongs to every tab and not to this one.
 class ExploreScreen extends StatelessWidget {
-  const ExploreScreen({super.key});
+  const ExploreScreen({this.resultsHeader, super.key});
+
+  // What another module draws over the results. It scrolls with them rather
+  // than standing between the search and the first card, and it is handed in
+  // because what is published on this platform is not this feature's.
+  final Widget? resultsHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -51,13 +56,15 @@ class ExploreScreen extends StatelessWidget {
               FilterOptionsNotifier(context.read<FilterOptionsRepository>()),
         ),
       ],
-      child: const _Explore(),
+      child: _Explore(resultsHeader: resultsHeader),
     );
   }
 }
 
 class _Explore extends StatefulWidget {
-  const _Explore();
+  const _Explore({this.resultsHeader});
+
+  final Widget? resultsHeader;
 
   @override
   State<_Explore> createState() => _ExploreState();
@@ -111,6 +118,7 @@ class _ExploreState extends State<_Explore> {
                 catalogue: Catalogue.stays,
                 results: context.read<StayResults>(),
                 onOpenFilters: _openStayFilters,
+                resultsHeader: widget.resultsHeader,
                 itemBuilder: (BuildContext context, Accommodation stay) =>
                     StayCard(stay),
               ),
@@ -118,6 +126,7 @@ class _ExploreState extends State<_Explore> {
                 catalogue: Catalogue.experiences,
                 results: context.read<ExperienceResults>(),
                 onOpenFilters: _openExperienceFilters,
+                resultsHeader: widget.resultsHeader,
                 itemBuilder: (BuildContext context, Experience term) =>
                     TermCard(term),
               ),

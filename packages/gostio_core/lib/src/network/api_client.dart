@@ -120,8 +120,11 @@ class ApiClient {
   Future<List<dynamic>> putList(String path, {Object? body}) async =>
       _asArray(await _request('PUT', path, body: body));
 
-  Future<void> delete(String path) async {
-    await _request('DELETE', path);
+  // A body on a delete is unusual and is here for one route: removing this
+  // device's registration names the token rather than putting it in the path,
+  // so it stays out of the places a URL is written down.
+  Future<void> delete(String path, {Object? body}) async {
+    await _request('DELETE', path, body: body);
   }
 
   Future<Uint8List> bytes(String path) async {

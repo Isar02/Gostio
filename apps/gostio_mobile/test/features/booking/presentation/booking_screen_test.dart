@@ -8,6 +8,7 @@ import '../../../support/auth_double.dart';
 import '../../../support/booking_fixture.dart';
 import '../../../support/payment_double.dart';
 import '../../../support/phone.dart';
+import '../../../support/push_double.dart';
 import '../../../support/screens.dart';
 
 void main() {
@@ -19,12 +20,14 @@ void main() {
     ExperienceSlot? term,
     PaymentDouble? payments,
     CardSheetDouble? sheet,
+    PushMessagingDouble? messaging,
   }) => pushOnto(
     tester,
     BookingScreen(booking, term: term),
     auth: AuthDouble(),
     payments: payments ?? PaymentDouble(),
     cardSheet: sheet ?? CardSheetDouble(),
+    messaging: messaging,
   );
 
   Future<void> tapPay(WidgetTester tester) async {
@@ -192,5 +195,19 @@ void main() {
     expect(find.text('This booking is paid for.'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Pay'), findsNothing);
     expect(find.text('285.00 KM'), findsOneWidget);
+  });
+
+  // The first moment in the client that there is something to be notified
+  // about — a hold that lapses, a host who confirms. Asked on the first frame
+  // of the first launch instead, the only honest answer would be no.
+  testWidgets('a booking that lands is where the phone is asked to notify', (
+    WidgetTester tester,
+  ) async {
+    final PushMessagingDouble messaging = PushMessagingDouble();
+    await open(tester, stayBooking(), messaging: messaging);
+
+    expect(messaging.askCalls, 1);
+
+    await messaging.close();
   });
 }

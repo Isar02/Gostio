@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../core/config/app_settings.dart';
+import '../core/push/push_messaging.dart';
 import '../features/booking/data/booking_repository.dart';
 import '../features/explore/data/catalogue_repository.dart';
 import '../features/explore/data/filter_options_repository.dart';
@@ -15,7 +18,9 @@ import '../features/messages/data/conversations_repository.dart';
 import '../features/messages/data/messages_repository.dart';
 import '../features/messages/data/signalr_chat_hub.dart';
 import '../features/messages/presentation/unread_messages.dart';
+import '../features/news/data/news_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
+import '../features/notifications/data/push_registration.dart';
 import '../features/notifications/presentation/unread_notices.dart';
 import '../features/payment/data/card_sheet.dart';
 import '../features/payment/data/payment_repository.dart';
@@ -92,9 +97,33 @@ class SignedInApp extends StatelessWidget {
           create: (BuildContext context) =>
               NotificationsRepository(context.read<ApiClient>()),
         ),
+        // Where this device says it can be reached, made with the session and
+        // given up with it. It is asked for as the client opens rather than
+        // when something first reads it: a registration nobody has read is
+        // still the one a push is delivered to.
+        Provider<PushRegistration>(
+          lazy: false,
+          create: (BuildContext context) {
+            final PushRegistration registration = PushRegistration(
+              context.read<NotificationsRepository>(),
+              context.read<PushMessaging>(),
+            );
+            unawaited(registration.start());
+
+            return registration;
+          },
+          dispose: (BuildContext context, PushRegistration registration) =>
+              unawaited(registration.close()),
+        ),
         ChangeNotifierProvider<UnreadNotices>(
+          create: (BuildContext context) => UnreadNotices(
+            context.read<NotificationsRepository>(),
+            messaging: context.read<PushMessaging>(),
+          ),
+        ),
+        Provider<NewsRepository>(
           create: (BuildContext context) =>
-              UnreadNotices(context.read<NotificationsRepository>()),
+              NewsRepository(context.read<ApiClient>()),
         ),
         Provider<ConversationsRepository>(
           create: (BuildContext context) =>

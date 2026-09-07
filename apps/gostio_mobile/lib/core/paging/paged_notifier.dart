@@ -32,6 +32,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   ApiException? _failure;
   List<T> _items = List<T>.empty();
   final List<_PendingEdit<T>> _pendingEdits = <_PendingEdit<T>>[];
+  bool Function(T held, T arrived)? _sameItem;
 
   List<T> get items => _items;
 
@@ -125,6 +126,47 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     publish();
   }
 
+  // The newest page read again while the reader is looking at the list, merged
+  // into what they are already holding rather than replacing it. A list the
+  // server orders newest first grows at the front, so a row the answer carries
+  // that this list does not hold is a new one and keeps the place the server
+  // gave it; a row it does hold is replaced, which is how a change made
+  // somewhere else catches up. Pages below the first are left exactly as they
+  // are, and so is the scroll.
+  //
+  // This is not `reload`. A reader several pages deep who is sent back to the
+  // first one every interval is worse off than one who is never told anything.
+  @protected
+  void mergeNewest(
+    PagedResult<T> newest, {
+    required bool Function(T held, T arrived) isSame,
+  }) {
+    if (isDisposed || !_hasLanded) {
+      return;
+    }
+
+    _sameItem = isSame;
+    final List<T> merged = <T>[];
+
+    for (final T arrived in newest.items) {
+      final int at = _items.indexWhere((T held) => isSame(held, arrived));
+      if (at < 0) {
+        merged.add(arrived);
+      }
+    }
+
+    _items = List<T>.unmodifiable(<T>[
+      ...merged,
+      for (final T held in _items)
+        newest.items.firstWhere(
+          (T arrived) => isSame(held, arrived),
+          orElse: () => held,
+        ),
+    ]);
+    _totalCount = newest.totalCount;
+    publish();
+  }
+
   // A page already on its way was read before this row changed. Remember what
   // happened to it for that request, so its older answer cannot put the row
   // back the way it was after the write has landed.
@@ -186,7 +228,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
       // A page that answers with nothing is the end of the list rather than a
       // reason to drop what has already been read.
       _items = _reconcile(
-        isAppending ? <T>[..._items, ...landed.items] : landed.items,
+        isAppending ? _appendWithoutDuplicates(landed.items) : landed.items,
         request,
       );
       _hasLanded = true;
@@ -227,6 +269,21 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     }
 
     return List<T>.unmodifiable(reconciled);
+  }
+
+  // A newest-page merge shifts every later offset page. The first row of the
+  // next page can therefore already be held; append only the rows that are not.
+  List<T> _appendWithoutDuplicates(List<T> arrived) {
+    final bool Function(T held, T arrived)? isSame = _sameItem;
+    if (isSame == null) {
+      return <T>[..._items, ...arrived];
+    }
+
+    return <T>[
+      ..._items,
+      for (final T item in arrived)
+        if (!_items.any((T held) => isSame(held, item))) item,
+    ];
   }
 
   void _forget(int request) => _pendingEdits.removeWhere(

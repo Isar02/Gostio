@@ -15,6 +15,8 @@ class TripsDouble implements TripsRepository {
     this.past = const <Reservation>[],
     RefundQuote? quote,
     Reservation? cancelled,
+    this.named,
+    this.namedFailure,
     this.failure,
     this.quoteFailure,
     this.cancelFailure,
@@ -25,6 +27,10 @@ class TripsDouble implements TripsRepository {
 
   final List<Reservation> upcoming;
   final List<Reservation> past;
+
+  // The one booking a notice names, read by its id alone.
+  final Reservation? named;
+  final ApiException? namedFailure;
   final RefundQuote quote;
   final Reservation cancelled;
   final ApiException? failure;
@@ -40,6 +46,8 @@ class TripsDouble implements TripsRepository {
       <({int guestId, TripWindow window, int page})>[];
 
   final List<int> quoted = <int>[];
+
+  final List<int> readById = <int>[];
 
   final List<({int bookingId, String reason})> calledOff =
       <({int bookingId, String reason})>[];
@@ -71,6 +79,17 @@ class TripsDouble implements TripsRepository {
       pageSize: pageSize,
       totalCount: all.length,
     );
+  }
+
+  @override
+  Future<Reservation> trip(int reservationId) async {
+    readById.add(reservationId);
+
+    if (namedFailure case final ApiException refused) {
+      throw refused;
+    }
+
+    return named ?? stayBooking();
   }
 
   @override

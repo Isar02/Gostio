@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_metrics.dart';
-import '../../core/widgets/count_badge.dart';
+import '../../core/push/push_messaging.dart';
 import '../../core/widgets/discard_guard.dart';
-import '../../features/messages/presentation/unread_messages.dart';
+import '../push_openings.dart';
+import 'shell_bar.dart';
 import 'shell_tab.dart';
 import 'tab_navigator.dart';
 
@@ -40,8 +39,24 @@ class _AppShellState extends State<AppShell> {
 
   _PendingTabReset? _pendingTabReset;
 
+  PushOpenings? _openings;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // A delivery the reader tapped opens inside the tab they are in, like every
+    // other screen: a push is a way back into the client rather than a place of
+    // its own beside it. Which tab that is, is all the shell contributes.
+    _openings = PushOpenings(
+      context.read<PushMessaging>(),
+      into: () => _navigators[_current]?.currentState,
+    );
+  }
+
   @override
   void dispose() {
+    _openings?.dispose();
     _cancelPendingTabReset();
 
     super.dispose();
@@ -76,7 +91,7 @@ class _AppShellState extends State<AppShell> {
                 ),
             ],
           ),
-          bottomNavigationBar: _Bar(current: _current, onChosen: _choose),
+          bottomNavigationBar: ShellBar(current: _current, onChosen: _choose),
         ),
       ),
     );
@@ -171,70 +186,6 @@ class _AppShellState extends State<AppShell> {
     }
 
     unawaited(SystemNavigator.pop());
-  }
-}
-
-class _Bar extends StatelessWidget {
-  const _Bar({required this.current, required this.onChosen});
-
-  final ShellTab current;
-  final void Function(ShellTab tab) onChosen;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      // The bar is told from the screen above it by a line rather than by a
-      // shadow, which is the same edge every other surface here carries.
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border)),
-      ),
-      child: NavigationBar(
-        selectedIndex: current.index,
-        onDestinationSelected: (int index) => onChosen(ShellTab.values[index]),
-        destinations: <Widget>[
-          for (final ShellTab tab in ShellTab.values)
-            NavigationDestination(
-              icon: _Destination(tab: tab, icon: tab.icon),
-              selectedIcon: _Destination(tab: tab, icon: tab.selectedIcon),
-              label: tab.label,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// One icon in the bar. The inbox carries what is waiting in it, because the
-// tab is where a reader would go to answer it and the bar is on every screen
-// they could be reading instead.
-class _Destination extends StatelessWidget {
-  const _Destination({required this.tab, required this.icon});
-
-  final ShellTab tab;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    if (tab != ShellTab.inbox) {
-      return Icon(icon);
-    }
-
-    final int unread = context.select<UnreadMessages, int>(
-      (UnreadMessages messages) => messages.unread,
-    );
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: <Widget>[
-        Icon(icon),
-        if (unread > 0)
-          Positioned(
-            top: -AppSpacing.sm,
-            right: -AppSpacing.sm,
-            child: CountBadge(unread),
-          ),
-      ],
-    );
   }
 }
 

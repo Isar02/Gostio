@@ -9,6 +9,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/section_header.dart';
 import '../../features/auth/presentation/sign_out.dart';
 import '../../features/favorites/presentation/favorites_screen.dart';
+import '../../features/notifications/data/push_registration.dart';
 import '../../features/reviews/presentation/guest_reviews_screen.dart';
 import 'tab_app_bar.dart';
 
@@ -77,7 +78,15 @@ class AccountTab extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             OutlinedButton(
-              onPressed: () => signOut(context),
+              // A phone is handed between people, so this device gives up its
+              // registration on the way out — while this account's token is
+              // still what the call carries.
+              onPressed: () => unawaited(
+                signOut(
+                  context,
+                  beforeTokenEnds: context.read<PushRegistration>().forget,
+                ),
+              ),
               child: const Text('Sign out'),
             ),
           ],

@@ -11,6 +11,7 @@ import '../features/booking/data/booking_repository.dart';
 import '../features/explore/data/catalogue_repository.dart';
 import '../features/explore/data/filter_options_repository.dart';
 import '../features/favorites/data/favorites_repository.dart';
+import '../features/host_application/data/host_application_repository.dart';
 import '../features/listing/data/listing_repository.dart';
 import '../features/listing/presentation/favorite_edits.dart';
 import '../features/messages/data/chat_hub.dart';
@@ -100,6 +101,10 @@ class SignedInApp extends StatelessWidget {
         // three and lives as long as the session does.
         ChangeNotifierProvider<ProfileWriteLock>(
           create: (BuildContext context) => ProfileWriteLock(),
+        ),
+        Provider<HostApplicationRepository>(
+          create: (BuildContext context) =>
+              HostApplicationRepository(context.read<ApiClient>()),
         ),
         Provider<TripsRepository>(
           create: (BuildContext context) =>

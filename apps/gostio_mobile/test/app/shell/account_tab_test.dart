@@ -9,8 +9,11 @@ import '../../support/account_fixture.dart';
 import '../../support/auth_double.dart';
 import '../../support/favorite_fixture.dart';
 import '../../support/favorites_double.dart';
+import '../../support/host_application_double.dart';
+import '../../support/host_application_fixture.dart';
 import '../../support/notifications_double.dart';
 import '../../support/phone.dart';
+import '../../support/profile_double.dart';
 import '../../support/push_double.dart';
 import '../../support/review_fixture.dart';
 import '../../support/reviews_double.dart';
@@ -137,6 +140,58 @@ void main() {
 
     expect(find.text('Saved'), findsOneWidget);
     expect(find.text('Stone villa above Neum'), findsOneWidget);
+  });
+
+  // The one row in this client whose words come off a role. A guest is invited
+  // and a host is told where hosting is done, and both open the same screen.
+  testWidgets('the profile names hosting by what this account may do', (
+    WidgetTester tester,
+  ) async {
+    final Session session = signedOutSession()
+      ..begin(account: account(), token: 'the-token');
+
+    await tester.pumpWidget(
+      underTest(
+        const AccountTab(),
+        auth: AuthDouble(),
+        session: session,
+        notifications: NotificationsDouble(),
+        hostApplications: HostApplicationDouble(),
+      ),
+    );
+
+    await reach(tester, 'Become a host');
+    await tester.tap(find.text('Become a host'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Put your own place on Gostio'), findsOneWidget);
+  });
+
+  testWidgets('an account that hosts reads the row as what it already is', (
+    WidgetTester tester,
+  ) async {
+    final User hosting = account(roles: <String>['Guest', 'Host']);
+    final Session session = signedOutSession()
+      ..begin(account: hosting, token: 'the-token');
+
+    await tester.pumpWidget(
+      underTest(
+        const AccountTab(),
+        auth: AuthDouble(),
+        session: session,
+        notifications: NotificationsDouble(),
+        // The profile reads the account again as it opens, so the answer
+        // behind that read is the one the row is named from.
+        profile: ProfileDouble(holds: hosting),
+        hostApplications: HostApplicationDouble(holds: approved()),
+      ),
+    );
+
+    await reach(tester, 'Hosting on Gostio');
+    await tester.tap(find.text('Hosting on Gostio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('You host on Gostio'), findsOneWidget);
   });
 
   // A phone is handed between people. A registration left behind delivers this

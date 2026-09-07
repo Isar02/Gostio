@@ -10,6 +10,7 @@ import 'package:gostio_mobile/features/booking/data/booking_repository.dart';
 import 'package:gostio_mobile/features/explore/data/catalogue_repository.dart';
 import 'package:gostio_mobile/features/explore/data/filter_options_repository.dart';
 import 'package:gostio_mobile/features/favorites/data/favorites_repository.dart';
+import 'package:gostio_mobile/features/host_application/data/host_application_repository.dart';
 import 'package:gostio_mobile/features/listing/data/listing_repository.dart';
 import 'package:gostio_mobile/features/listing/presentation/favorite_edits.dart';
 import 'package:gostio_mobile/features/messages/data/chat_hub.dart';
@@ -67,6 +68,7 @@ Widget underTest(
   ProfileRepository? profile,
   PictureSource? pictures,
   ProfileWriteLock? profileWrites,
+  HostApplicationRepository? hostApplications,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
     // Every picture is fetched through the client, so a screen holding a card
@@ -99,6 +101,8 @@ Widget underTest(
     ChangeNotifierProvider<ProfileWriteLock>.value(
       value: profileWrites ?? ProfileWriteLock(),
     ),
+    if (hostApplications case final HostApplicationRepository repository)
+      Provider<HostApplicationRepository>.value(value: repository),
     if (reviews case final ReviewsRepository repository)
       Provider<ReviewsRepository>.value(value: repository),
     if (saved case final FavoritesRepository repository)
@@ -191,6 +195,7 @@ Future<GlobalKey<NavigatorState>> pushOnto(
   ProfileRepository? profile,
   PictureSource? pictures,
   ProfileWriteLock? profileWrites,
+  HostApplicationRepository? hostApplications,
 }) async {
   final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
 
@@ -216,6 +221,7 @@ Future<GlobalKey<NavigatorState>> pushOnto(
       profile: profile,
       pictures: pictures,
       profileWrites: profileWrites,
+      hostApplications: hostApplications,
     ),
   );
 

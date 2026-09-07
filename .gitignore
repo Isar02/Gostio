@@ -4,7 +4,8 @@
 doc/
 
 # ---------------------------------------------------------------------------
-# Configuration and secrets -- never commit
+# Plaintext configuration and secrets -- never commit
+# The encrypted .env-tajne.zip handover file is intentionally not matched.
 # ---------------------------------------------------------------------------
 .env
 .env.*

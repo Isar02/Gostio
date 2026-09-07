@@ -5,15 +5,23 @@ Windows client beside it.
 
 ## Current state
 
-Milestone C2 is complete and C3 is in review. The client signs in, registers, requests and spends a
+The client is complete. It signs in, registers, requests and spends a
 password-reset code, signs out, and validates the active session whenever the
-application returns to the foreground. Behind those screens sits the widget
-vocabulary the catalogue flow is built from: cards and listing cards, section
-headers, chips, rating stars, the loading, empty and error states, a bottom
-sheet and action bar, an appending paged list that says how much of the whole
-it holds, a date range picker over a month grid, and `ApiImage`. None of it
-is drawn by a screen yet, so C4, the five-tab shell, is both what composes it
-and what first puts it in front of a reader.
+application returns to the foreground. Signed in, five tabs — Explore, For you,
+Trips, Inbox and Profile — each hold their own stack over the shell: the two
+catalogues searched, filtered and paged; a listing with its gallery, facts,
+amenities, map, priced calendar and reviews; a booking against nights or a term
+and the hold it comes back with; paying through the card sheet; trips ahead and
+behind, cancelled with their refund quote; reviews written, changed and taken
+back; favourites; explained recommendations; threads over the chat hub; notices
+with the bell that polls for them and the news; the account with its picture,
+its details and its password; and the application to host.
+
+Every screen is composed from the widget vocabulary under `lib/core/widgets` —
+cards and listing cards, section headers, chips, rating stars, the loading,
+empty and error states, a bottom sheet and action bar, an appending paged list
+that says how much of the whole it holds, a date range picker over a month grid,
+and `ApiImage`. A screen that needs one of those takes it from there.
 
 ## The emulator
 
@@ -38,7 +46,6 @@ command line. `10.0.2.2` is the host machine as an emulator sees it.
 ```bash
 flutter pub get
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
-flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```
 
 Started without it, or with an address that is not absolute http or https, the
@@ -46,7 +53,40 @@ client says which value is missing and stops rather than failing on the first
 call.
 
 Plain HTTP reaches `10.0.2.2` and `localhost` and nothing else; any other
-address is called over HTTPS or not at all.
+address is called over HTTPS or not at all. That permission is in
+`android/app/src/main/res/xml/network_security_config.xml` rather than in the
+debug manifest, so the release build reaches the API the same way the debug one
+does.
+
+## Building for release
+
+```bash
+flutter clean
+flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5000
+```
+
+It writes one file, `build/app/outputs/flutter-apk/app-release.apk`, signed with
+the debug keys so it installs from a build alone. The build is not shrunk, so no
+plugin needs ProGuard rules kept beside it; turning minification on means
+carrying the payment package's rules with it, or the card sheet fails at runtime
+in a build that compiled cleanly.
+
+Android's own lint is off for the release build. It runs only there, and one
+payment plugin publishes lint rules that pull an artifact Google does not serve
+publicly, so `lintVitalAnalyzeRelease` cannot resolve its own classpath. This is
+a deliberate waiver, not equivalent coverage: it also removes Android checks
+over the manifest, XML resources and Gradle configuration. The Dart analyzer
+remains a separate gate over the Dart sources.
+
+A release build is not done until it has been installed and driven:
+
+```bash
+adb uninstall ba.gostio.mobile
+adb install -r build/app/outputs/flutter-apk/app-release.apk
+```
+
+The old version comes off first, because installing over it keeps the data of a
+build nobody is delivering.
 
 ## Before a commit
 

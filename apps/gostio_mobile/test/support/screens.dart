@@ -22,12 +22,17 @@ import 'package:gostio_mobile/features/notifications/data/push_registration.dart
 import 'package:gostio_mobile/features/notifications/presentation/unread_notices.dart';
 import 'package:gostio_mobile/features/payment/data/card_sheet.dart';
 import 'package:gostio_mobile/features/payment/data/payment_repository.dart';
+import 'package:gostio_mobile/features/profile/data/picture_source.dart';
+import 'package:gostio_mobile/features/profile/data/profile_repository.dart';
+import 'package:gostio_mobile/features/profile/presentation/profile_write_lock.dart';
 import 'package:gostio_mobile/features/recommendations/data/recommendations_repository.dart';
 import 'package:gostio_mobile/features/reviews/data/reviews_repository.dart';
 import 'package:gostio_mobile/features/trips/data/trips_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import 'picture_double.dart';
+import 'profile_double.dart';
 import 'push_double.dart';
 
 ApiClient testClient() => ApiClient(baseUrl: Uri.parse('http://10.0.2.2:5000'));
@@ -59,6 +64,9 @@ Widget underTest(
   MessagesRepository? messages,
   ChatHub? chat,
   FavoriteEdits? favorites,
+  ProfileRepository? profile,
+  PictureSource? pictures,
+  ProfileWriteLock? profileWrites,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
     // Every picture is fetched through the client, so a screen holding a card
@@ -83,6 +91,14 @@ Widget underTest(
       Provider<CardSheet>.value(value: sheet),
     if (trips case final TripsRepository repository)
       Provider<TripsRepository>.value(value: repository),
+    // The account is somebody signed in rather than a screen's subject, so
+    // what reads and writes it is composed wherever the profile can be
+    // reached. Nothing is behind either double until a test puts it there.
+    Provider<ProfileRepository>.value(value: profile ?? ProfileDouble()),
+    Provider<PictureSource>.value(value: pictures ?? PictureSourceDouble()),
+    ChangeNotifierProvider<ProfileWriteLock>.value(
+      value: profileWrites ?? ProfileWriteLock(),
+    ),
     if (reviews case final ReviewsRepository repository)
       Provider<ReviewsRepository>.value(value: repository),
     if (saved case final FavoritesRepository repository)
@@ -172,6 +188,9 @@ Future<GlobalKey<NavigatorState>> pushOnto(
   PushMessaging? messaging,
   ChatHub? chat,
   FavoriteEdits? favorites,
+  ProfileRepository? profile,
+  PictureSource? pictures,
+  ProfileWriteLock? profileWrites,
 }) async {
   final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
 
@@ -194,6 +213,9 @@ Future<GlobalKey<NavigatorState>> pushOnto(
       messaging: messaging,
       chat: chat,
       favorites: favorites,
+      profile: profile,
+      pictures: pictures,
+      profileWrites: profileWrites,
     ),
   );
 

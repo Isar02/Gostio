@@ -19,6 +19,13 @@ import '../../support/screens.dart';
 void main() {
   setUp(usePhoneScreen);
 
+  // The profile is longer than a phone, so what is being pressed is brought
+  // into view first — the same thing a thumb does before it presses anything.
+  Future<void> reach(WidgetTester tester, String label) async {
+    await tester.scrollUntilVisible(find.text(label), 200);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('signing out tells the server and then ends the session', (
     WidgetTester tester,
   ) async {
@@ -38,6 +45,7 @@ void main() {
     expect(find.text('Emina Begić'), findsOneWidget);
     expect(find.text('emina.b@gostio.test'), findsOneWidget);
 
+    await reach(tester, 'Sign out');
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
@@ -64,6 +72,7 @@ void main() {
       ),
     );
 
+    await reach(tester, 'Sign out');
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
@@ -93,6 +102,7 @@ void main() {
       ),
     );
 
+    await reach(tester, 'What you have written');
     await tester.tap(find.text('What you have written'));
     await tester.pumpAndSettle();
 
@@ -121,6 +131,7 @@ void main() {
       ),
     );
 
+    await reach(tester, 'Stays and experiences you have kept');
     await tester.tap(find.text('Stays and experiences you have kept'));
     await tester.pumpAndSettle();
 
@@ -155,6 +166,7 @@ void main() {
 
     expect(notifications.registered, <String>['device-token']);
 
+    await reach(tester, 'Sign out');
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
@@ -188,6 +200,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await reach(tester, 'Sign out');
       await tester.tap(find.text('Sign out'));
       await tester.pump();
       await notifications.reached;

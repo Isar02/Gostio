@@ -4,24 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_metrics.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/section_header.dart';
 import '../../features/auth/presentation/sign_out.dart';
 import '../../features/favorites/presentation/favorites_screen.dart';
 import '../../features/notifications/data/push_registration.dart';
+import '../../features/profile/presentation/profile_link.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/reviews/presentation/guest_reviews_screen.dart';
 import 'tab_app_bar.dart';
 
-// Who is signed in, what they have kept and written, and the way out. The
-// account's picture, its details and its password are the profile screen's,
-// and this tab holds the session seam until that screen exists.
+// Who is signed in, and everything an account reaches from itself. The profile
+// draws the account and writes it; where the other two rows lead is named here,
+// because the features they open are neither the profile's business nor each
+// other's.
 class AccountTab extends StatelessWidget {
   const AccountTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
     final User? account = context.select<Session, User?>(
       (Session session) => session.account,
     );
@@ -35,40 +34,17 @@ class AccountTab extends StatelessWidget {
     return Scaffold(
       appBar: const TabAppBar('Profile'),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: <Widget>[
-            const SectionHeader('Account'),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(account.fullName, style: text.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    account.email,
-                    style: text.bodyMedium?.copyWith(color: AppColors.inkMuted),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    account.username,
-                    style: text.bodySmall?.copyWith(color: AppColors.inkFaint),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const SectionHeader('Saved'),
-            _ProfileLink(
+        child: ProfileScreen(
+          account: account,
+          links: <ProfileLink>[
+            ProfileLink(
               title: 'Stays and experiences you have kept',
               message:
                   'Everything the heart on a listing has put aside, newest '
                   'first.',
               onTap: () => unawaited(FavoritesScreen.open(context)),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const SectionHeader('Reviews'),
-            _ProfileLink(
+            ProfileLink(
               title: 'What you have written',
               message:
                   'The ratings you left on the stays and experiences you have '
@@ -76,64 +52,17 @@ class AccountTab extends StatelessWidget {
               onTap: () =>
                   unawaited(GuestReviewsScreen.open(context, account.id)),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            OutlinedButton(
-              // A phone is handed between people, so this device gives up its
-              // registration on the way out — while this account's token is
-              // still what the call carries.
-              onPressed: () => unawaited(
-                signOut(
-                  context,
-                  beforeTokenEnds: context.read<PushRegistration>().forget,
-                ),
-              ),
-              child: const Text('Sign out'),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// One place this tab leads. The arrow is the only thing on it that is not
-// words, because a row of a profile is read rather than scanned.
-class _ProfileLink extends StatelessWidget {
-  const _ProfileLink({
-    required this.title,
-    required this.message,
-    required this.onTap,
-  });
-
-  final String title;
-  final String message;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
-
-    return AppCard(
-      onTap: onTap,
-      semanticLabel: '$title. $message',
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: text.titleSmall),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  message,
-                  style: text.bodySmall?.copyWith(color: AppColors.inkMuted),
-                ),
-              ],
+          // A phone is handed between people, so this device gives up its
+          // registration on the way out — while this account's token is still
+          // what the call carries.
+          onSignOut: () => unawaited(
+            signOut(
+              context,
+              beforeTokenEnds: context.read<PushRegistration>().forget,
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.inkFaint),
-        ],
+        ),
       ),
     );
   }

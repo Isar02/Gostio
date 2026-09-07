@@ -25,6 +25,10 @@ import '../features/notifications/presentation/unread_notices.dart';
 import '../features/payment/data/card_sheet.dart';
 import '../features/payment/data/payment_repository.dart';
 import '../features/payment/data/stripe_card_sheet.dart';
+import '../features/profile/data/image_picker_pictures.dart';
+import '../features/profile/data/picture_source.dart';
+import '../features/profile/data/profile_repository.dart';
+import '../features/profile/presentation/profile_write_lock.dart';
 import '../features/recommendations/data/recommendations_repository.dart';
 import '../features/reviews/data/reviews_repository.dart';
 import '../features/trips/data/trips_repository.dart';
@@ -80,6 +84,22 @@ class SignedInApp extends StatelessWidget {
         // test draws paying without a processor behind it.
         Provider<CardSheet>(
           create: (BuildContext context) => const StripeCardSheet(),
+        ),
+        Provider<ProfileRepository>(
+          create: (BuildContext context) =>
+              ProfileRepository(context.read<ApiClient>()),
+        ),
+        // The camera and the gallery are composed here like a repository,
+        // because that is what they are to this client: the one thing on it
+        // that reads a file off the phone.
+        Provider<PictureSource>(
+          create: (BuildContext context) => ImagePickerPictures(),
+        ),
+        // The three writes an account makes about itself are on three routes
+        // rather than on one screen, so what holds them apart is above all
+        // three and lives as long as the session does.
+        ChangeNotifierProvider<ProfileWriteLock>(
+          create: (BuildContext context) => ProfileWriteLock(),
         ),
         Provider<TripsRepository>(
           create: (BuildContext context) =>

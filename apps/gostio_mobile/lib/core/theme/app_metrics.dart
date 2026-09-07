@@ -27,6 +27,11 @@ abstract final class AppSizes {
   static const double focusRing = 1.5;
   static const double stroke = 2;
 
+  // A face beside a name, and the same face where it is the subject rather
+  // than a mark: the profile is the one screen a picture is looked at on.
+  static const double avatar = 40;
+  static const double avatarLarge = 96;
+
   static const double icon = 22;
   static const double iconSmall = 18;
   static const double star = 16;

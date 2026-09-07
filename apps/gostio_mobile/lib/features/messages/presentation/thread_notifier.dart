@@ -1,22 +1,41 @@
+import 'dart:async';
+
 import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/state/live_notifier.dart';
+import '../data/chat_hub.dart';
 import '../data/conversations_repository.dart';
 import '../data/messages_repository.dart';
+import 'thread_liveness.dart';
 
 // One thread being read: the lines in it, newest first as the API answers
 // them, and the one being written. Earlier lines are a page further back
 // rather than a page instead of this one, so the whole thread stays on screen
 // once it has been read.
+//
+// What arrives while the thread is open comes over the hub. The socket is held
+// only while the application is in front of the reader: it is given up when the
+// phone goes into a pocket and taken again when it comes back, and a thread
+// with no socket reads its newest page on a timer instead. Neither state is
+// announced, because both are the thread up to date within seconds and a
+// sentence about the connection is not what the reader came to read.
 class ThreadNotifier extends LiveNotifier {
   ThreadNotifier(
     this._messages,
     this._conversations,
+    ChatHub hub,
     this._thread, {
     required this.callerId,
     this.onThreadChanged,
     this.onUnread,
-  });
+  }) {
+    _liveness = ThreadLiveness(
+      hub,
+      conversationId: _thread.id,
+      onEvent: _heard,
+      onRefresh: _refreshQuietly,
+    );
+  }
 
   final MessagesRepository _messages;
   final ConversationsRepository _conversations;
@@ -29,12 +48,15 @@ class ThreadNotifier extends LiveNotifier {
 
   // What the account has waiting across every thread, which marking this one
   // read answers on the way.
-  final void Function(int unread)? onUnread;
+  final Future<void> Function(Future<int> unread)? onUnread;
 
   final List<Message> _lines = <Message>[];
   final Set<int> _held = <int>{};
 
+  late final ThreadLiveness _liveness;
+
   Conversation _thread;
+  bool _isRefreshing = false;
   bool _isLoading = true;
   bool _isReadingEarlier = false;
   bool _isSending = false;
@@ -71,6 +93,8 @@ class ThreadNotifier extends LiveNotifier {
   String? get bodyRefusal => _sendFailure?.firstMessageFor('body');
 
   Future<void> open() async {
+    _liveness.start();
+
     await _read(page: 1);
 
     // Nothing is written where nothing is waiting: a thread the reader has
@@ -127,26 +151,28 @@ class ThreadNotifier extends LiveNotifier {
     return true;
   }
 
+  void bodyChanged() {
+    if (_sendFailure == null || isDisposed) {
+      return;
+    }
+
+    _sendFailure = null;
+    publish();
+  }
+
   Future<void> _read({required int page}) async {
     _isLoading = _lines.isEmpty;
     _failure = null;
     publish();
 
     try {
-      final PagedResult<Message> read = await _messages.search(
-        conversationId: _thread.id,
-        page: page,
-        pageSize: PagedResult.defaultPageSize,
-      );
+      final PagedResult<Message> read = await _fetchPage(page);
 
       if (isDisposed) {
         return;
       }
 
-      for (final Message line in read.items) {
-        _hold(line);
-      }
-
+      _merge(read);
       _totalCount = read.totalCount;
       _pagesRead = page > _pagesRead ? page : _pagesRead;
     } on ApiException catch (refused) {
@@ -159,6 +185,21 @@ class ThreadNotifier extends LiveNotifier {
 
     _isLoading = false;
     publish();
+  }
+
+  Future<PagedResult<Message>> _fetchPage(int page) => _messages.search(
+    conversationId: _thread.id,
+    page: page,
+    pageSize: PagedResult.defaultPageSize,
+  );
+
+  bool _merge(PagedResult<Message> page) {
+    var arrived = false;
+    for (final Message line in page.items) {
+      arrived = _hold(line) || arrived;
+    }
+
+    return arrived;
   }
 
   // Newest first, and each line filed once however many times it arrives: a
@@ -198,7 +239,19 @@ class ThreadNotifier extends LiveNotifier {
     _readAgain = false;
 
     try {
-      onUnread?.call(await _messages.markRead(_thread.id));
+      // The write is started here and the count is handed the answer to wait
+      // on, so it registers the write when it begins rather than when it lands
+      // — a poll that started later may already have seen more than this did.
+      // It is started outside the call because inside one that may be null it
+      // would be short-circuited away, and a thread nobody counts for would
+      // never be marked read at all.
+      final Future<int> marking = _messages.markRead(_thread.id);
+      final Future<void> Function(Future<int>)? report = onUnread;
+      if (report == null) {
+        await marking;
+      } else {
+        await report(marking);
+      }
     } on ApiException {
       // The count stands as it was. The row is still read back afterwards,
       // because a line just sent has changed it whether or not the read mark
@@ -232,7 +285,68 @@ class ThreadNotifier extends LiveNotifier {
     }
   }
 
+  void _heard(ChatEvent event) {
+    switch (event) {
+      case ChatJoined():
+        // A connection made after something was said would never be told about
+        // it, so the newest page is read again rather than trusted.
+        unawaited(_refreshQuietly());
+      case ChatDropped():
+        break;
+      case ChatSaid(:final Message message):
+        if (message.conversationId != _thread.id || !_hold(message)) {
+          return;
+        }
+
+        publish();
+
+        if (message.senderUserId != callerId) {
+          unawaited(_markRead());
+        }
+    }
+  }
+
+  // Nobody asked for this read, so nobody is told it did not happen and the
+  // thread is only redrawn where something actually arrived.
+  Future<void> _refreshQuietly() async {
+    if (_isRefreshing || _isLoading) {
+      return;
+    }
+
+    _isRefreshing = true;
+
+    try {
+      final PagedResult<Message> read = await _fetchPage(1);
+
+      if (isDisposed) {
+        return;
+      }
+
+      final bool arrived = _merge(read);
+
+      if (read.totalCount > _totalCount) {
+        _totalCount = read.totalCount;
+      }
+
+      if (arrived) {
+        publish();
+        await _markRead();
+      }
+    } on ApiException {
+      return;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
   static bool _isAfter(Message one, Message other) =>
       one.sentAt.isAfter(other.sentAt) ||
       (one.sentAt == other.sentAt && one.id > other.id);
+
+  @override
+  void dispose() {
+    _liveness.dispose();
+
+    super.dispose();
+  }
 }

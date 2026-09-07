@@ -14,6 +14,7 @@ class MessageComposer extends StatefulWidget {
     required this.body,
     required this.isSending,
     required this.onSend,
+    required this.onChanged,
     this.refusal,
     super.key,
   });
@@ -26,6 +27,7 @@ class MessageComposer extends StatefulWidget {
   final bool isSending;
   final String? refusal;
   final Future<bool> Function(String body) onSend;
+  final VoidCallback onChanged;
 
   @override
   State<MessageComposer> createState() => _MessageComposerState();
@@ -70,6 +72,7 @@ class _MessageComposerState extends State<MessageComposer> {
                       maxLines: 4,
                       keyboardType: TextInputType.multiline,
                       textCapitalization: TextCapitalization.sentences,
+                      onChanged: _changed,
                       style: Theme.of(context).textTheme.bodyMedium,
                       decoration: InputDecoration(
                         hintText: 'Write a message',
@@ -85,6 +88,14 @@ class _MessageComposerState extends State<MessageComposer> {
         ),
       ),
     );
+  }
+
+  void _changed(String _) {
+    if (_refusal != null) {
+      setState(() => _refusal = null);
+    }
+
+    widget.onChanged();
   }
 
   String _counter(String written) {

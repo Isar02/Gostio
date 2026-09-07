@@ -27,6 +27,7 @@ void main() {
         conversations:
             conversations ?? ConversationsDouble(rows: <Conversation>[row]),
         messages: messages,
+        chat: ChatHubDouble(),
       ),
     );
     await tester.pumpAndSettle();
@@ -170,6 +171,44 @@ void main() {
     expect(find.text('A message needs something in it.'), findsOneWidget);
   });
 
+  testWidgets('a local body refusal clears when the body is corrected', (
+    WidgetTester tester,
+  ) async {
+    await openThread(
+      tester,
+      messages: MessagesDouble(lines: <Message>[line()]),
+    );
+    await write(tester, '   ');
+    await pressSend(tester);
+
+    await write(tester, 'A real question.');
+
+    expect(find.text('A message needs something in it.'), findsNothing);
+  });
+
+  testWidgets('a server body refusal clears when the body is corrected', (
+    WidgetTester tester,
+  ) async {
+    await openThread(
+      tester,
+      messages: MessagesDouble(
+        lines: <Message>[line()],
+        sendFailure: const ApiException(
+          message: 'The message was refused.',
+          errors: <String, List<String>>{
+            'Body': <String>['Use fewer words.'],
+          },
+        ),
+      ),
+    );
+    await write(tester, 'A first question.');
+    await pressSend(tester);
+
+    await write(tester, 'Shorter.');
+
+    expect(find.text('Use fewer words.'), findsNothing);
+  });
+
   testWidgets('a refused send says so and keeps what was written', (
     WidgetTester tester,
   ) async {
@@ -223,6 +262,7 @@ void main() {
       auth: AuthDouble(),
       conversations: ConversationsDouble(rows: <Conversation>[thread()]),
       messages: MessagesDouble(lines: <Message>[line()]),
+      chat: ChatHubDouble(),
     );
 
     await write(tester, 'Half of a question');

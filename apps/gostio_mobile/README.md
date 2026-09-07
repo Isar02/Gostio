@@ -84,9 +84,12 @@ The contract, the session and the brand come from `packages/gostio_core`,
 through the one library it publishes.
 
 Dependencies point one way: `presentation` reaches `data`, `data` reaches
-`core`, and nothing reaches back. A feature may import another feature's `data`
-and never its `presentation`. `test/architecture` fails the build if any of that
-stops being true.
+`core`, and nothing reaches back. A feature may import another feature's `data`.
+It may compose another feature's `presentation` only when that feature is part
+of the explicit shared-feature set in `test/architecture/layering_test.dart` —
+currently `listing`, `booking`, `payment` and `messages`. The architecture tests
+fail the build if a dependency points elsewhere or a new exception is not
+recorded there deliberately.
 
 ## Identity
 

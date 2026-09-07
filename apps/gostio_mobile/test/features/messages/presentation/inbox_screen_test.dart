@@ -24,6 +24,7 @@ void main() {
         auth: AuthDouble(),
         conversations: conversations,
         messages: messages ?? MessagesDouble(),
+        chat: ChatHubDouble(),
       ),
     );
     await tester.pumpAndSettle();
@@ -118,6 +119,23 @@ void main() {
 
     expect(find.text('Gostio support'), findsOneWidget);
     expect(find.text('Help with your account'), findsOneWidget);
+  });
+
+  // Support is one entry rather than a thread the reader has to find: above
+  // the list where there is one, and inside the empty state where there is not.
+  testWidgets('support is offered whether or not there are threads', (
+    WidgetTester tester,
+  ) async {
+    await openInbox(
+      tester,
+      conversations: ConversationsDouble(rows: <Conversation>[thread()]),
+    );
+
+    expect(find.text('Ask Gostio support'), findsOneWidget);
+
+    await openInbox(tester, conversations: ConversationsDouble());
+
+    expect(find.text('Ask Gostio support'), findsOneWidget);
   });
 
   testWidgets('an inbox with nothing in it says what opens there', (

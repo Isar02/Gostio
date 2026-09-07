@@ -51,9 +51,14 @@ abstract class UnreadCount extends LiveNotifier with WidgetsBindingObserver {
     }
   }
 
-  // What a write has just answered. Marking a thread read costs the server the
-  // same figure, so it is taken from there rather than asked for again.
-  void report(int unread) => _write(++_request, unread);
+  // A write is registered when it starts, not when its answer happens to
+  // arrive. Otherwise an older, slow mark-read answer could overwrite a poll
+  // that began later and already saw a newly arrived message.
+  Future<void> report(Future<int> answer) async {
+    final int request = ++_request;
+
+    _write(request, await answer);
+  }
 
   // Only the newest answer may write: one still in flight when a later one is
   // issued is stale by the time it lands.

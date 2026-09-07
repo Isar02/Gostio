@@ -10,6 +10,8 @@ import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../booking/presentation/booking_summary.dart';
 import '../../booking/presentation/hold_countdown.dart';
+import '../../messages/data/thread_subject.dart';
+import '../../messages/presentation/open_thread_button.dart';
 import '../../payment/data/card_sheet.dart';
 import '../../payment/data/payment_repository.dart';
 import '../../payment/presentation/pay_bar.dart';
@@ -112,6 +114,14 @@ class _Trip extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             BookingSummary(booking, standing: _standing(payment)),
+            const SizedBox(height: AppSpacing.xl),
+            // The thread about this booking, which is the same one the host
+            // reaches from their side and the one the server answers again
+            // rather than opening a second.
+            OpenThreadButton(
+              subject: AboutBooking(booking.id),
+              label: 'Message the host',
+            ),
             // A booking is reviewed once it is behind the guest, which is the
             // server's rule and is mirrored rather than reproduced: what it
             // decides is still the server's, and a section that would only

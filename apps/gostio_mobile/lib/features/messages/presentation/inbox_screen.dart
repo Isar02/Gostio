@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/paged_list.dart';
 import '../data/conversations_repository.dart';
+import '../data/thread_subject.dart';
 import 'conversation_card.dart';
 import 'inbox_notifier.dart';
+import 'open_thread_button.dart';
 import 'thread_screen.dart';
 
 // Every thread this account is in, the one that was last spoken in first. A
@@ -53,8 +56,13 @@ class _Inbox extends StatelessWidget {
       onRefresh: inbox.reload,
       emptyTitle: 'No messages yet',
       emptyMessage:
-          'Threads with a host about a stay, an experience or a booking are '
-          'read here, and so is anything you ask support.',
+          'Write to a host from a listing or a booking and the thread opens '
+          'here. Anything else is a question for support.',
+      // Support is one entry rather than a thread the reader has to find:
+      // above the list where there is one, and inside the empty state where
+      // there is not. The list draws whichever of the two it is showing.
+      emptyAction: const _AskSupport(),
+      header: const _AskSupport(),
       itemBuilder: (BuildContext context, Conversation thread) =>
           ConversationCard(
             thread,
@@ -68,6 +76,22 @@ class _Inbox extends StatelessWidget {
               ),
             ),
           ),
+    );
+  }
+}
+
+class _AskSupport extends StatelessWidget {
+  const _AskSupport();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+      child: OpenThreadButton(
+        subject: WithSupport(),
+        label: 'Ask Gostio support',
+        icon: Icons.support_agent_rounded,
+      ),
     );
   }
 }

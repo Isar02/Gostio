@@ -11,6 +11,7 @@ import 'package:gostio_mobile/features/explore/data/filter_options_repository.da
 import 'package:gostio_mobile/features/favorites/data/favorites_repository.dart';
 import 'package:gostio_mobile/features/listing/data/listing_repository.dart';
 import 'package:gostio_mobile/features/listing/presentation/favorite_edits.dart';
+import 'package:gostio_mobile/features/messages/data/chat_hub.dart';
 import 'package:gostio_mobile/features/messages/data/conversations_repository.dart';
 import 'package:gostio_mobile/features/messages/data/messages_repository.dart';
 import 'package:gostio_mobile/features/messages/presentation/unread_messages.dart';
@@ -49,6 +50,7 @@ Widget underTest(
   RecommendationsRepository? suggestions,
   ConversationsRepository? conversations,
   MessagesRepository? messages,
+  ChatHub? chat,
   FavoriteEdits? favorites,
 }) => MultiProvider(
   providers: <SingleChildWidget>[
@@ -99,6 +101,9 @@ Widget underTest(
     ],
     if (conversations case final ConversationsRepository repository)
       Provider<ConversationsRepository>.value(value: repository),
+    // A thread listens through the hub, so one is composed wherever a thread
+    // can be opened. Nothing else in the client reaches for it.
+    if (chat case final ChatHub hub) Provider<ChatHub>.value(value: hub),
     // The count over the inbox tab is created by the provider for the same
     // reason the bell's is: what created it is what ends its poll when the
     // tree goes.
@@ -134,6 +139,7 @@ Future<GlobalKey<NavigatorState>> pushOnto(
   FavoritesRepository? saved,
   ConversationsRepository? conversations,
   MessagesRepository? messages,
+  ChatHub? chat,
   FavoriteEdits? favorites,
 }) async {
   final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
@@ -153,6 +159,7 @@ Future<GlobalKey<NavigatorState>> pushOnto(
       saved: saved,
       conversations: conversations,
       messages: messages,
+      chat: chat,
       favorites: favorites,
     ),
   );

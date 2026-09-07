@@ -110,7 +110,19 @@ void main() {
 // Paying is drawn under the booking it settles, and later under the trip that
 // reaches the same booking a second time. What it knows about is a charge and
 // the row that records one, which is neither of those screens' business.
-const Set<String> _shared = <String>{'listing', 'booking', 'payment'};
+//
+// Messaging is the way into a thread, and a reader asks for one where the
+// question comes up: under the listing whose host it is with, under the booking
+// it is about, and over the inbox for support. Three screens in three features
+// draw the same control, and every one of them opens a thread by naming what it
+// is about — so it is composed rather than handed down through the four
+// features that push a listing.
+const Set<String> _shared = <String>{
+  'listing',
+  'booking',
+  'payment',
+  'messages',
+};
 
 String? _featureOf(String path) {
   if (!path.startsWith('features/')) {

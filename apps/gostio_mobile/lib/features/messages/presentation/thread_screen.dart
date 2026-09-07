@@ -8,6 +8,7 @@ import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_notice.dart';
 import '../../../core/widgets/discard_guard.dart';
 import '../../../core/widgets/screen_states.dart';
+import '../data/chat_hub.dart';
 import '../data/conversations_repository.dart';
 import '../data/messages_repository.dart';
 import 'conversation_look.dart';
@@ -33,13 +34,21 @@ class ThreadScreen extends StatelessWidget {
     Conversation thread, {
     required int callerId,
     ValueChanged<Conversation>? onThreadChanged,
-  }) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (BuildContext context) => ThreadScreen(
-        thread,
-        callerId: callerId,
-        onThreadChanged: onThreadChanged,
-      ),
+  }) => Navigator.of(
+    context,
+  ).push(route(thread, callerId: callerId, onThreadChanged: onThreadChanged));
+
+  // The route apart from the push, for a caller holding a navigator rather
+  // than a context it may still use.
+  static Route<void> route(
+    Conversation thread, {
+    required int callerId,
+    ValueChanged<Conversation>? onThreadChanged,
+  }) => MaterialPageRoute<void>(
+    builder: (BuildContext context) => ThreadScreen(
+      thread,
+      callerId: callerId,
+      onThreadChanged: onThreadChanged,
     ),
   );
 
@@ -56,6 +65,7 @@ class ThreadScreen extends StatelessWidget {
       create: (BuildContext context) => ThreadNotifier(
         context.read<MessagesRepository>(),
         context.read<ConversationsRepository>(),
+        context.read<ChatHub>(),
         thread,
         callerId: callerId,
         onThreadChanged: onThreadChanged,
@@ -133,6 +143,7 @@ class _ThreadState extends State<_Thread> {
                       isSending: thread.isSending,
                       refusal: thread.bodyRefusal,
                       onSend: thread.send,
+                      onChanged: thread.bodyChanged,
                     ),
                   ],
                 ),

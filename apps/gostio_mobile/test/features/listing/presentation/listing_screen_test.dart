@@ -112,6 +112,27 @@ void main() {
     expect(find.text('Your dates'), findsOneWidget);
   });
 
+  // A question the listing does not answer is a question for whoever lets it.
+  testWidgets('a listing offers a thread with the host who lets it', (
+    WidgetTester tester,
+  ) async {
+    await open(tester, ListingDouble());
+    await scrollTo(tester, find.text('Message Amir Hodžić'));
+
+    expect(find.text('Message Amir Hodžić'), findsOneWidget);
+  });
+
+  testWidgets('a host is not offered a thread with themselves', (
+    WidgetTester tester,
+  ) async {
+    final Session session = signedOutSession()
+      ..begin(account: account(id: 7), token: 'the-token');
+
+    await open(tester, ListingDouble(), session: session);
+
+    expect(find.textContaining('Message '), findsNothing);
+  });
+
   // The server refuses a host who books their own listing, and a button that
   // has to be pressed to learn so is a button that lied.
   testWidgets('a host is not offered a booking on their own listing', (

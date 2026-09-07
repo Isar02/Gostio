@@ -1,9 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_mobile/core/state/unread_count.dart';
 import 'package:gostio_mobile/features/messages/presentation/unread_messages.dart';
 
 import '../../../support/messages_double.dart';
 import '../../../support/phone.dart';
+
+class _DeferredCounts extends MessagesDouble {
+  final List<Completer<int>> answers = <Completer<int>>[];
+
+  @override
+  Future<int> unreadCount() {
+    countCalls++;
+    final Completer<int> answer = Completer<int>();
+    answers.add(answer);
+
+    return answer.future;
+  }
+}
 
 // The count is built inside a widget test because its poll runs on the clock
 // the test binding controls, and it is ended inside the test body because the
@@ -33,10 +48,33 @@ void main() {
     final UnreadMessages waiting = UnreadMessages(MessagesDouble(unread: 6));
 
     await tester.pump();
-    waiting.report(2);
+    await waiting.report(Future<int>.value(2));
     await tester.pump(UnreadCount.pollInterval - const Duration(seconds: 1));
 
     expect(waiting.unread, 2);
+
+    waiting.dispose();
+  });
+
+  testWidgets('a later poll is not overwritten by an older write answer', (
+    WidgetTester tester,
+  ) async {
+    final _DeferredCounts messages = _DeferredCounts();
+    final UnreadMessages waiting = UnreadMessages(messages);
+
+    messages.answers.single.complete(6);
+    await tester.pump();
+
+    final Completer<int> write = Completer<int>();
+    final Future<void> reporting = waiting.report(write.future);
+    await tester.pump(UnreadCount.pollInterval);
+    messages.answers.last.complete(4);
+    await tester.pump();
+
+    write.complete(2);
+    await reporting;
+
+    expect(waiting.unread, 4);
 
     waiting.dispose();
   });

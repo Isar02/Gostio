@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:gostio_core/gostio_core.dart';
+import 'package:gostio_mobile/features/messages/data/chat_hub.dart';
 import 'package:gostio_mobile/features/messages/data/conversations_repository.dart';
 import 'package:gostio_mobile/features/messages/data/messages_repository.dart';
+import 'package:gostio_mobile/features/messages/data/thread_subject.dart';
 
 import 'conversation_fixture.dart';
 
@@ -18,8 +20,14 @@ class ConversationsDouble implements ConversationsRepository {
   // in. Left unset, the row already in the list is answered again.
   Conversation? readsBack;
 
+  // What the server answers when a thread is opened. Left unset, a thread the
+  // subject can be recognised from is answered.
+  Conversation? opens;
+  ApiException? refusesToOpen;
+
   final List<int> pagesAsked = <int>[];
   final List<int> threadsRead = <int>[];
+  final List<ThreadSubject> opened = <ThreadSubject>[];
 
   @override
   Future<PagedResult<Conversation>> search({
@@ -55,6 +63,77 @@ class ConversationsDouble implements ConversationsRepository {
       (Conversation held) => held.id == conversationId,
       orElse: () => thread(id: conversationId),
     );
+  }
+
+  @override
+  Future<Conversation> open(ThreadSubject subject) async {
+    opened.add(subject);
+
+    if (refusesToOpen case final ApiException refused) {
+      throw refused;
+    }
+
+    return opens ??
+        switch (subject) {
+          WithHost() => thread(id: 51),
+          AboutBooking() => thread(id: 52),
+          WithSupport() => thread(
+            id: 53,
+            type: ConversationType.support,
+            reservationId: null,
+            listingTitle: null,
+            participants: <ConversationParticipant>[party()],
+          ),
+        };
+  }
+}
+
+// The hub, with nothing under it. A test pushes what a socket would have
+// delivered and the thread cannot tell the difference.
+class ChatHubDouble implements ChatHub {
+  final List<int> watched = <int>[];
+  int cancels = 0;
+  bool wasClosed = false;
+
+  StreamController<ChatEvent>? _events;
+
+  bool get isWatching => _events != null;
+
+  void say(ChatEvent event) => _events?.add(event);
+
+  Future<void> endWatch() async {
+    final StreamController<ChatEvent>? events = _events;
+    if (events == null) {
+      return;
+    }
+
+    await events.close();
+    if (identical(_events, events)) {
+      _events = null;
+    }
+  }
+
+  @override
+  Stream<ChatEvent> watch(int conversationId) {
+    watched.add(conversationId);
+
+    final StreamController<ChatEvent> events = StreamController<ChatEvent>();
+    _events = events;
+    events.onCancel = () {
+      cancels++;
+      if (identical(_events, events)) {
+        _events = null;
+      }
+    };
+
+    return events.stream;
+  }
+
+  @override
+  Future<void> close() async {
+    wasClosed = true;
+    await _events?.close();
+    _events = null;
   }
 }
 

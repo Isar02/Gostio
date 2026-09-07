@@ -3,14 +3,17 @@ import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
+import '../core/config/app_settings.dart';
 import '../features/booking/data/booking_repository.dart';
 import '../features/explore/data/catalogue_repository.dart';
 import '../features/explore/data/filter_options_repository.dart';
 import '../features/favorites/data/favorites_repository.dart';
 import '../features/listing/data/listing_repository.dart';
 import '../features/listing/presentation/favorite_edits.dart';
+import '../features/messages/data/chat_hub.dart';
 import '../features/messages/data/conversations_repository.dart';
 import '../features/messages/data/messages_repository.dart';
+import '../features/messages/data/signalr_chat_hub.dart';
 import '../features/messages/presentation/unread_messages.dart';
 import '../features/notifications/data/notifications_repository.dart';
 import '../features/notifications/presentation/unread_notices.dart';
@@ -100,6 +103,15 @@ class SignedInApp extends StatelessWidget {
         Provider<MessagesRepository>(
           create: (BuildContext context) =>
               MessagesRepository(context.read<ApiClient>()),
+        ),
+        // The one socket this client opens, made with the session and given up
+        // with it: a thread listens through it and nothing else does.
+        Provider<ChatHub>(
+          create: (BuildContext context) => SignalRChatHub(
+            context.read<ApiClient>(),
+            baseUrl: context.read<AppSettings>().apiBaseUrl,
+          ),
+          dispose: (BuildContext context, ChatHub hub) => hub.close(),
         ),
         // What is waiting in the inbox is drawn over the tab from every screen
         // in the client, so it is counted here beside the bell's count and for

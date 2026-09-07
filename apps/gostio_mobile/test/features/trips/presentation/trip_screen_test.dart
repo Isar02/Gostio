@@ -5,6 +5,7 @@ import 'package:gostio_mobile/features/trips/presentation/trip_screen.dart';
 
 import '../../../support/auth_double.dart';
 import '../../../support/booking_fixture.dart';
+import '../../../support/messages_double.dart';
 import '../../../support/payment_double.dart';
 import '../../../support/phone.dart';
 import '../../../support/screens.dart';
@@ -25,6 +26,9 @@ void main() {
     payments: PaymentDouble(),
     cardSheet: CardSheetDouble(),
     trips: trips ?? TripsDouble(),
+    conversations: ConversationsDouble(),
+    messages: MessagesDouble(),
+    chat: ChatHubDouble(),
   );
 
   Future<void> openTheSheet(WidgetTester tester) async {
@@ -40,6 +44,16 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Cancel the booking'));
     await tester.pumpAndSettle();
   }
+
+  // The thread about this booking is the same one the host reaches from their
+  // side, and the server answers it again rather than opening a second.
+  testWidgets('a trip offers a thread about the booking', (
+    WidgetTester tester,
+  ) async {
+    await open(tester, stayBooking());
+
+    expect(find.text('Message the host'), findsOneWidget);
+  });
 
   testWidgets('a trip says where it stands, what it is for and what it cost', (
     WidgetTester tester,

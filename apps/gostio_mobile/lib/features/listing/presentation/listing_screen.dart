@@ -6,6 +6,8 @@ import 'package:provider/single_child_widget.dart';
 import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/screen_states.dart';
 import '../../booking/presentation/book_bar.dart';
+import '../../messages/data/thread_subject.dart';
+import '../../messages/presentation/open_thread_button.dart';
 import '../data/listing_detail.dart';
 import '../data/listing_repository.dart';
 import 'favorite_edits.dart';
@@ -131,11 +133,33 @@ class _Sections extends StatelessWidget {
         if (overview.amenities.isNotEmpty)
           _Block(child: ListingAmenities(overview.amenities)),
         _Block(child: ListingPlace(detail)),
+        _Block(child: _AskTheHost(detail)),
         if (detail case StayDetail(:final Accommodation stay))
           _Block(child: ListingAvailability(stay.id)),
         _Block(child: ListingReviews(detail)),
       ],
     );
+  }
+}
+
+// A question the listing does not answer. A host is not offered their own
+// listing: the server refuses a thread with nobody else in it, and a button
+// that has to be pressed to learn so is a button that lied.
+class _AskTheHost extends StatelessWidget {
+  const _AskTheHost(this.detail);
+
+  final ListingDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isOwn = context.watch<Session>().account?.id == detail.hostId;
+
+    return isOwn
+        ? const SizedBox.shrink()
+        : OpenThreadButton(
+            subject: WithHost(detail.hostId),
+            label: 'Message ${detail.hostName}',
+          );
   }
 }
 

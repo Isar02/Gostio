@@ -513,18 +513,23 @@ internal static class BookingSeed
 
         var reservation = booking.Reservation;
         var opened = reservation.CreatedAt.AddMinutes(20);
+        DateTime? processedAt = status == PaymentStatus.Pending
+            ? null
+            : opened.AddMinutes(40);
 
         return new Payment
         {
             Reservation = reservation,
-            StripePaymentIntentId = $"pi_seed_{sequence:000}",
+            // The processor names a charge that reached it. A seeded charge still
+            // waiting never did, and a name invented for it would send the client
+            // that pays for it to read a charge the processor has never heard of;
+            // with none, that client opens the real one.
+            StripePaymentIntentId = processedAt is null ? null : $"pi_seed_{sequence:000}",
             Status = status,
             Amount = reservation.TotalPrice,
             Currency = currency,
             CreatedAt = opened,
-            ProcessedAt = status == PaymentStatus.Pending
-                ? null
-                : opened.AddMinutes(40),
+            ProcessedAt = processedAt,
             FailureReason = status == PaymentStatus.Cancelled
                 ? "The hold expired before the card was charged."
                 : null,

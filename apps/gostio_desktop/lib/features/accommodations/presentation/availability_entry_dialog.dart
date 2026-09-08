@@ -113,7 +113,7 @@ class _AvailabilityEntryDialogState extends State<AvailabilityEntryDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isSaving ? null : _submit,
+          onPressed: _isSaving || _isRefused ? null : _submit,
           child: Text(_isSaving ? 'Adding' : 'Add entry'),
         ),
       ],
@@ -124,13 +124,24 @@ class _AvailabilityEntryDialogState extends State<AvailabilityEntryDialog> {
       '${AvailabilityWords.nights(widget.nights)} · '
       '${AvailabilityWords.span(widget.from, widget.to)}';
 
-  // An entry says what the calendar offers from now on, and a booking already
-  // made was paid at the price it was made at and keeps its place either way.
+  // Repricing a booked night is allowed and closing it is not, so this refuses
+  // one choice rather than the days the dialog was opened over.
+  bool get _isRefused => !_isOpen && widget.bookedNights > 0;
+
+  // The server's own refusal, said before the write.
+  static const String blockedRefusal =
+      'Closing them cancels those bookings, and a cancellation is made through '
+      'the reservation.';
+
+  // A booking already made keeps its price and its place.
+  static const String keptEitherWay =
+      'This entry does not move or cancel a booking that already stands.';
+
   String get _booked {
     final int booked = widget.bookedNights;
 
     return '$booked of these nights ${booked == 1 ? 'is' : 'are'} booked. '
-        'This entry does not move or cancel a booking that already stands.';
+        '${_isRefused ? blockedRefusal : keptEitherWay}';
   }
 
   // The dialog stays open when the server refuses, because the fields it is

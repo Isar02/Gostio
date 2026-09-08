@@ -27,6 +27,7 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
   bool _itemsBelongToQuery = false;
   int? _refusedPage;
   bool _refusedSharesItems = false;
+  bool _refusedAppending = false;
   bool _activeLoadSharesItems = false;
   TQuery _query;
   ApiException? _failure;
@@ -84,16 +85,33 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
 
     return refused == null
         ? Future<void>.value()
-        : _load(page: refused, query: _query, sharesItems: _refusedSharesItems);
+        : _load(
+            page: refused,
+            query: _query,
+            sharesItems: _refusedSharesItems,
+            appending: _refusedAppending,
+          );
   }
 
+  // An offset is counted in rows, not pages: taking one down slides everything
+  // after it forward. So the page asked for is the one the first uncovered row
+  // falls in, and the part of it already held is dropped on arrival.
   Future<void> more() {
     if (_isLoading || !_hasLanded || !hasMore) {
       return Future<void>.value();
     }
 
-    return _load(page: _page + 1, query: _query, sharesItems: true);
+    return _load(
+      page: _covered ~/ pageSize + 1,
+      query: _query,
+      sharesItems: true,
+      appending: true,
+    );
   }
+
+  // The rows held are always a prefix of the server's list, so how far this
+  // window reaches is how many of them there are.
+  int get _covered => _items.length;
 
   // One row the reader changed on a screen this list opened. What has already
   // been read stays where it is: reading the list again would take one several
@@ -187,9 +205,14 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     required int page,
     required TQuery query,
     required bool sharesItems,
+    bool appending = false,
   }) async {
     final int request = ++_request;
-    final bool isAppending = page > 1;
+    final bool isAppending = appending;
+
+    // Read now, not when the answer lands: a merge arriving in the meantime
+    // moves every offset, and the page in flight was asked for under these.
+    final int covered = _covered;
 
     _isLoading = true;
     _isAppending = isAppending;
@@ -221,14 +244,19 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
 
     _refusedPage = result == null ? page : null;
     _refusedSharesItems = result == null ? sharesItems : false;
+    _refusedAppending = result == null ? isAppending : false;
 
     if (result case final PagedResult<T> landed) {
+      final List<T> arrived = isAppending
+          ? _notYetHeld(landed, covered)
+          : landed.items;
+
       _page = landed.page;
       _totalCount = landed.totalCount;
       // A page that answers with nothing is the end of the list rather than a
       // reason to drop what has already been read.
       _items = _reconcile(
-        isAppending ? _appendWithoutDuplicates(landed.items) : landed.items,
+        isAppending ? _appendWithoutDuplicates(arrived) : arrived,
         request,
       );
       _hasLanded = true;
@@ -269,6 +297,17 @@ abstract class PagedNotifier<T, TQuery> extends LiveNotifier {
     }
 
     return List<T>.unmodifiable(reconciled);
+  }
+
+  // What a page carries past the end of the window as it was when the page was
+  // asked for. Anything that moved since shifts the page and the window
+  // together, so it cancels out.
+  List<T> _notYetHeld(PagedResult<T> landed, int covered) {
+    final int shared = covered - ((landed.page - 1) * pageSize);
+
+    return shared <= 0
+        ? landed.items
+        : landed.items.skip(shared).toList(growable: false);
   }
 
   // A newest-page merge shifts every later offset page. The first row of the

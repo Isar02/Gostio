@@ -13,6 +13,7 @@ public static class ReservationServiceCollectionExtensions
 
         services.AddScoped<ReservationAccess>();
         services.AddScoped<ReservationPlaces>();
+        services.AddScoped<ReservationPreconditions>();
         services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<IReservationMoveService, ReservationMoveService>();
 

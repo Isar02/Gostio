@@ -61,8 +61,8 @@ internal static class UserSeed
         // The desktop client serves administrators and hosts, so its account holds both.
         Add("desktop", "Dina", "Kovačević", 1, RoleNames.Administrator, RoleNames.Host);
         Add("mobile", "Amar", "Selimović", 2, RoleNames.Guest);
-        Add("administrator", "Nedim", "Alispahić", 3, RoleNames.Administrator);
-        Add("host", "Lamija", "Hadžić", 4, RoleNames.Host);
+        Add("administrator", "Nedim", "Alispahić", 4, RoleNames.Administrator);
+        Add("host", "Lamija", "Hadžić", 3, RoleNames.Host);
         Add("guest", "Vedad", "Terzić", 5, RoleNames.Guest);
 
         Add("amina.hodzic", "Amina", "Hodžić", 6, RoleNames.Host);

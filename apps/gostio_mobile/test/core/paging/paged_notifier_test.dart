@@ -362,6 +362,89 @@ void main() {
       expect(catalogue.items.length, 46);
     },
   );
+
+  // The twenty-first row slides into twentieth place, inside the page already
+  // read, and asking for page two steps straight over it.
+  test('a row taken down does not carry the next one away with it', () async {
+    final List<String> first = <String>[
+      for (int at = 1; at <= 20; at++) 'Listing $at',
+    ];
+
+    await _fill(catalogue, first, total: 21);
+
+    catalogue.remove('Listing 4');
+
+    expect(catalogue.items, hasLength(19));
+    expect(catalogue.totalCount, 20);
+    expect(catalogue.hasMore, isTrue);
+
+    final Future<void> reading = catalogue.more();
+
+    expect(catalogue.pagesAsked.last, 1);
+
+    catalogue.answer(
+      _page(1, <String>[
+        for (final String held in first)
+          if (held != 'Listing 4') held,
+        'Listing 21',
+      ], total: 20),
+    );
+    await reading;
+
+    expect(catalogue.items, hasLength(20));
+    expect(catalogue.items.last, 'Listing 21');
+    expect(catalogue.items.toSet().length, catalogue.items.length);
+    expect(catalogue.hasMore, isFalse);
+  });
+
+  // A merge landing while a page is on its way moves every offset on the server
+  // by the rows it added. The page in flight was asked for under the offsets
+  // before that, so what it already covers has to be measured against those.
+  test('a merge during load more does not step over a row', () async {
+    final List<String> first = <String>[
+      for (int at = 1; at <= 20; at++) 'Listing $at',
+    ];
+
+    await _fill(catalogue, first, total: 40);
+
+    final Future<void> reading = catalogue.more();
+
+    expect(catalogue.pagesAsked.last, 2);
+
+    catalogue.merge(_page(1, <String>['Listing 0', ...first.take(19)], total: 41));
+
+    catalogue.answer(
+      _page(2, <String>[
+        for (int at = 21; at <= 40; at++) 'Listing $at',
+      ], total: 41),
+    );
+    await reading;
+
+    expect(catalogue.items, contains('Listing 21'));
+    expect(catalogue.items.toSet().length, catalogue.items.length);
+    expect(catalogue.items, hasLength(41));
+  });
+
+  // The same list untouched still walks forward a page at a time.
+  test('a list nothing was taken from asks for the page after it', () async {
+    await _fill(catalogue, <String>[
+      for (int at = 1; at <= 20; at++) 'Listing $at',
+    ], total: 43);
+
+    final Future<void> reading = catalogue.more();
+
+    expect(catalogue.pagesAsked.last, 2);
+
+    catalogue.answer(
+      _page(2, <String>[
+        for (int at = 21; at <= 40; at++) 'Listing $at',
+      ], total: 43),
+    );
+    await reading;
+
+    expect(catalogue.items, hasLength(40));
+    expect(catalogue.items.toSet().length, catalogue.items.length);
+  });
 }
 
 Future<void> _fill(
@@ -392,6 +475,7 @@ class _Catalogue extends PagedNotifier<String, String> {
       <Completer<PagedResult<String>>>[];
 
   final List<String> queries = <String>[];
+  final List<int> pagesAsked = <int>[];
 
   int get reads => _pending.length;
 
@@ -419,6 +503,7 @@ class _Catalogue extends PagedNotifier<String, String> {
     required String query,
   }) {
     queries.add(query);
+    pagesAsked.add(page);
     final Completer<PagedResult<String>> answer =
         Completer<PagedResult<String>>();
     _pending.add(answer);

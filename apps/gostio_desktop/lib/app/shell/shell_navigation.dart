@@ -17,14 +17,16 @@ class ShellNavigation extends StatefulWidget {
 }
 
 class _ShellNavigationState extends State<ShellNavigation> {
-  final Set<NavigationGroup> _expanded = <NavigationGroup>{};
+  // Held apart from what the section says and answered first. Written to the
+  // same place, the header could not close a group holding the open section:
+  // the tap would take it out and the section would put it straight back.
+  final Map<NavigationGroup, bool> _saidByTheReader = <NavigationGroup, bool>{};
 
-  void _toggle(NavigationGroup group) {
-    setState(() {
-      if (!_expanded.remove(group)) {
-        _expanded.add(group);
-      }
-    });
+  bool _isExpanded(NavigationGroup group, AppSection section) =>
+      _saidByTheReader[group] ?? _holds(group, section);
+
+  void _toggle(NavigationGroup group, AppSection section) {
+    setState(() => _saidByTheReader[group] = !_isExpanded(group, section));
   }
 
   @override
@@ -62,10 +64,8 @@ class _ShellNavigationState extends State<ShellNavigation> {
                       NavigationGroup() => _Group(
                         group: entry,
                         selected: workspace.section,
-                        isExpanded:
-                            _expanded.contains(entry) ||
-                            _holds(entry, workspace.section),
-                        onToggle: () => _toggle(entry),
+                        isExpanded: _isExpanded(entry, workspace.section),
+                        onToggle: () => _toggle(entry, workspace.section),
                         onOpen: workspace.open,
                       ),
                     },

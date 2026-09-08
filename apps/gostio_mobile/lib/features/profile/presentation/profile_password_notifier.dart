@@ -4,7 +4,6 @@ import '../../../core/state/screen_notifier.dart';
 import '../data/password_draft.dart';
 import '../data/profile_repository.dart';
 import 'profile_write_lock.dart';
-import 'session_mark.dart';
 
 // Changing a password ends every token issued before it, the one this session
 // holds included. The reply carries the replacement, so it is taken up here and

@@ -35,6 +35,20 @@ public static class CancellationPolicy
         return endsAt < startsAt ? endsAt : startsAt;
     }
 
+    public const string ProviderCalledItOff =
+        "Called off by the host, so the whole charge goes back whatever the notice was.";
+
+    // The notice periods price a choice the guest made. A host withdrawing the
+    // thing they booked is not that choice, so the two are asked apart.
+    public static RefundEntitlement For(
+        DateTime createdAt,
+        DateTime startsAt,
+        DateTime cancelledAt,
+        bool byTheGuest) =>
+        byTheGuest
+            ? For(createdAt, startsAt, cancelledAt)
+            : new RefundEntitlement(Full, ProviderCalledItOff);
+
     public static RefundEntitlement For(DateTime createdAt, DateTime startsAt, DateTime cancelledAt)
     {
         if (cancelledAt < GraceEndsAt(createdAt, startsAt))

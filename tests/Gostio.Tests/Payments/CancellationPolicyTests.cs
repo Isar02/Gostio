@@ -95,4 +95,43 @@ public class CancellationPolicyTests
         Assert.Equal(0m, CancellationPolicy.AmountOf(320m, CancellationPolicy.Nothing));
         Assert.Equal(320m, CancellationPolicy.AmountOf(320m, CancellationPolicy.Full));
     }
+
+    // A host withdrawing what was booked is not the guest's choice.
+    [Fact]
+    public void AHostCallingItOffOwesTheWholeChargeWhateverTheNoticeWas()
+    {
+        var createdAt = new DateTime(2026, 3, 1, 9, 0, 0, DateTimeKind.Utc);
+        var startsAt = createdAt.AddDays(10);
+
+        foreach (var cancelledAt in new[]
+        {
+            createdAt.AddMinutes(30),
+            createdAt.AddDays(5),
+            startsAt.AddHours(-1),
+        })
+        {
+            var entitlement = CancellationPolicy.For(
+                createdAt, startsAt, cancelledAt, byTheGuest: false);
+
+            Assert.Equal(CancellationPolicy.Full, entitlement.Percentage);
+            Assert.Equal(CancellationPolicy.ProviderCalledItOff, entitlement.Reason);
+        }
+    }
+
+    [Fact]
+    public void AGuestCallingItOffIsStillPricedOnTheClock()
+    {
+        var createdAt = new DateTime(2026, 3, 1, 9, 0, 0, DateTimeKind.Utc);
+        var startsAt = createdAt.AddDays(10);
+        var cancelledAt = startsAt.AddHours(-1);
+
+        var byTheGuest = CancellationPolicy.For(
+            createdAt, startsAt, cancelledAt, byTheGuest: true);
+
+        Assert.Equal(
+            CancellationPolicy.For(createdAt, startsAt, cancelledAt).Percentage,
+            byTheGuest.Percentage);
+
+        Assert.Equal(CancellationPolicy.Nothing, byTheGuest.Percentage);
+    }
 }

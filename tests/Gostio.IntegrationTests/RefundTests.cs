@@ -223,6 +223,113 @@ public class RefundTests(DatabaseFixture fixture)
             () => workspace.QuoteAsync(stranger, RoleNames.Guest, booked.Id));
     }
 
+    // A notice period prices a choice, and this guest made none.
+    [Fact]
+    public async Task AHostCallingOffAPaidBookingOwesAllOfItHoweverLateItIs()
+    {
+        var checkIn = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+
+        var (host, _, booked, payment) = await APaidBookingWithItsHostAsync(
+            bookedDaysAgo: 5, checkIn: checkIn);
+
+        await workspace.Reservations.CancelAsync(
+            host, RoleNames.Host, booked, "The boiler has gone");
+
+        var refund = Assert.Single(await workspace.RefundsOfAsync(booked));
+
+        Assert.Equal(payment.Amount, refund.Amount);
+        Assert.Equal(CancellationPolicy.ProviderCalledItOff, refund.Reason);
+    }
+
+    // The same booking the other way round: the rule turns on who ended it.
+    [Fact]
+    public async Task TheSameBookingCalledOffByTheGuestStillOwesHalf()
+    {
+        var checkIn = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+
+        var (_, guest, booked, payment) = await APaidBookingWithItsHostAsync(
+            bookedDaysAgo: 5, checkIn: checkIn);
+
+        await workspace.Reservations.CancelAsync(guest, RoleNames.Guest, booked, "Plans changed");
+
+        var refund = Assert.Single(await workspace.RefundsOfAsync(booked));
+
+        Assert.Equal(
+            CancellationPolicy.AmountOf(payment.Amount, CancellationPolicy.Half), refund.Amount);
+    }
+
+    [Fact]
+    public async Task AnAdministratorEndingAGuestsBookingOwesAllOfItToo()
+    {
+        var checkIn = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+
+        var (_, _, booked, payment) = await APaidBookingWithItsHostAsync(
+            bookedDaysAgo: 5, checkIn: checkIn);
+
+        var administrator = await workspace.Reservations.AnAdministratorAsync();
+
+        await workspace.Reservations.CancelAsync(
+            administrator, RoleNames.Administrator, booked, "Listing withdrawn");
+
+        Assert.Equal(payment.Amount, Assert.Single(await workspace.RefundsOfAsync(booked)).Amount);
+    }
+
+    // The quote prices what the reader is about to do.
+    [Fact]
+    public async Task TheHostIsQuotedTheWholeChargeAndTheGuestTheirShare()
+    {
+        var checkIn = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+
+        var (host, guest, booked, payment) = await APaidBookingWithItsHostAsync(
+            bookedDaysAgo: 5, checkIn: checkIn);
+
+        var toTheHost = await workspace.QuoteAsync(host, RoleNames.Host, booked);
+        var toTheGuest = await workspace.QuoteAsync(guest, RoleNames.Guest, booked);
+
+        Assert.Equal(CancellationPolicy.Full, toTheHost.Percentage);
+        Assert.Equal(payment.Amount, toTheHost.Amount);
+        Assert.Equal(CancellationPolicy.Half, toTheGuest.Percentage);
+    }
+
+    // Once ended, the quote answers for what was written.
+    [Fact]
+    public async Task TheQuoteAfterAHostCancellationSaysSoToEitherOfThem()
+    {
+        var checkIn = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+
+        var (host, guest, booked, payment) = await APaidBookingWithItsHostAsync(
+            bookedDaysAgo: 5, checkIn: checkIn);
+
+        await workspace.Reservations.CancelAsync(
+            host, RoleNames.Host, booked, "The boiler has gone");
+
+        var toTheGuest = await workspace.QuoteAsync(guest, RoleNames.Guest, booked);
+
+        Assert.Equal(CancellationPolicy.Full, toTheGuest.Percentage);
+        Assert.Equal(payment.Amount, toTheGuest.Amount);
+    }
+
+    private async Task<(int Host, int Guest, int Booked, StoredPayment Payment)>
+        APaidBookingWithItsHostAsync(int bookedDaysAgo, DateOnly? checkIn = null)
+    {
+        var (host, listing) = await workspace.Reservations.AListingAsync();
+        var guest = await workspace.Reservations.AGuestAsync();
+
+        var booked = await workspace.Reservations.BookStayAsync(
+            guest, listing, checkIn ?? InAMonth, nights: 2);
+
+        var started = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
+
+        await workspace.SucceedAsync(started.Id);
+
+        if (bookedDaysAgo > 0)
+        {
+            await workspace.Reservations.AgeAsync(booked.Id, TimeSpan.FromDays(bookedDaysAgo));
+        }
+
+        return (host, guest, booked.Id, Assert.Single(await workspace.PaymentsOfAsync(booked.Id)));
+    }
+
     private async Task<(int Guest, int Booked, StoredPayment Payment)> APaidBookingAsync(
         int bookedDaysAgo,
         DateOnly? checkIn = null)

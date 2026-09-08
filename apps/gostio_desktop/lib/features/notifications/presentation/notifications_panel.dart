@@ -11,8 +11,34 @@ import '../../../core/widgets/screen_states.dart';
 import 'notification_filter.dart';
 import 'notifications_notifier.dart';
 
-class NotificationsPanel extends StatelessWidget {
+// Built only while the menu holds it open, so its lifetime is what tells the
+// list it is being looked at.
+class NotificationsPanel extends StatefulWidget {
   const NotificationsPanel({super.key});
+
+  @override
+  State<NotificationsPanel> createState() => _NotificationsPanelState();
+}
+
+class _NotificationsPanelState extends State<NotificationsPanel> {
+  // Held from the way in: `dispose` runs once the element has left the tree,
+  // and a provider read from there is not found.
+  late final NotificationsNotifier _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _notifications = context.read<NotificationsNotifier>();
+    _notifications.watch();
+  }
+
+  @override
+  void dispose() {
+    _notifications.unwatch();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

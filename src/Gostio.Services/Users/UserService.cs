@@ -174,12 +174,18 @@ internal sealed class UserService(GostioDbContext db, ICurrentUser currentUser)
 
         var user = await RequireAsync(id, cancellationToken);
 
-        // No token version is raised: the session validator reads IsActive on
-        // every request, so clearing it ends the session by itself.
+        // Clearing IsActive refuses requests while it stays clear but does not
+        // end the session: a token issued beforehand would work again the moment
+        // the account is opened back up. So the version moves with it.
         if (user.IsActive != isActive)
         {
             user.IsActive = isActive;
             user.ModifiedAt = DateTime.UtcNow;
+
+            if (!isActive)
+            {
+                user.TokenVersion++;
+            }
 
             await Db.SaveChangesAsync(cancellationToken);
         }

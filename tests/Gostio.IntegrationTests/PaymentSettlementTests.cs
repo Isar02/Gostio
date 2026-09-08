@@ -266,6 +266,84 @@ public class PaymentSettlementTests(DatabaseFixture fixture)
         Assert.Equal(payment.Amount, refund.Amount);
     }
 
+    // The service will not write this calendar any more, so the row is put
+    // there behind it: money alone must not seat somebody with no place.
+    [Fact]
+    public async Task AChargeSettlingOntoClosedDatesEndsTheBookingAndOwesItBack()
+    {
+        var (_, listing) = await workspace.Reservations.AListingAsync();
+        var guest = await workspace.Reservations.AGuestAsync();
+        var booked = await workspace.Reservations.BookStayAsync(guest, listing, Soon, nights: 2);
+        var payment = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
+
+        await workspace.Reservations.CloseBehindTheServiceAsync(listing, Soon, Soon.AddDays(1));
+
+        await workspace.SucceedAsync(payment.Id);
+
+        Assert.Equal(
+            ReservationStatusCode.Cancelled,
+            await workspace.Reservations.StatusOfAsync(booked.Id));
+
+        var charge = Assert.Single(await workspace.PaymentsOfAsync(booked.Id));
+
+        Assert.Equal(PaymentStatus.Succeeded, charge.Status);
+
+        // The guest closed nothing, so none of it is theirs to lose, and the row
+        // says what actually happened rather than blaming a hold.
+        var owed = Assert.Single(await workspace.RefundsOfAsync(booked.Id));
+
+        Assert.Equal(charge.Amount, owed.Amount);
+        Assert.Contains("closed", owed.Reason);
+        Assert.DoesNotContain("hold", owed.Reason);
+
+        var ended = Assert.Single(
+            await workspace.Reservations.HistoryOfAsync(booked.Id),
+            history => history.NewStatusId == (int)ReservationStatusCode.Cancelled);
+
+        Assert.Null(ended.ChangedByUserId);
+        Assert.Contains("closed", ended.Reason);
+    }
+
+    [Fact]
+    public async Task AChargeSettlingOntoAClosedTermEndsTheBookingToo()
+    {
+        var (_, slot) = await workspace.Reservations.ATermAsync(
+            capacity: 6, startsAt: DateTime.UtcNow.AddDays(10));
+
+        var guest = await workspace.Reservations.AGuestAsync();
+        var booked = await workspace.Reservations.BookTermAsync(guest, slot, guestCount: 2);
+        var payment = await workspace.StartAsync(guest, RoleNames.Guest, booked.Id);
+
+        await workspace.Reservations.CloseTermBehindTheServiceAsync(slot);
+
+        await workspace.SucceedAsync(payment.Id);
+
+        Assert.Equal(
+            ReservationStatusCode.Cancelled,
+            await workspace.Reservations.StatusOfAsync(booked.Id));
+
+        var charge = Assert.Single(await workspace.PaymentsOfAsync(booked.Id));
+        var owed = Assert.Single(await workspace.RefundsOfAsync(booked.Id));
+
+        Assert.Equal(charge.Amount, owed.Amount);
+        Assert.Contains("closed", owed.Reason);
+    }
+
+    // A charge on a booking nothing has touched still confirms it.
+    [Fact]
+    public async Task AChargeOnAPlaceThatIsStillThereConfirmsAsBefore()
+    {
+        var (_, booked, payment) = await APendingChargeAsync();
+
+        await workspace.SucceedAsync(payment);
+
+        Assert.Equal(
+            ReservationStatusCode.Confirmed,
+            await workspace.Reservations.StatusOfAsync(booked));
+
+        Assert.Empty(await workspace.RefundsOfAsync(booked));
+    }
+
     private async Task<(int Guest, int Booked, int Payment)> APendingChargeAsync()
     {
         var (_, listing) = await workspace.Reservations.AListingAsync();

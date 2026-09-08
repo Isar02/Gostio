@@ -1,18 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
-import 'package:gostio_desktop/features/notifications/data/notifications_repository.dart';
 import 'package:gostio_desktop/features/notifications/presentation/notification_filter.dart';
 import 'package:gostio_desktop/features/notifications/presentation/notifications_notifier.dart';
+
+import '../../../support/notifications_double.dart';
 
 void main() {
   test(
     'a failed filter change keeps the rows and their filter together',
     () async {
-      final _FakeNotificationsRepository repository =
-          _FakeNotificationsRepository(<AppNotification>[
-            _notification(1, isRead: true),
-            _notification(2),
-          ]);
+      final NotificationsDouble repository = NotificationsDouble(
+        <AppNotification>[aNotification(1, isRead: true), aNotification(2)],
+      );
       final NotificationsNotifier notifier = NotificationsNotifier(repository);
       addTearDown(notifier.dispose);
 
@@ -29,13 +28,77 @@ void main() {
     },
   );
 
+  // The badge kept up on its own while the list under it did not, so a panel
+  // left open showed rows the count already disagreed with.
+  test('an open panel reads the rows the interval counts', () async {
+    final NotificationsDouble repository = NotificationsDouble(
+      <AppNotification>[aNotification(1)],
+    );
+    final NotificationsNotifier notifier = NotificationsNotifier(repository);
+    addTearDown(notifier.dispose);
+
+    await notifier.reload();
+    expect(notifier.items.map((AppNotification item) => item.id), <int>[1]);
+
+    notifier.watch();
+    repository.notifications.add(aNotification(2));
+
+    await notifier.poll();
+
+    expect(notifier.unread, 2);
+    expect(notifier.items.map((AppNotification item) => item.id), <int>[1, 2]);
+  });
+
+  // A list nobody is looking at is a request every interval for an answer
+  // nobody reads. The badge is the one thing that still has to keep up.
+  test('a closed panel counts without reading the rows', () async {
+    final NotificationsDouble repository = NotificationsDouble(
+      <AppNotification>[aNotification(1)],
+    );
+    final NotificationsNotifier notifier = NotificationsNotifier(repository);
+    addTearDown(notifier.dispose);
+
+    await notifier.reload();
+
+    final int readSoFar = repository.searches;
+
+    repository.notifications.add(aNotification(2));
+
+    await notifier.poll();
+
+    expect(notifier.unread, 2);
+    expect(repository.searches, readSoFar);
+    expect(notifier.items.map((AppNotification item) => item.id), <int>[1]);
+  });
+
+  test('a panel closed again stops reading the rows', () async {
+    final NotificationsDouble repository = NotificationsDouble(
+      <AppNotification>[aNotification(1)],
+    );
+    final NotificationsNotifier notifier = NotificationsNotifier(repository);
+    addTearDown(notifier.dispose);
+
+    await notifier.reload();
+
+    notifier.watch();
+    expect(notifier.isOnScreen, isTrue);
+
+    notifier.unwatch();
+    expect(notifier.isOnScreen, isFalse);
+
+    final int readSoFar = repository.searches;
+
+    await notifier.poll();
+
+    expect(repository.searches, readSoFar);
+  });
+
   test(
     'marking the last row returns to the last page that still exists',
     () async {
-      final _FakeNotificationsRepository repository =
-          _FakeNotificationsRepository(<AppNotification>[
-            for (int id = 1; id <= 21; id++) _notification(id),
-          ]);
+      final NotificationsDouble repository = NotificationsDouble(
+        <AppNotification>[for (int id = 1; id <= 21; id++) aNotification(id)],
+      );
       final NotificationsNotifier notifier = NotificationsNotifier(repository);
       addTearDown(notifier.dispose);
 
@@ -54,87 +117,4 @@ void main() {
       );
     },
   );
-}
-
-AppNotification _notification(int id, {bool isRead = false}) => AppNotification(
-  id: id,
-  kind: NotificationKind.reservationCreated,
-  title: 'Notification $id',
-  body: 'Body $id',
-  isRead: isRead,
-  createdAt: DateTime.utc(2026, 1, 1),
-  readAt: isRead ? DateTime.utc(2026, 1, 2) : null,
-);
-
-class _FakeNotificationsRepository implements NotificationsRepository {
-  _FakeNotificationsRepository(this.notifications);
-
-  final List<AppNotification> notifications;
-
-  bool failNextSearch = false;
-
-  @override
-  Future<int> unreadCount() async =>
-      notifications.where((AppNotification item) => !item.isRead).length;
-
-  @override
-  Future<PagedResult<AppNotification>> search({
-    int page = 1,
-    int pageSize = PagedResult.defaultPageSize,
-    bool? isRead,
-  }) async {
-    if (failNextSearch) {
-      failNextSearch = false;
-      throw const ApiException(message: 'Search failed.');
-    }
-
-    final List<AppNotification> matches = notifications
-        .where(
-          (AppNotification item) => isRead == null || item.isRead == isRead,
-        )
-        .toList(growable: false);
-    final int first = (page - 1) * pageSize;
-    final List<AppNotification> items = first >= matches.length
-        ? const <AppNotification>[]
-        : matches.sublist(
-            first,
-            first + pageSize < matches.length
-                ? first + pageSize
-                : matches.length,
-          );
-
-    return PagedResult<AppNotification>(
-      items: items,
-      page: page,
-      pageSize: pageSize,
-      totalCount: matches.length,
-    );
-  }
-
-  @override
-  Future<void> markRead(int id) async {
-    final int index = notifications.indexWhere(
-      (AppNotification item) => item.id == id,
-    );
-    final AppNotification item = notifications[index];
-    notifications[index] = AppNotification(
-      id: item.id,
-      kind: item.kind,
-      title: item.title,
-      body: item.body,
-      isRead: true,
-      createdAt: item.createdAt,
-      reservationId: item.reservationId,
-      readAt: DateTime.utc(2026, 1, 2),
-    );
-  }
-
-  @override
-  Future<void> markAllRead() async {
-    for (final AppNotification item in List<AppNotification>.of(
-      notifications,
-    )) {
-      await markRead(item.id);
-    }
-  }
 }

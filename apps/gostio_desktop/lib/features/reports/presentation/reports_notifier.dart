@@ -49,6 +49,9 @@ class ReportsNotifier extends ScreenNotifier {
 
   ListingReport? get listings => _listings;
 
+  // Moving to a report already in hand abandons whatever was being fetched, and
+  // abandoning it has to end the wait too: the answer that lands afterwards is
+  // not the one that says the loading is over, and Save and Print wait on that.
   Future<void> showReport(ReportKind kind) {
     if (kind == _kind) {
       return _settled();
@@ -58,6 +61,8 @@ class ReportsNotifier extends ScreenNotifier {
 
     if (_isHeld) {
       ++_request;
+      _isLoading = false;
+      _failure = null;
 
       return _settled(announcing: true);
     }

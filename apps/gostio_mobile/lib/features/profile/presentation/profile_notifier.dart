@@ -4,7 +4,6 @@ import '../../../core/state/live_notifier.dart';
 import '../data/picture_source.dart';
 import '../data/profile_repository.dart';
 import 'profile_write_lock.dart';
-import 'session_mark.dart';
 
 // The profile's own two jobs: keeping the account the whole client draws from
 // current, and the picture, which is the one thing written on this screen

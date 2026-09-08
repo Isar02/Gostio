@@ -45,6 +45,7 @@ export 'src/network/api_exception.dart';
 export 'src/network/page_walk.dart';
 export 'src/network/uploaded_file.dart';
 export 'src/session/session.dart';
+export 'src/session/session_mark.dart';
 export 'src/theme/app_colors.dart';
 export 'src/theme/app_fonts.dart';
 export 'src/theme/font_licences.dart';

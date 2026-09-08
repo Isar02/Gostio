@@ -155,6 +155,67 @@ void main() {
     expect(ShownReport.of(notifier), isNull);
   });
 
+  // Save and Print wait on the loading ending, so it has to end even when the
+  // answer that would have ended it is one nobody wants any more.
+  test(
+    'going back to a document already in hand ends the wait it left behind',
+    () async {
+      final ReportsDouble reports = ReportsDouble(holds: true);
+      final ReportsNotifier notifier = ReportsNotifier(
+        reports,
+        scope: ReportScope.platform,
+      );
+
+      final Future<void> opening = notifier.reload();
+      reports.waits.single.complete();
+      await opening;
+
+      final Future<void> abandoned = notifier.showReport(ReportKind.listings);
+      expect(notifier.isLoading, isTrue);
+
+      await notifier.showReport(ReportKind.revenue);
+
+      expect(notifier.isLoading, isFalse);
+      expect(ShownReport.of(notifier), isNotNull);
+
+      reports.waits[1].complete();
+      await abandoned;
+
+      expect(notifier.isLoading, isFalse);
+      expect(notifier.revenue, isNotNull);
+      expect(ShownReport.of(notifier), isNotNull);
+    },
+  );
+
+  // The failure belonged to the document that was being fetched, not to the one
+  // being returned to.
+  test(
+    'going back to a document already in hand leaves no error on it',
+    () async {
+      final ReportsDouble reports = ReportsDouble();
+      final ReportsNotifier notifier = ReportsNotifier(
+        reports,
+        scope: ReportScope.platform,
+      );
+
+      await notifier.reload();
+
+      final ReportsNotifier failing = ReportsNotifier(
+        ReportsDouble(failing: true),
+        scope: ReportScope.platform,
+      );
+
+      await failing.reload();
+      expect(failing.failureMessage, isNotNull);
+
+      await notifier.showReport(ReportKind.listings);
+      await notifier.showReport(ReportKind.revenue);
+
+      expect(notifier.failureMessage, isNull);
+      expect(notifier.isLoading, isFalse);
+    },
+  );
+
   test(
     'a cached document switch invalidates the document left in flight',
     () async {

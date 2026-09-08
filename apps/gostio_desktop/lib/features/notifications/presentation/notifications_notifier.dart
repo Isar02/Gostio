@@ -11,7 +11,7 @@ class NotificationsNotifier
     extends PagedNotifier<AppNotification, NotificationFilter> {
   NotificationsNotifier(this._repository) : super(NotificationFilter.all) {
     unawaited(_refreshUnread());
-    _poll = Timer.periodic(pollInterval, (Timer _) => _refreshUnread());
+    _poll = Timer.periodic(pollInterval, (Timer _) => unawaited(poll()));
   }
 
   static const Duration pollInterval = Duration(seconds: 30);
@@ -22,8 +22,23 @@ class NotificationsNotifier
 
   int _unread = 0;
   int _countRequest = 0;
+  int _watchers = 0;
 
   int get unread => _unread;
+
+  bool get isOnScreen => _watchers > 0;
+
+  // A list nobody is looking at costs a request every interval for nothing.
+  void watch() => _watchers++;
+
+  void unwatch() {
+    if (_watchers > 0) {
+      _watchers--;
+    }
+  }
+
+  // Reading the page reads the count beside it, so an open panel asks once.
+  Future<void> poll() => isOnScreen ? refreshQuietly() : _refreshUnread();
 
   @override
   @protected

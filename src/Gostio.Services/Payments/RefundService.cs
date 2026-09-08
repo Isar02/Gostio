@@ -1,6 +1,8 @@
 using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Responses;
+using Gostio.Model.Validation;
+using Gostio.Services.Authentication;
 using Gostio.Services.Configuration;
 using Gostio.Services.Database;
 using Gostio.Services.Database.Entities;
@@ -24,9 +26,12 @@ internal sealed record RefundRow(
     DateTime? ProcessedAt,
     string? FailureReason);
 
+internal sealed record HowItEnded(DateTime AsOf, bool ByTheGuest);
+
 internal sealed class RefundService(
     GostioDbContext db,
     ReservationAccess reservations,
+    ICurrentUser currentUser,
     StripeSettings stripe) : IRefundService, ICancellationRefunds
 {
     private const string ExpiredHoldReason =
@@ -50,8 +55,13 @@ internal sealed class RefundService(
         var booking = await reservations.RequireReachableAsync(reservationId, cancellationToken);
         var charge = await SettledChargeAsync(reservationId, cancellationToken);
         var charged = charge?.Amount ?? booking.TotalPrice;
-        var asOf = await AsOfAsync(reservationId, booking.StatusId, cancellationToken);
-        var entitlement = CancellationPolicy.For(booking.CreatedAt, booking.StartsAt, asOf);
+        var ended = await HowItEndedAsync(
+            reservationId, booking.StatusId, booking.GuestId, cancellationToken);
+
+        var asOf = ended.AsOf;
+
+        var entitlement = CancellationPolicy.For(
+            booking.CreatedAt, booking.StartsAt, asOf, ended.ByTheGuest);
 
         return new RefundQuoteResponse
         {
@@ -67,22 +77,32 @@ internal sealed class RefundService(
         };
     }
 
-    private async Task<DateTime> AsOfAsync(
+    // While a booking is live the quote prices what the reader is about to do.
+    // Once it has ended, the trail answers rather than the clock.
+    private async Task<HowItEnded> HowItEndedAsync(
         int reservationId,
         int statusId,
+        int guestId,
         CancellationToken cancellationToken)
     {
         if (ReservationStateMachine.RequireKnown(statusId) != ReservationStatusCode.Cancelled)
         {
-            return DateTime.UtcNow;
+            return new HowItEnded(DateTime.UtcNow, currentUser.UserId == guestId);
         }
 
-        return await db.ReservationStatusHistory
+        var ended = await db.ReservationStatusHistory
             .AsNoTracking()
             .Where(history => history.ReservationId == reservationId
                 && history.NewStatusId == (int)ReservationStatusCode.Cancelled)
-            .MaxAsync(history => (DateTime?)history.ChangedAt, cancellationToken)
-            ?? DateTime.UtcNow;
+            .OrderByDescending(history => history.ChangedAt)
+            .ThenByDescending(history => history.Id)
+            .Select(history => new { history.ChangedAt, history.ChangedByUserId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // A sweep names nobody, and the row it writes is the whole charge back.
+        return ended is null
+            ? new HowItEnded(DateTime.UtcNow, ByTheGuest: true)
+            : new HowItEnded(ended.ChangedAt, ended.ChangedByUserId == guestId);
     }
 
     private Task<OwedAmount?> OwedRefundAsync(int paymentId, CancellationToken cancellationToken) =>
@@ -148,7 +168,7 @@ internal sealed class RefundService(
         }
 
         var entitlement = CancellationPolicy.For(
-            booking.CreatedAt, booking.StartsAt, booking.CancelledAt);
+            booking.CreatedAt, booking.StartsAt, booking.CancelledAt, booking.ByTheGuest);
 
         var amount = CancellationPolicy.AmountOf(charge.Amount, entitlement.Percentage);
 
@@ -156,9 +176,12 @@ internal sealed class RefundService(
             charge, amount, entitlement.Reason, booking.CancelledAt, cancellationToken);
     }
 
+    // The reason is the caller's: a hold that ran out and a place that has gone
+    // both hand the whole charge back, and the row says which.
     public async Task RecordFullAsync(
         int reservationId,
         DateTime owedAt,
+        string reason,
         CancellationToken cancellationToken)
     {
         var charge = await SettledChargeAsync(reservationId, cancellationToken);
@@ -169,7 +192,11 @@ internal sealed class RefundService(
         }
 
         await RecordAsync(
-            charge, charge.Amount, ExpiredHoldReason, owedAt, cancellationToken);
+            charge,
+            charge.Amount,
+            Reasons.Fit(reason) ?? ExpiredHoldReason,
+            owedAt,
+            cancellationToken);
     }
 
     private async Task RecordAsync(

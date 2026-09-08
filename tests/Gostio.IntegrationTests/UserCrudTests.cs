@@ -224,6 +224,43 @@ public class UserCrudTests(DatabaseFixture fixture)
         Assert.True(reopened.IsActive);
     }
 
+    // Clearing IsActive is not the same as ending the session.
+    [Fact]
+    public async Task ClosingAnAccountEndsTheSessionsItAlreadyHad()
+    {
+        var theirs = await fixture.AddUserAsync(Password);
+        var before = await TokenVersionOfAsync(theirs);
+
+        await AsAdministratorAsync(users => users.SetStateAsync(
+            theirs, new UserStateRequest { IsActive = false }, CancellationToken.None));
+
+        var whileClosed = await TokenVersionOfAsync(theirs);
+
+        Assert.Equal(before + 1, whileClosed);
+        Assert.False(await IsCurrentAsync(theirs, before));
+
+        await AsAdministratorAsync(users => users.SetStateAsync(
+            theirs, new UserStateRequest { IsActive = true }, CancellationToken.None));
+
+        Assert.Equal(whileClosed, await TokenVersionOfAsync(theirs));
+        Assert.False(await IsCurrentAsync(theirs, before));
+        Assert.True(await IsCurrentAsync(theirs, whileClosed));
+    }
+
+    // A write that changes nothing must not sign anybody out.
+    [Fact]
+    public async Task SettingTheStateItAlreadyHasEndsNothing()
+    {
+        var theirs = await fixture.AddUserAsync(Password);
+        var before = await TokenVersionOfAsync(theirs);
+
+        await AsAdministratorAsync(users => users.SetStateAsync(
+            theirs, new UserStateRequest { IsActive = true }, CancellationToken.None));
+
+        Assert.Equal(before, await TokenVersionOfAsync(theirs));
+        Assert.True(await IsCurrentAsync(theirs, before));
+    }
+
     // Both of these lock the administrator out of the application entirely.
     [Fact]
     public async Task AnAdministratorNeitherDeactivatesNorDeletesTheirOwnAccount()
@@ -342,6 +379,15 @@ public class UserCrudTests(DatabaseFixture fixture)
 
         await services.GetRequiredService<IUserService>().SetRolesAsync(
             id, new UserRolesRequest { Roles = [.. roles] }, CancellationToken.None);
+    }
+
+    // What matters is whether a token on the old version is still let in.
+    private async Task<bool> IsCurrentAsync(int userId, int tokenVersion)
+    {
+        await using var db = fixture.CreateContext();
+
+        return await new UserSessionValidator(db)
+            .IsCurrentAsync(userId, tokenVersion, CancellationToken.None);
     }
 
     private async Task<int> TokenVersionOfAsync(int userId)

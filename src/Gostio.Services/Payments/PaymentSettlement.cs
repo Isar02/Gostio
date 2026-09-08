@@ -14,6 +14,7 @@ namespace Gostio.Services.Payments;
 internal sealed class PaymentSettlement(
     GostioDbContext db,
     ReservationPlaces places,
+    ReservationPreconditions preconditions,
     IReservationTransitionService transitions,
     RefundService refunds,
     IReservationNotices notices,
@@ -148,16 +149,24 @@ internal sealed class PaymentSettlement(
     // written here — priced against the moment the booking ended and never
     // against now, because an event the processor delivered late must not cost a
     // guest a threshold they were inside of when they called it off.
+    // A charge only confirms what the host's own click would: a lapsed hold and
+    // a place that has gone both end here, and both hand the charge back.
     private async Task<ReservationStatusCode?> MoveTheBookingAsync(
         int reservationId,
         int paymentId,
         CancellationToken cancellationToken)
     {
+        // Asked first: a lapsed hold is that whatever else has happened since.
         var lapsed = await TheHoldRanOutAsync(reservationId, cancellationToken);
 
-        var to = lapsed
-            ? ReservationStatusCode.Cancelled
-            : ReservationStatusCode.Confirmed;
+        var ending = lapsed
+            ? ReservationHold.RanOut
+            : await preconditions.WhyItCannotBeHonouredAsync(
+                reservationId, DateTime.UtcNow, cancellationToken);
+
+        var to = ending is null
+            ? ReservationStatusCode.Confirmed
+            : ReservationStatusCode.Cancelled;
 
         try
         {
@@ -166,7 +175,7 @@ internal sealed class PaymentSettlement(
                 (int)ReservationStatusCode.Pending,
                 to,
                 changedByUserId: null,
-                lapsed ? ReservationHold.RanOut : null,
+                ending,
                 cancellationToken);
         }
         catch (BusinessException)
@@ -177,20 +186,24 @@ internal sealed class PaymentSettlement(
                 paymentId,
                 reservationId);
 
-            await OweTheChargeBackAsync(reservationId, lapsed, cancellationToken);
+            await OweTheChargeBackAsync(
+                reservationId, lapsed ? ReservationHold.RanOut : null, cancellationToken);
 
             return null;
         }
 
-        if (lapsed)
+        if (ending is not null)
         {
             logger.LogInformation(
-                "The payment {PaymentId} settled against the reservation {ReservationId}, whose "
-                    + "hold had run out. The booking was ended and the charge is owed back.",
+                "The payment {PaymentId} settled against the reservation {ReservationId}, which "
+                    + "could no longer stand: {Reason} The booking was ended and the charge is "
+                    + "owed back.",
                 paymentId,
-                reservationId);
+                reservationId,
+                ending);
 
-            await OweTheChargeBackAsync(reservationId, full: true, cancellationToken);
+            await OweTheChargeBackAsync(
+                reservationId, ending, cancellationToken);
         }
 
         return to;
@@ -228,7 +241,7 @@ internal sealed class PaymentSettlement(
 
     private async Task OweTheChargeBackAsync(
         int reservationId,
-        bool full,
+        string? whollyOwedBecause,
         CancellationToken cancellationToken)
     {
         var ended = await db.Reservations
@@ -239,6 +252,7 @@ internal sealed class PaymentSettlement(
             {
                 reservation.CreatedAt,
                 reservation.CheckInDate,
+                GuestId = reservation.UserId,
                 SlotStartTime = reservation.ExperienceSlot != null
                     ? (DateTime?)reservation.ExperienceSlot.StartTime
                     : null,
@@ -246,6 +260,13 @@ internal sealed class PaymentSettlement(
                     .Where(history =>
                         history.NewStatusId == (int)ReservationStatusCode.Cancelled)
                     .Max(history => (DateTime?)history.ChangedAt),
+                CancelledBy = reservation.StatusHistory
+                    .Where(history =>
+                        history.NewStatusId == (int)ReservationStatusCode.Cancelled)
+                    .OrderByDescending(history => history.ChangedAt)
+                    .ThenByDescending(history => history.Id)
+                    .Select(history => history.ChangedByUserId)
+                    .FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -256,9 +277,9 @@ internal sealed class PaymentSettlement(
 
         var endedAt = ended.CancelledAt ?? DateTime.UtcNow;
 
-        if (full)
+        if (whollyOwedBecause is string reason)
         {
-            await refunds.RecordFullAsync(reservationId, endedAt, cancellationToken);
+            await refunds.RecordFullAsync(reservationId, endedAt, reason, cancellationToken);
         }
         else
         {
@@ -269,7 +290,8 @@ internal sealed class PaymentSettlement(
                     ended.CheckInDate is { } checkIn
                         ? StayTimes.BeginsAt(checkIn)
                         : ended.SlotStartTime!.Value,
-                    endedAt),
+                    endedAt,
+                    ByTheGuest: ended.CancelledBy == ended.GuestId),
                 cancellationToken);
         }
     }

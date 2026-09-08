@@ -135,6 +135,11 @@ public static class RecommendationScoring
         return asked / (asked + Math.Abs((double)candidate.Price - asked));
     }
 
+    // A score may be partial; a reason may not. Capacity reads as a flat claim
+    // that the place holds the party, so only a whole fit is offered as one.
+    private static bool IsTrueOf(WeightedAxis axis) =>
+        axis.Feature.Kind != RecommendationReasonKind.Capacity || axis.Weight >= 1;
+
     private static double? CapacityFit(TasteProfile profile, Candidate candidate)
     {
         if (profile.PreferredGuests is not int party || candidate.MaxGuests is not int room)
@@ -183,6 +188,7 @@ public static class RecommendationScoring
         List<RecommendationReasonResponse> reasons = [.. vector
             .Select(axis => (Axis: axis, Weight: Contribution(profile, axis)))
             .Where(scored => scored.Weight > 0)
+            .Where(scored => IsTrueOf(scored.Axis))
             .OrderByDescending(scored => scored.Weight)
             .ThenBy(scored => scored.Axis.Feature.Kind)
             .ThenBy(scored => scored.Axis.Feature.Key, StringComparer.Ordinal)

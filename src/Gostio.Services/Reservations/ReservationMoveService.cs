@@ -13,6 +13,7 @@ internal sealed class ReservationMoveService(
     ICurrentUser currentUser,
     ReservationAccess access,
     ReservationPlaces places,
+    ReservationPreconditions preconditions,
     IReservationTransitionService transitions,
     ICancellationRefunds refunds,
     IReservationNotices notices) : IReservationMoveService
@@ -43,7 +44,7 @@ internal sealed class ReservationMoveService(
             reason: null,
             cancellationToken);
 
-        await RequireThePlaceIsStillFreeAsync(reservationId, booking, now, cancellationToken);
+        await RequireThePlaceIsStillFreeAsync(reservationId, now, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -81,9 +82,15 @@ internal sealed class ReservationMoveService(
             request.Reason,
             cancellationToken);
 
+        // Anybody but the guest is the service being withdrawn rather than
+        // declined, an administrator included.
         await refunds.RecordAsync(
             new CancelledBooking(
-                reservationId, booking.CreatedAt, booking.StartsAt, cancelledAt),
+                reservationId,
+                booking.CreatedAt,
+                booking.StartsAt,
+                cancelledAt,
+                ByTheGuest: actorId == booking.GuestId),
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -101,86 +108,19 @@ internal sealed class ReservationMoveService(
 
     // A hold that lapsed stopped holding its place, so somebody else can have
     // taken it. What creation tested is tested again, on the instant read after
-    // the wait for the lock, with this reservation left out of the counts and
-    // the term read inside the lock because its capacity moves under it.
-    private Task RequireThePlaceIsStillFreeAsync(
+    // the wait for the lock, and by the same reader a settling charge asks, so
+    // the two ways of confirming a booking cannot come to different answers.
+    private async Task RequireThePlaceIsStillFreeAsync(
         int reservationId,
-        ReservationView booking,
-        DateTime now,
-        CancellationToken cancellationToken) =>
-        booking.AccommodationId is int accommodationId
-            ? RequireTheNightsAreStillFreeAsync(
-                reservationId, accommodationId, booking, now, cancellationToken)
-            : RequireTheTermStillHasRoomAsync(reservationId, booking, now, cancellationToken);
-
-    private async Task RequireTheNightsAreStillFreeAsync(
-        int reservationId,
-        int accommodationId,
-        ReservationView booking,
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var checkIn = booking.CheckInDate!.Value;
-        var checkOut = booking.CheckOutDate!.Value;
+        var refusal = await preconditions.WhyItCannotBeHonouredAsync(
+            reservationId, now, cancellationToken);
 
-        if (checkIn < DateOnly.FromDateTime(now))
+        if (refusal is not null)
         {
-            throw new BusinessException("This stay has already begun.");
-        }
-
-        var ranges = await places.RangesOverAsync(
-            accommodationId, checkIn, checkOut, cancellationToken);
-
-        if (ranges.Any(range => !range.IsAvailable))
-        {
-            throw new BusinessException(
-                "The host has closed part of these dates since the booking was made.");
-        }
-
-        var taken = await places.AreTheNightsTakenAsync(
-            accommodationId, checkIn, checkOut, now, reservationId, cancellationToken);
-
-        if (taken)
-        {
-            throw new BusinessException("These dates were taken while this booking was pending.");
-        }
-    }
-
-    private async Task RequireTheTermStillHasRoomAsync(
-        int reservationId,
-        ReservationView booking,
-        DateTime now,
-        CancellationToken cancellationToken)
-    {
-        var slotId = booking.ExperienceSlotId!.Value;
-
-        var term = await db.ExperienceSlots
-            .AsNoTracking()
-            .Where(slot => slot.Id == slotId)
-            .Select(slot => new { slot.StartTime, slot.Capacity })
-            .FirstAsync(cancellationToken);
-
-        if (term.StartTime <= now)
-        {
-            throw new BusinessException("This term has already started.");
-        }
-
-        var duplicate = await places.HoldsAPlaceAsync(
-            slotId, booking.GuestId, now, reservationId, cancellationToken);
-
-        if (duplicate)
-        {
-            throw new BusinessException(
-                "This guest booked this term again while this booking was pending.");
-        }
-
-        var seatsTaken = await places.SeatsTakenAsync(
-            slotId, now, reservationId, cancellationToken);
-
-        if (booking.GuestCount > term.Capacity - seatsTaken)
-        {
-            throw new BusinessException(
-                "This term ran out of room while this booking was pending.");
+            throw new BusinessException(refusal);
         }
     }
 }

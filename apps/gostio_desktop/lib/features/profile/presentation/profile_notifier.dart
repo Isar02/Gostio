@@ -65,6 +65,8 @@ class ProfileNotifier extends ScreenNotifier {
       _passwordFailure?.firstMessageFor(field);
 
   Future<void> load() async {
+    final SessionMark asked = SessionMark.of(_session);
+
     _isLoading = true;
     _failure = null;
     publish();
@@ -72,12 +74,13 @@ class ProfileNotifier extends ScreenNotifier {
     try {
       final User read = await _profile.mine();
 
-      // The read goes to the session too. What it is holding was answered when
-      // the token was issued and an administrator may have edited the account
-      // since, so this is the moment the top bar stops being older than the
-      // screen under it.
+      // The session is holding what the token said when it was issued, so this
+      // is where the top bar catches up — unless it is somebody else's now.
       _account = read;
-      _session.accountChanged(read);
+
+      if (asked.stillHolds(_session)) {
+        _session.accountChanged(read);
+      }
     } on ApiException catch (failure) {
       _failure = failure;
     }
@@ -122,6 +125,8 @@ class ProfileNotifier extends ScreenNotifier {
       return false;
     }
 
+    final SessionMark asked = SessionMark.of(_session);
+
     _isSavingPassword = true;
     _passwordFailure = null;
     publish();
@@ -129,13 +134,18 @@ class ProfileNotifier extends ScreenNotifier {
     bool changed = false;
 
     try {
-      _session.tokenRenewed(
-        await _profile.changePassword(
-          currentPassword: currentPassword,
-          newPassword: newPassword,
-          confirmNewPassword: confirmNewPassword,
-        ),
+      final String renewed = await _profile.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        confirmNewPassword: confirmNewPassword,
       );
+
+      // Handed to a session signed in as somebody else, this would sign them in
+      // as the first reader with nothing on the screen to say so.
+      if (asked.stillHolds(_session)) {
+        _session.tokenRenewed(renewed);
+      }
+
       changed = true;
     } on ApiException catch (failure) {
       _passwordFailure = failure;
@@ -169,17 +179,22 @@ class ProfileNotifier extends ScreenNotifier {
     return saved;
   }
 
-  // The account this screen holds and the one the session hands the rest of
-  // the client are the same account, so a write that landed reaches both.
+  // A write that landed reaches this screen and the session both, while they
+  // are still the same session.
   Future<bool> _adopt(
     Future<User> Function() write, {
     required void Function(ApiException failure) onFailure,
   }) async {
+    final SessionMark asked = SessionMark.of(_session);
+
     try {
       final User written = await write();
 
       _account = written;
-      _session.accountChanged(written);
+
+      if (asked.stillHolds(_session)) {
+        _session.accountChanged(written);
+      }
 
       return true;
     } on ApiException catch (failure) {

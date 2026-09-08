@@ -4,7 +4,6 @@ import '../../../core/state/screen_notifier.dart';
 import '../data/profile_draft.dart';
 import '../data/profile_repository.dart';
 import 'profile_write_lock.dart';
-import 'session_mark.dart';
 
 // The four fields, saved as one. What comes back is the account itself, so it
 // goes to the session and the name over the profile is the name that was just

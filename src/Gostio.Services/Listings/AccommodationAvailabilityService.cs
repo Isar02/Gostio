@@ -98,6 +98,7 @@ internal sealed class AccommodationAvailabilityService(
         await access.LockAsync(accommodationId, cancellationToken);
 
         await RequireTheDatesAreFreeAsync(range, cancellationToken);
+        await RequireNobodyIsBookedIntoAsync(range, cancellationToken);
 
         db.AccommodationAvailability.Add(range);
 
@@ -192,6 +193,35 @@ internal sealed class AccommodationAvailabilityService(
         {
             throw new BusinessException(
                 "These dates already carry an entry. Remove that one before adding this.");
+        }
+    }
+
+    // Closing dates takes away nights somebody is holding, which is a
+    // cancellation and is made through the reservation. A range is inclusive of
+    // both days and a stay is half-open.
+    private async Task RequireNobodyIsBookedIntoAsync(
+        AccommodationAvailability range,
+        CancellationToken cancellationToken)
+    {
+        if (range.IsAvailable)
+        {
+            return;
+        }
+
+        var booked = await db.Reservations
+            .AsNoTracking()
+            .Where(ReservationQueries.IsActive(DateTime.UtcNow))
+            .AnyAsync(
+                reservation => reservation.AccommodationId == range.AccommodationId
+                    && reservation.CheckInDate <= range.EndDate
+                    && range.StartDate < reservation.CheckOutDate,
+                cancellationToken);
+
+        if (booked)
+        {
+            throw new BusinessException(
+                "These dates carry a booking. Closing them cancels it, and a cancellation is "
+                    + "made through the reservation.");
         }
     }
 

@@ -7,6 +7,9 @@ import '../../../support/account_fixture.dart';
 import '../../../support/profile_double.dart';
 
 void main() {
+  // Ending a session clears the image cache, which needs the binding up.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   // The session's copy was answered when the token was issued, and an
   // administrator may have edited the account since. The screen reads the
   // account anyway, so the read is the cheapest moment to stop the top bar
@@ -74,6 +77,94 @@ void main() {
 
     profile.releaseTheWrite();
     await saving;
+  });
+
+  // A token answered for one reader, handed to the session of another, signs
+  // them in as somebody else with nothing on the screen to say so.
+  test(
+    'a password change landing in another reader session is dropped',
+    () async {
+      final ProfileDouble profile = ProfileDouble(
+        holdsTheWrite: true,
+        issuedToken: 'renewed-for-the-first-reader',
+      );
+      final ApiClient client = ApiClient(
+        baseUrl: Uri.parse('http://localhost:5000'),
+      );
+      final Session session = Session(client)
+        ..begin(account: account(), token: 'the-first-token');
+
+      final ProfileNotifier notifier = ProfileNotifier(profile, session);
+
+      await notifier.load();
+
+      final Future<bool> changing = notifier.changePassword(
+        currentPassword: 'the-old-one',
+        newPassword: 'a-longer-new-one',
+        confirmNewPassword: 'a-longer-new-one',
+      );
+
+      await pumpEventQueue();
+
+      session
+        ..end(SessionEnding.signedOut)
+        ..begin(
+          account: account(id: 33, username: 'somebody.else'),
+          token: 'the-second-token',
+        );
+
+      profile.releaseTheWrite();
+      await changing;
+
+      expect(client.token, 'the-second-token');
+      expect(session.account?.id, 33);
+    },
+  );
+
+  // The quieter half: it replaces the name they are shown.
+  test('a details save landing in another reader session is dropped', () async {
+    final ProfileDouble profile = ProfileDouble(holdsTheWrite: true);
+    final Session session = _session();
+    final ProfileNotifier notifier = ProfileNotifier(profile, session);
+
+    await notifier.load();
+
+    final Future<bool> saving = notifier.saveDetails(_draft);
+
+    await pumpEventQueue();
+
+    session
+      ..end(SessionEnding.signedOut)
+      ..begin(
+        account: account(id: 33, username: 'somebody.else'),
+        token: 'the-second-token',
+      );
+
+    profile.releaseTheWrite();
+    await saving;
+
+    expect(session.account?.id, 33);
+    expect(session.account?.username, 'somebody.else');
+  });
+
+  // A reply arriving after the session simply ended has nowhere to go either.
+  test('a save landing after the session ended signs nobody in', () async {
+    final ProfileDouble profile = ProfileDouble(holdsTheWrite: true);
+    final Session session = _session();
+    final ProfileNotifier notifier = ProfileNotifier(profile, session);
+
+    await notifier.load();
+
+    final Future<bool> saving = notifier.saveDetails(_draft);
+
+    await pumpEventQueue();
+
+    session.end(SessionEnding.signedOut);
+
+    profile.releaseTheWrite();
+    await saving;
+
+    expect(session.isSignedIn, isFalse);
   });
 }
 

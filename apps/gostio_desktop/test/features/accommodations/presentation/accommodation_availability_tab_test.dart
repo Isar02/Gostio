@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_core/gostio_core.dart';
+import 'package:gostio_desktop/core/widgets/app_dropdown.dart';
 import 'package:gostio_desktop/features/accommodations/data/accommodation_availability_repository.dart';
 import 'package:gostio_desktop/features/accommodations/data/availability_draft.dart';
 import 'package:gostio_desktop/features/accommodations/presentation/accommodation_availability_tab.dart';
+import 'package:gostio_desktop/features/accommodations/presentation/availability_entry_dialog.dart';
 import 'package:gostio_desktop/features/reservations/data/reservations_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -100,7 +102,90 @@ void main() {
       isNotNull,
     );
   });
+
+  // The dialog says so before the write rather than offering a button the
+  // server will turn down.
+  testWidgets('blocking a booked night is refused on the dialog itself', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_tab(_Availability()));
+    await tester.pumpAndSettle();
+
+    await _openTheDialogOver(tester, day: '21');
+
+    expect(find.textContaining('1 of these nights is booked'), findsOneWidget);
+    expect(
+      find.textContaining('Closing them cancels those bookings'),
+      findsOneWidget,
+    );
+    expect(_dialogButton(tester).onPressed, isNull);
+  });
+
+  // The same nights may still be repriced.
+  testWidgets('the same night may still be repriced', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_tab(_Availability()));
+    await tester.pumpAndSettle();
+
+    await _openTheDialogOver(tester, day: '21');
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AvailabilityEntryDialog),
+        matching: find.byType(AppDropdown<bool>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open, at a price of their own').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('does not move or cancel a booking'),
+      findsOneWidget,
+    );
+    expect(_dialogButton(tester).onPressed, isNotNull);
+  });
+
+  // Nothing is holding these nights, so blocking them is the ordinary write.
+  testWidgets('blocking free nights is offered as before', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(_tab(_Availability()));
+    await tester.pumpAndSettle();
+
+    await _openTheDialogOver(tester, day: '18');
+
+    expect(
+      find.descendant(
+        of: find.byType(AvailabilityEntryDialog),
+        matching: find.textContaining('booked'),
+      ),
+      findsNothing,
+    );
+    expect(_dialogButton(tester).onPressed, isNotNull);
+  });
 }
+
+// The single day chosen on the calendar, opened as the entry it would write.
+Future<void> _openTheDialogOver(
+  WidgetTester tester, {
+  required String day,
+}) async {
+  await tester.tap(find.text(day));
+  await tester.pumpAndSettle();
+
+  await tester.tap(find.text('Add entry'));
+  await tester.pumpAndSettle();
+}
+
+// The tab holds an *Add entry* of its own behind the dialog.
+FilledButton _dialogButton(WidgetTester tester) => tester.widget<FilledButton>(
+  find.descendant(
+    of: find.byType(AvailabilityEntryDialog),
+    matching: find.byType(FilledButton),
+  ),
+);
 
 // Days of the month on screen that no neighbouring month can also draw: the
 // grid carries at most six days before it and twelve after.

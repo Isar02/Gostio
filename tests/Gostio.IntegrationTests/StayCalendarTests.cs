@@ -43,6 +43,8 @@ public class StayCalendarTests(DatabaseFixture fixture)
         Assert.Equal([true, false, false, true], Bookable(days));
     }
 
+    // The service will not write this range any more, so it is put there behind
+    // it: a day unbookable twice over is still one day.
     [Fact]
     public async Task ADayCarryingBothIsStillOneDay()
     {
@@ -50,7 +52,9 @@ public class StayCalendarTests(DatabaseFixture fixture)
         var guest = await workspace.AGuestAsync();
 
         await workspace.BookStayAsync(guest, listing, first.AddDays(1), nights: 1);
-        await workspace.CloseAsync(host, listing, first.AddDays(1), first.AddDays(1));
+
+        await workspace.CloseBehindTheServiceAsync(
+            listing, first.AddDays(1), first.AddDays(1));
 
         var days = await CalendarAsync(host, RoleNames.Host, listing, first, first.AddDays(2));
 

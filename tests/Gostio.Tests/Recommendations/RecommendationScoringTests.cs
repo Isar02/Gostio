@@ -124,6 +124,39 @@ public class RecommendationScoringTests
         Assert.Equal(RecommendationReasonKind.Capacity, Assert.Single(ranked[0].Reasons).Kind);
     }
 
+    // The place that does not fit still scores what it can, because a near miss
+    // ranks above a wrong one. What it must not do is say it fits: the reason is
+    // read as a flat claim that the party has room, and it would not be true.
+    [Fact]
+    public void APlaceTooSmallForThePartyIsNeverGivenRoomAsAReason()
+    {
+        var profile = TasteProfile.Build([Searched(guestCount: 4)], [], Now);
+        var fits = Listing with { ListingId = 1, MaxGuests = 4 };
+        var cramped = Listing with { ListingId = 2, MaxGuests = 1 };
+
+        var ranked = RecommendationScoring.Rank(profile, [cramped, fits]);
+
+        var smaller = Assert.Single(ranked, one => one.Listing.ListingId == 2);
+
+        Assert.DoesNotContain(
+            smaller.Reasons, reason => reason.Kind == RecommendationReasonKind.Capacity);
+
+        // Still ranked, and still ranked below the one that fits.
+        Assert.True(smaller.Score > 0);
+        Assert.Equal(2, ranked[1].Listing.ListingId);
+    }
+
+    [Fact]
+    public void APlaceLargerThanThePartyStillHasRoomForThem()
+    {
+        var profile = TasteProfile.Build([Searched(guestCount: 2)], [], Now);
+        var roomy = Listing with { ListingId = 1, MaxGuests = 8 };
+
+        var ranked = RecommendationScoring.Rank(profile, [roomy]);
+
+        Assert.Equal(RecommendationReasonKind.Capacity, Assert.Single(ranked[0].Reasons).Kind);
+    }
+
     [Fact]
     public void AGuestWhoseSignalsMatchNothingStillGetsTheCatalogueInOrder()
     {

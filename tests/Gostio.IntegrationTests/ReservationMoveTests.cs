@@ -215,6 +215,64 @@ public class ReservationMoveTests(DatabaseFixture fixture)
         Assert.Equal(ReservationStatusCode.Pending, await workspace.StatusOfAsync(booked.Id));
     }
 
+    // Closing dates takes away nights somebody is holding, so it is refused
+    // while anything holds them.
+    [Fact]
+    public async Task DatesCarryingALiveHoldCannotBeClosed()
+    {
+        var (host, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var booked = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        var refused = await Assert.ThrowsAsync<BusinessException>(
+            () => workspace.CloseAsync(host, listing, Soon, Soon.AddDays(1)));
+
+        Assert.Contains("cancellation", refused.Message);
+        Assert.Equal(ReservationStatusCode.Pending, await workspace.StatusOfAsync(booked.Id));
+    }
+
+    [Fact]
+    public async Task DatesCarryingAConfirmedBookingCannotBeClosedEither()
+    {
+        var (host, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var booked = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        await workspace.ConfirmAsync(host, RoleNames.Host, booked.Id);
+
+        await Assert.ThrowsAsync<BusinessException>(
+            () => workspace.CloseAsync(host, listing, Soon, Soon.AddDays(1)));
+    }
+
+    // Both bounds of a range are days and both bounds of a stay are nights, so
+    // a range covering only the day a guest leaves takes no night they booked.
+    [Fact]
+    public async Task DatesAroundABookingCanStillBeClosed()
+    {
+        var (host, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+
+        await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        await workspace.CloseAsync(host, listing, Soon.AddDays(2), Soon.AddDays(4));
+        await workspace.CloseAsync(host, listing, Soon.AddDays(-3), Soon.AddDays(-1));
+    }
+
+    [Fact]
+    public async Task DatesAHoldNoLongerCoversCanBeClosed()
+    {
+        var (host, listing) = await workspace.AListingAsync();
+        var guest = await workspace.AGuestAsync();
+        var booked = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
+
+        await workspace.CancelAsync(guest, RoleNames.Guest, booked.Id, "Plans changed");
+
+        await workspace.CloseAsync(host, listing, Soon, Soon.AddDays(1));
+    }
+
+    // A live hold cannot have its dates closed under it, so the host reaches
+    // this by waiting the hold out first. What it asks is the same either way:
+    // a confirmation is a place being given, and a closed one cannot be given.
     [Fact]
     public async Task DatesClosedAfterTheBookingRefuseTheConfirmation()
     {
@@ -222,12 +280,31 @@ public class ReservationMoveTests(DatabaseFixture fixture)
         var guest = await workspace.AGuestAsync();
         var booked = await workspace.BookStayAsync(guest, listing, Soon, nights: 2);
 
+        await workspace.LapseAsync(booked.Id);
         await workspace.CloseAsync(host, listing, Soon, Soon.AddDays(1));
 
         var refused = await Assert.ThrowsAsync<BusinessException>(
             () => workspace.ConfirmAsync(host, RoleNames.Host, booked.Id));
 
         Assert.Contains("closed", refused.Message);
+    }
+
+    // A host may close a term the moment its last hold lapses.
+    [Fact]
+    public async Task ATermClosedAfterTheBookingRefusesTheConfirmation()
+    {
+        var (host, slot) = await workspace.ATermAsync(capacity: 6, startsAt: Later);
+        var guest = await workspace.AGuestAsync();
+        var booked = await workspace.BookTermAsync(guest, slot, guestCount: 2);
+
+        await workspace.LapseAsync(booked.Id);
+        await workspace.CloseTermAsync(host, slot, capacity: 10);
+
+        var refused = await Assert.ThrowsAsync<BusinessException>(
+            () => workspace.ConfirmAsync(host, RoleNames.Host, booked.Id));
+
+        Assert.Contains("closed", refused.Message);
+        Assert.Equal(ReservationStatusCode.Pending, await workspace.StatusOfAsync(booked.Id));
     }
 
     [Fact]

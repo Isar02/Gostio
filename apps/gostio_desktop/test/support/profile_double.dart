@@ -91,6 +91,10 @@ class ProfileDouble implements ProfileRepository {
     required String newPassword,
     required String confirmNewPassword,
   }) async {
+    if (holdsTheWrite) {
+      await _write.future;
+    }
+
     if (passwordFails) {
       throw const ApiException(
         message: 'One or more values are not valid.',

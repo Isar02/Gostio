@@ -137,6 +137,33 @@ internal sealed class ReservationWorkspace(DatabaseFixture fixture)
     public Task CloseAsync(int host, int listing, DateOnly from, DateOnly to) =>
         AddExceptionAsync(host, listing, from, to, isAvailable: false, priceOverride: null);
 
+    // The row the service refuses to write, put there anyway so what stands
+    // behind that refusal can be asked on its own.
+    public async Task CloseBehindTheServiceAsync(int listing, DateOnly from, DateOnly to)
+    {
+        await using var db = fixture.CreateContext();
+
+        db.AccommodationAvailability.Add(new AccommodationAvailability
+        {
+            AccommodationId = listing,
+            StartDate = from,
+            EndDate = to,
+            IsAvailable = false,
+            PriceOverride = null,
+        });
+
+        await db.SaveChangesAsync();
+    }
+
+    public async Task CloseTermBehindTheServiceAsync(int slot)
+    {
+        await using var db = fixture.CreateContext();
+
+        await db.ExperienceSlots
+            .Where(term => term.Id == slot)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(term => term.IsActive, false));
+    }
+
     public Task RepriceAsync(int host, int listing, DateOnly from, DateOnly to, decimal price) =>
         AddExceptionAsync(host, listing, from, to, isAvailable: true, priceOverride: price);
 

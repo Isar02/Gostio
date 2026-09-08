@@ -22,6 +22,24 @@ each client is measurement and drawing: its own spacing and type scales, its own
 widgets, notifiers and repositories. A client imports the one library the
 package publishes and nothing inside it.
 
+## Screenshots
+
+Both clients, from release builds against a seeded database.
+
+### Desktop — administrator and host panel
+
+| Overview | Reports |
+| --- | --- |
+| ![Overview](assets/screenshots/desktop-overview.png) | ![Reports](assets/screenshots/desktop-reports.png) |
+
+![Accommodations](assets/screenshots/desktop-accommodations.png)
+
+### Mobile — guest
+
+| Explore | Listing | Trips |
+| --- | --- | --- |
+| ![Explore](assets/screenshots/mobile-explore.png) | ![Listing](assets/screenshots/mobile-listing.png) | ![Trips](assets/screenshots/mobile-trips.png) |
+
 ## Test accounts
 
 Created by the seeder the first time the API starts against an empty database.

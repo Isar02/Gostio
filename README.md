@@ -12,8 +12,6 @@ Both clients, from release builds against a seeded database.
 
 <p align="center">
   <img src="assets/screenshots/desktop-overview.png" width="880" alt="Overview: accounts, listings, bookings and net revenue for the month">
-  <img src="assets/screenshots/desktop-accommodations.png" width="880" alt="Host panel: my accommodations, filtered and paged">
-  <img src="assets/screenshots/desktop-messages.png" width="880" alt="Messages: a support conversation answered from the admin panel">
 </p>
 
 ### Mobile — guest
@@ -53,67 +51,50 @@ recommendations data to stand on. They use the same password.
 
 - Docker Desktop
 - 7-Zip, WinRAR or PeaZip — Windows Explorer cannot open an encrypted archive
-- Stripe CLI — only to settle a payment locally
-- Flutter 3.47+ and the Android SDK — only for the clients
+- Flutter SDK 3.47+ and the Android SDK (for the clients)
+- Stripe CLI (only to settle a payment locally)
 
-### Run the stack
+### Run the API stack with Docker
 
-1. Unpack `.env-tajne.zip` in place — it is the working `.env`, encrypted, and
-   its password is handed over separately:
+1. Unpack `.env-tajne.zip` in place with `7z x .env-tajne.zip` — it is the
+   working `.env`, encrypted, and its password is handed over separately. To
+   work on the project instead, copy `.env.example` to `.env` and fill in what
+   it leaves empty.
+2. From this folder:
 
-   ```powershell
-   7z x .env-tajne.zip
-   ```
-
-   To work on the project instead, copy `.env.example` to `.env` and fill in
-   the values it leaves empty. `DB_NAME`, `DB_SA_PASSWORD`, `JWT_KEY`, the two
-   RabbitMQ credentials and `SEED_DEFAULT_PASSWORD` are needed to start; the
-   SMTP, Stripe and Google Maps values are needed only by the features that
-   call those services.
-
-2. Bring the stack up:
-
-   ```bash
-   docker compose up -d --build
-   ```
+```bash
+docker compose up -d --build
+```
 
 Four containers come up: SQL Server, RabbitMQ, the API and the worker. The API
-creates its database, applies the migrations and seeds it on first start, so
-nothing has to be run by hand. It listens on `http://localhost:5000` and serves
-Swagger at `/swagger`.
+creates its database, migrates and seeds it on first start.
+
+API default: `http://localhost:5000` (Swagger at `/swagger` in Development).
+
+### Run the Flutter apps
+
+The API address is a compile-time constant, so it is passed on every run and
+every build.
+
+- **Desktop:** `cd apps/gostio_desktop` → `flutter run -d windows --dart-define=API_BASE_URL=http://localhost:5000`
+- **Mobile (emulator):** `cd apps/gostio_mobile` → `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000`
+
+Sign in as `desktop` / `test`: that account holds both roles, so it opens on
+the administrator panel with a switch to the host one.
 
 ### Settle a payment locally
 
-Stripe confirms a booking through a signed webhook, so a charge made locally
-settles only while the Stripe CLI is forwarding. The key is read from `.env`,
-which no shell loads on its own:
+Stripe confirms a booking through a signed webhook, so a local charge settles
+only while the Stripe CLI is forwarding it. The delivered `.env` already holds
+the secret the listener prints, so nothing has to be reconfigured:
 
 ```bash
 set -a; source .env; set +a
 stripe listen --api-key "$STRIPE_SECRET_KEY" --forward-to http://localhost:5000/api/payments/webhook
 ```
 
-The `whsec_...` the listener prints has to match `STRIPE_WEBHOOK_SECRET`; the
-delivered configuration already holds the one this account's CLI prints.
 Without the forwarder the card is charged and the booking stays *Pending* —
 only the signed webhook marks it paid.
-
-### Run the clients
-
-The API address is a compile-time constant, so it is passed on every run and
-every build.
-
-```bash
-cd apps/gostio_desktop && flutter run -d windows --dart-define=API_BASE_URL=http://localhost:5000
-cd apps/gostio_mobile  && flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
-```
-
-Sign in as `desktop` / `test` on the desktop client — that account holds both
-roles, so it opens on the administrator panel with a switch to the host one.
-
-Either client checks itself with `dart format --set-exit-if-changed lib test`,
-`flutter analyze` and `flutter test`. The backend does so with
-`dotnet build -warnaserror` and `dotnet test`, which needs `gostio-db` up.
 
 ### Build for release
 
@@ -122,10 +103,14 @@ cd apps/gostio_desktop && flutter build windows --release --dart-define=API_BASE
 cd apps/gostio_mobile  && flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```
 
-The Windows build writes `build/windows/x64/runner/Release` — `Gostio.exe` and
-the DLLs and `data` folder beside it, so the folder travels rather than the
-executable alone. The Android build writes
-`build/app/outputs/flutter-apk/app-release.apk`.
+They write `build/windows/x64/runner/Release` — the whole folder travels, not
+`Gostio.exe` alone — and `build/app/outputs/flutter-apk/app-release.apk`.
+
+### Checks
+
+Either client: `dart format --set-exit-if-changed lib test`, `flutter analyze`,
+`flutter test`. Backend: `dotnet build -warnaserror` and `dotnet test`, with
+`gostio-db` up.
 
 ## Project structure
 

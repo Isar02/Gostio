@@ -5,16 +5,21 @@ import 'package:gostio_core/gostio_core.dart';
 
 import '../../../core/paging/paged_notifier.dart';
 import '../data/conversations_repository.dart';
+import 'chat_nudge.dart';
 
 // Every thread this account is in, newest activity first. It has no filter of
 // its own — a guest reaches only their own threads — so the query it pages
 // under carries nothing.
 class InboxNotifier extends PagedNotifier<Conversation, void> {
-  InboxNotifier(this._repository) : super(null) {
+  InboxNotifier(this._repository, {ChatNudge? nudge}) : super(null) {
+    _listening = nudge?.touched.listen((int _) => unawaited(catchUp()));
     unawaited(reload());
   }
 
   final ConversationsRepository _repository;
+
+  StreamSubscription<int>? _listening;
+  bool _isCatchingUp = false;
 
   // What the list is holding, in the order the server keeps it: last spoken in
   // first, and the newer thread first where two were spoken in at once. Every
@@ -37,6 +42,35 @@ class InboxNotifier extends PagedNotifier<Conversation, void> {
   // pages it has already read and redraws the one row that changed.
   void threadChanged(Conversation thread) =>
       replaceWhere((Conversation held) => held.id == thread.id, thread);
+
+  // The newest page merged into what is already held, so a nudge does not send
+  // a reader several pages deep back to the top.
+  Future<void> catchUp() async {
+    if (_isCatchingUp || isLoading || !hasLanded) {
+      return;
+    }
+
+    _isCatchingUp = true;
+
+    try {
+      mergeNewest(
+        await _repository.search(page: 1, pageSize: pageSize),
+        isSame: (Conversation held, Conversation arrived) =>
+            held.id == arrived.id,
+      );
+    } on ApiException {
+      return;
+    } finally {
+      _isCatchingUp = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_listening?.cancel());
+
+    super.dispose();
+  }
 
   static int _lastSpokenInFirst(Conversation one, Conversation other) {
     final int moment = other.lastActivityAt.compareTo(one.lastActivityAt);

@@ -18,6 +18,7 @@ import '../features/messages/data/chat_hub.dart';
 import '../features/messages/data/conversations_repository.dart';
 import '../features/messages/data/messages_repository.dart';
 import '../features/messages/data/signalr_chat_hub.dart';
+import '../features/messages/presentation/chat_nudge.dart';
 import '../features/messages/presentation/unread_messages.dart';
 import '../features/news/data/news_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
@@ -170,9 +171,15 @@ class SignedInApp extends StatelessWidget {
         // What is waiting in the inbox is drawn over the tab from every screen
         // in the client, so it is counted here beside the bell's count and for
         // the same reason.
+        Provider<ChatNudge>(
+          create: (BuildContext context) => ChatNudge(context.read<ChatHub>()),
+          dispose: (BuildContext context, ChatNudge nudge) => nudge.dispose(),
+        ),
         ChangeNotifierProvider<UnreadMessages>(
-          create: (BuildContext context) =>
-              UnreadMessages(context.read<MessagesRepository>()),
+          create: (BuildContext context) => UnreadMessages(
+            context.read<MessagesRepository>(),
+            nudge: context.read<ChatNudge>(),
+          ),
         ),
       ],
       child: const AppShell(),

@@ -123,5 +123,11 @@ internal sealed class ApiHost : IAsyncDisposable
             int userId,
             int tokenVersion,
             CancellationToken cancellationToken) => Task.FromResult(true);
+
+        public Task<IReadOnlyDictionary<int, int>> CurrentVersionsAsync(
+            IReadOnlyCollection<int> userIds,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyDictionary<int, int>>(
+                userIds.ToDictionary(userId => userId, _ => 0));
     }
 }

@@ -1,3 +1,4 @@
+using Gostio.Model.Enums;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Services.Chat;
@@ -33,6 +34,8 @@ public sealed class ConversationMessagesController(IMessageService messages) : C
 
     // Polled or refreshed, so it costs a count rather than a page of threads.
     [HttpGet("unread-count")]
-    public Task<UnreadCountResponse> Unread(CancellationToken cancellationToken) =>
-        messages.UnreadAsync(cancellationToken);
+    public Task<UnreadCountResponse> Unread(
+        [FromQuery] ConversationType? type,
+        CancellationToken cancellationToken) =>
+        messages.UnreadAsync(type, cancellationToken);
 }

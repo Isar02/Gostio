@@ -1,5 +1,6 @@
 using System.Net;
 using Gostio.Model.Authorization;
+using Gostio.Model.Enums;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 using Gostio.Model.Validation;
@@ -183,7 +184,9 @@ public sealed class ConversationMessagesControllerTests : IAsyncLifetime
             return Task.FromResult(new UnreadCountResponse { Unread = 0 });
         }
 
-        public Task<UnreadCountResponse> UnreadAsync(CancellationToken cancellationToken) =>
+        public Task<UnreadCountResponse> UnreadAsync(
+            ConversationType? type,
+            CancellationToken cancellationToken) =>
             Task.FromResult(new UnreadCountResponse { Unread = 4 });
     }
 }

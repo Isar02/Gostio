@@ -153,6 +153,9 @@ class _SendButton extends StatelessWidget {
       child: IconButton.filled(
         onPressed: isSending ? null : onPressed,
         tooltip: 'Send',
+        // The theme's ambient icon colour reaches inside a filled button and
+        // leaves a muted arrow on the brand ground, which reads as disabled.
+        style: IconButton.styleFrom(foregroundColor: AppColors.surface),
         icon: isSending
             ? const SizedBox(
                 width: AppSizes.iconSmall,

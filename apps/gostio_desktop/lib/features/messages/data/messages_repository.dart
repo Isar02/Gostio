@@ -36,8 +36,12 @@ class MessagesRepository {
   Future<int> markRead(int conversationId) async =>
       _unread(await _client.post('/conversations/$conversationId/read'));
 
-  Future<int> unreadCount() async =>
-      _unread(await _client.get('/conversations/unread-count'));
+  Future<int> unreadCount({ConversationType? type}) async => _unread(
+    await _client.get(
+      '/conversations/unread-count',
+      query: <String, dynamic>{'type': ?type?.wireName},
+    ),
+  );
 
   static int _unread(JsonMap body) => body['unread'] as int? ?? 0;
 }

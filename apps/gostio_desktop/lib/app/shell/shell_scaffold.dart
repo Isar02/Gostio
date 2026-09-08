@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 import 'package:provider/provider.dart';
@@ -55,8 +57,10 @@ class ShellScaffold extends StatelessWidget {
               NotificationsNotifier(context.read<NotificationsRepository>()),
         ),
         ChangeNotifierProvider<ChatUnreadNotifier>(
-          create: (BuildContext context) =>
-              ChatUnreadNotifier(context.read<MessagesRepository>()),
+          create: (BuildContext context) => ChatUnreadNotifier(
+            context.read<MessagesRepository>(),
+            hub: context.read<ChatHub>(),
+          ),
         ),
       ],
       child: _ShellFrame(account: account),
@@ -64,15 +68,28 @@ class ShellScaffold extends StatelessWidget {
   }
 }
 
-class _ShellFrame extends StatelessWidget {
+class _ShellFrame extends StatefulWidget {
   const _ShellFrame({required this.account});
 
   final User account;
 
   @override
+  State<_ShellFrame> createState() => _ShellFrameState();
+}
+
+class _ShellFrameState extends State<_ShellFrame> {
+  @override
   Widget build(BuildContext context) {
     final WorkspaceMode mode = context.select<Workspace, WorkspaceMode>(
       (Workspace workspace) => workspace.mode,
+    );
+
+    // A host panel lists its own threads and no support, so the badge over it
+    // counts the same.
+    unawaited(
+      context.read<ChatUnreadNotifier>().scopeTo(
+        mode == WorkspaceMode.host ? ConversationType.direct : null,
+      ),
     );
     final AppSection section = context.select<Workspace, AppSection>(
       (Workspace workspace) => workspace.section,
@@ -85,12 +102,12 @@ class _ShellFrame extends StatelessWidget {
           Expanded(
             child: Column(
               children: <Widget>[
-                ShellTopBar(account: account),
+                ShellTopBar(account: widget.account),
                 Expanded(
                   child: SectionHost(
                     mode: mode,
                     section: section,
-                    account: account,
+                    account: widget.account,
                   ),
                 ),
               ],

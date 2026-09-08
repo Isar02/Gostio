@@ -12,6 +12,8 @@ class ChatHubDouble implements ChatHub {
   final List<int> watched = <int>[];
   final List<int> given = <int>[];
 
+  final StreamController<int> account = StreamController<int>.broadcast();
+
   bool get isClosed => _isClosed;
 
   bool _isClosed = false;
@@ -39,6 +41,16 @@ class ChatHubDouble implements ChatHub {
   }
 
   @override
+  Stream<int> watchAccount() => account.stream;
+
+  // What the server sends every connection an account holds.
+  Future<void> touch(int conversationId) async {
+    account.add(conversationId);
+
+    await Future<void>.microtask(() {});
+  }
+
+  @override
   Future<void> close() async {
     _isClosed = true;
 
@@ -46,6 +58,8 @@ class ChatHubDouble implements ChatHub {
       await events.close();
     }
     watching.clear();
+
+    await account.close();
   }
 }
 
@@ -73,6 +87,7 @@ class ChatConnectionDouble implements ChatConnection {
   @override
   void listen({
     required void Function(List<Object?>? arguments) said,
+    required void Function(List<Object?>? arguments) touched,
     required void Function(Object? failure) lost,
     required void Function() restored,
   }) {

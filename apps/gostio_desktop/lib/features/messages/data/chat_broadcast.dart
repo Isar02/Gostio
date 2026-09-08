@@ -1,6 +1,5 @@
 import 'package:gostio_core/gostio_core.dart';
 
-// The one call the hub makes carries the message as its only argument.
 abstract final class ChatBroadcast {
   static Message? read(List<Object?>? arguments) {
     final Object? payload = arguments == null || arguments.isEmpty
@@ -17,4 +16,8 @@ abstract final class ChatBroadcast {
       return null;
     }
   }
+
+  // The nudge carries the thread it is about and nothing else.
+  static int? touched(List<Object?>? arguments) =>
+      arguments == null || arguments.isEmpty ? null : arguments.first as int?;
 }

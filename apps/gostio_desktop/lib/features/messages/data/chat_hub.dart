@@ -29,5 +29,9 @@ abstract interface class ChatHub {
   // Connected on the first listen, given up when the last is cancelled.
   Stream<ChatEvent> watch(int conversationId);
 
+  // The id of a thread this account is in that has just been spoken in, for
+  // the lists that are not inside one.
+  Stream<int> watchAccount();
+
   Future<void> close();
 }

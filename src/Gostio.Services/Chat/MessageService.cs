@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
@@ -115,15 +116,26 @@ internal sealed class MessageService(
                 setters => setters.SetProperty(participant => participant.LastReadAt, readAt),
                 cancellationToken);
 
-        return await UnreadAsync(cancellationToken);
+        return await UnreadAsync(type: null, cancellationToken);
     }
 
-    public async Task<UnreadCountResponse> UnreadAsync(CancellationToken cancellationToken) =>
-        new()
+    public async Task<UnreadCountResponse> UnreadAsync(
+        ConversationType? type,
+        CancellationToken cancellationToken)
+    {
+        var threads = access.Reachable();
+
+        if (type is ConversationType kind)
         {
-            Unread = await access.Reachable()
-                .SumAsync(ChatQueries.UnreadBy(access.CallerId), cancellationToken),
+            threads = threads.Where(conversation => conversation.Type == kind);
+        }
+
+        return new UnreadCountResponse
+        {
+            Unread = await threads.SumAsync(
+                ChatQueries.UnreadBy(access.CallerId), cancellationToken),
         };
+    }
 
     // The row that puts an administrator in the thread and the answer that put
     // them there are one write: a message that lands without it is a message in

@@ -11,7 +11,10 @@ import 'conversation_fixture.dart';
 // The threads an inbox is drawn over. It pages what it was given the way the
 // server would, so a test names rows rather than pages.
 class ConversationsDouble implements ConversationsRepository {
-  ConversationsDouble({this.rows = const <Conversation>[], this.failure});
+  ConversationsDouble({
+    List<Conversation> rows = const <Conversation>[],
+    this.failure,
+  }) : rows = List<Conversation>.of(rows);
 
   final List<Conversation> rows;
   final ApiException? failure;
@@ -96,6 +99,10 @@ class ChatHubDouble implements ChatHub {
   bool wasClosed = false;
 
   StreamController<ChatEvent>? _events;
+  StreamController<int>? _account;
+
+  int accountWatches = 0;
+  int accountCancels = 0;
 
   bool get isWatching => _events != null;
 
@@ -130,10 +137,29 @@ class ChatHubDouble implements ChatHub {
   }
 
   @override
+  Stream<int> watchAccount() {
+    accountWatches++;
+    _account ??= StreamController<int>.broadcast(
+      onCancel: () => accountCancels++,
+    );
+
+    return _account!.stream;
+  }
+
+  // What the server sends every connection an account holds.
+  Future<void> touch(int conversationId) async {
+    _account?.add(conversationId);
+
+    await Future<void>.microtask(() {});
+  }
+
+  @override
   Future<void> close() async {
     wasClosed = true;
     await _events?.close();
     _events = null;
+    await _account?.close();
+    _account = null;
   }
 }
 
@@ -150,7 +176,7 @@ class MessagesDouble implements MessagesRepository {
 
   // Newest first, which is the order the API answers them in.
   final List<Message> lines;
-  final int unread;
+  int unread;
 
   final ApiException? failure;
   final ApiException? sendFailure;

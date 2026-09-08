@@ -58,11 +58,16 @@ internal sealed class ConversationService(
                     SentAt = message.SentAt,
                 })
                 .FirstOrDefault(),
-            UnreadCount = conversation.Messages.Count(message =>
-                message.SenderUserId != callerId
-                && message.SentAt >= (conversation.Participants
-                    .Where(participant => participant.UserId == callerId)
-                    .Max(participant => participant.LastReadAt) ?? ChatQueries.Never)),
+            // ChatQueries.UnreadBy, restated in full: an expression cannot call
+            // another one, and a part left out stops the two agreeing.
+            UnreadCount = conversation.Participants.Any(
+                participant => participant.UserId == callerId)
+                ? conversation.Messages.Count(message =>
+                    message.SenderUserId != callerId
+                    && message.SentAt >= (conversation.Participants
+                        .Where(participant => participant.UserId == callerId)
+                        .Max(participant => participant.LastReadAt) ?? ChatQueries.Never))
+                : 0,
             CreatedAt = conversation.CreatedAt,
             LastActivityAt =
                 conversation.Messages.Max(message => (DateTime?)message.SentAt)

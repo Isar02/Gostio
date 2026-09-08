@@ -14,4 +14,13 @@ internal sealed class ChatMembership(GostioDbContext db) : IChatMembership
             .AsNoTracking()
             .Where(ChatQueries.IsReachableBy(userId, isAdministrator))
             .AnyAsync(conversation => conversation.Id == conversationId, cancellationToken);
+
+    public async Task<IReadOnlyList<int>> ParticipantsOfAsync(
+        int conversationId,
+        CancellationToken cancellationToken) =>
+        await db.ConversationParticipants
+            .AsNoTracking()
+            .Where(participant => participant.ConversationId == conversationId)
+            .Select(participant => participant.UserId)
+            .ToListAsync(cancellationToken);
 }

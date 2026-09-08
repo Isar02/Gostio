@@ -27,6 +27,11 @@ class SignalRChatHub implements ChatHub {
   final Map<int, StreamController<ChatEvent>> _watchers =
       <int, StreamController<ChatEvent>>{};
 
+  // Its listener keeps the socket up for as long as the client is signed in.
+  late final StreamController<int> _account = StreamController<int>.broadcast(
+    onListen: () => unawaited(_connect()),
+  );
+
   ChatConnection? _connection;
   Future<ChatConnection>? _connecting;
 
@@ -48,9 +53,15 @@ class SignalRChatHub implements ChatHub {
     return events.stream;
   }
 
+  // The nudge the server sends to every connection this account holds.
+  @override
+  Stream<int> watchAccount() => _account.stream;
+
   @override
   Future<void> close() async {
     _isClosed = true;
+
+    unawaited(_account.close());
 
     for (final StreamController<ChatEvent> watcher in _watchers.values) {
       unawaited(watcher.close());
@@ -107,7 +118,7 @@ class SignalRChatHub implements ChatHub {
       }
     }
 
-    if (_watchers.isEmpty) {
+    if (_watchers.isEmpty && !_account.hasListener) {
       await _hangUp();
     }
   }
@@ -141,6 +152,7 @@ class SignalRChatHub implements ChatHub {
 
     connection.listen(
       said: (List<Object?>? arguments) => _said(connection, arguments),
+      touched: (List<Object?>? arguments) => _touched(connection, arguments),
       lost: (Object? failure) => _dropped(connection, failure),
       restored: () => _rejoin(connection),
     );
@@ -182,6 +194,17 @@ class SignalRChatHub implements ChatHub {
 
     if (ChatBroadcast.read(arguments) case final Message said) {
       _tell(said.conversationId, ChatSaid(said));
+    }
+  }
+
+  void _touched(ChatConnection connection, List<Object?>? arguments) {
+    if (!_isHeld(connection)) {
+      return;
+    }
+
+    if (ChatBroadcast.touched(arguments) case final int conversationId
+        when !_account.isClosed) {
+      _account.add(conversationId);
     }
   }
 

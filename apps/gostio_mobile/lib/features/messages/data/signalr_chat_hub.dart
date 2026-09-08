@@ -31,6 +31,8 @@ class SignalRChatHub implements ChatHub {
   final ChatConnections _open;
 
   _Watch? _held;
+  StreamController<int>? _account;
+  ChatConnection? _accountConnection;
   bool _isClosed = false;
 
   @override
@@ -45,11 +47,77 @@ class SignalRChatHub implements ChatHub {
     return events.stream;
   }
 
+  // A socket of its own, because the thread this holds is opened and left while
+  // the account stays the same. Given up when the listen is cancelled, so a
+  // phone behind its reader still holds nothing open.
+  @override
+  Stream<int> watchAccount() {
+    late final StreamController<int> events;
+
+    events = StreamController<int>.broadcast(
+      onListen: () => unawaited(_startAccount(events)),
+      onCancel: () => unawaited(_cancelAccount(events)),
+    );
+
+    return events.stream;
+  }
+
   @override
   Future<void> close() async {
     _isClosed = true;
 
     await _giveUp(_take());
+    await _cancelAccount(_account);
+  }
+
+  Future<void> _startAccount(StreamController<int> events) async {
+    _account = events;
+
+    final ChatConnection connection = _open()
+      ..listen(
+        said: (List<Object?>? _) {},
+        touched: (List<Object?>? arguments) => _touched(events, arguments),
+        lost: (Object? _) {},
+        restored: () {},
+      );
+
+    try {
+      await connection.start();
+    } on Object {
+      await _hangUp(connection);
+
+      return;
+    }
+
+    if (_isClosed || !identical(_account, events)) {
+      await _hangUp(connection);
+
+      return;
+    }
+
+    _accountConnection = connection;
+  }
+
+  Future<void> _cancelAccount(StreamController<int>? events) async {
+    if (events == null || !identical(_account, events)) {
+      return;
+    }
+
+    final ChatConnection? connection = _accountConnection;
+    _account = null;
+    _accountConnection = null;
+
+    await _hangUp(connection);
+  }
+
+  void _touched(StreamController<int> events, List<Object?>? arguments) {
+    if (!identical(_account, events) || events.isClosed) {
+      return;
+    }
+
+    if (ChatBroadcast.touched(arguments) case final int conversationId) {
+      events.add(conversationId);
+    }
   }
 
   Future<void> _start(_Watch watch) async {
@@ -71,6 +139,7 @@ class SignalRChatHub implements ChatHub {
     final ChatConnection connection = _open()
       ..listen(
         said: (List<Object?>? arguments) => _said(watch, arguments),
+        touched: (List<Object?>? _) {},
         lost: (Object? failure) => _dropped(watch, failure),
         restored: () => unawaited(_rejoin(watch)),
       );

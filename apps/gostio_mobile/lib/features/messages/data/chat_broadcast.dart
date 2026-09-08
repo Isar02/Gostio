@@ -19,4 +19,8 @@ abstract final class ChatBroadcast {
       return null;
     }
   }
+
+  // The nudge carries the thread it is about and nothing else.
+  static int? touched(List<Object?>? arguments) =>
+      arguments == null || arguments.isEmpty ? null : arguments.first as int?;
 }

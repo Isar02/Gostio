@@ -222,6 +222,14 @@ public sealed class AuthenticationPipelineTests : IAsyncLifetime
             int userId,
             int tokenVersion,
             CancellationToken cancellationToken) => Task.FromResult(IsCurrent);
+
+        public Task<IReadOnlyDictionary<int, int>> CurrentVersionsAsync(
+            IReadOnlyCollection<int> userIds,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyDictionary<int, int>>(
+                IsCurrent
+                    ? userIds.ToDictionary(userId => userId, _ => 0)
+                    : new Dictionary<int, int>());
     }
 }
 

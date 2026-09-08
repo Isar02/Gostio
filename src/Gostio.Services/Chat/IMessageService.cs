@@ -1,3 +1,4 @@
+using Gostio.Model.Enums;
 using Gostio.Model.Requests;
 using Gostio.Model.Responses;
 
@@ -19,5 +20,9 @@ public interface IMessageService
         int conversationId,
         CancellationToken cancellationToken);
 
-    Task<UnreadCountResponse> UnreadAsync(CancellationToken cancellationToken);
+    // The kind narrows it the way it narrows the list, so a panel showing one
+    // kind is not counted over both.
+    Task<UnreadCountResponse> UnreadAsync(
+        ConversationType? type,
+        CancellationToken cancellationToken);
 }

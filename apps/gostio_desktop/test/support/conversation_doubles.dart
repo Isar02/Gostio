@@ -59,6 +59,7 @@ class MessagesDouble implements MessagesRepository {
     this.pagesOfLines = const <List<Message>>[],
     int? totalCount,
     this.unread = 0,
+    this.unreadAfterMarking,
     this.refusing,
     this.failing = false,
   }) : totalCount =
@@ -71,10 +72,15 @@ class MessagesDouble implements MessagesRepository {
   List<List<Message>> pagesOfLines;
   int totalCount;
   int unread;
+
+  // What the marking answers with. Unset, it reports the count unchanged.
+  int? unreadAfterMarking;
+
   ApiException? refusing;
   bool failing;
 
   final List<int> pagesRead = <int>[];
+  final List<ConversationType?> scopes = <ConversationType?>[];
   final List<String> written = <String>[];
   int markedRead = 0;
 
@@ -135,11 +141,13 @@ class MessagesDouble implements MessagesRepository {
       throw const ApiException(message: 'The thread could not be marked read.');
     }
 
-    return unread;
+    return unread = unreadAfterMarking ?? unread;
   }
 
   @override
-  Future<int> unreadCount() async {
+  Future<int> unreadCount({ConversationType? type}) async {
+    scopes.add(type);
+
     if (failing) {
       throw const ApiException(message: 'The count could not be read.');
     }

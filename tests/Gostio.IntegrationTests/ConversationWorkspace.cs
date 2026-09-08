@@ -165,8 +165,11 @@ internal sealed class ConversationWorkspace(DatabaseFixture fixture)
             service => service.MarkReadAsync(conversationId, default),
             interceptors);
 
-    public Task<UnreadCountResponse> UnreadAsync(int actor, string role) =>
-        AsMessagesAsync(actor, role, service => service.UnreadAsync(default));
+    public Task<UnreadCountResponse> UnreadAsync(
+        int actor,
+        string role,
+        ConversationType? type = null) =>
+        AsMessagesAsync(actor, role, service => service.UnreadAsync(type, default));
 
     public async Task<bool> ReachesAsync(int userId, bool isAdministrator, int conversationId)
     {

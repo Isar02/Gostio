@@ -16,6 +16,7 @@ import 'package:gostio_mobile/features/listing/presentation/favorite_edits.dart'
 import 'package:gostio_mobile/features/messages/data/chat_hub.dart';
 import 'package:gostio_mobile/features/messages/data/conversations_repository.dart';
 import 'package:gostio_mobile/features/messages/data/messages_repository.dart';
+import 'package:gostio_mobile/features/messages/presentation/chat_nudge.dart';
 import 'package:gostio_mobile/features/messages/presentation/unread_messages.dart';
 import 'package:gostio_mobile/features/news/data/news_repository.dart';
 import 'package:gostio_mobile/features/notifications/data/notifications_repository.dart';
@@ -152,7 +153,13 @@ Widget underTest(
       Provider<ConversationsRepository>.value(value: repository),
     // A thread listens through the hub, so one is composed wherever a thread
     // can be opened. Nothing else in the client reaches for it.
-    if (chat case final ChatHub hub) Provider<ChatHub>.value(value: hub),
+    if (chat case final ChatHub hub) ...<SingleChildWidget>[
+      Provider<ChatHub>.value(value: hub),
+      Provider<ChatNudge>(
+        create: (BuildContext context) => ChatNudge(hub),
+        dispose: (BuildContext context, ChatNudge nudge) => nudge.dispose(),
+      ),
+    ],
     // The count over the inbox tab is created by the provider for the same
     // reason the bell's is: what created it is what ends its poll when the
     // tree goes.
@@ -160,8 +167,10 @@ Widget underTest(
         case final MessagesRepository repository) ...<SingleChildWidget>[
       Provider<MessagesRepository>.value(value: repository),
       ChangeNotifierProvider<UnreadMessages>(
-        create: (BuildContext context) =>
-            UnreadMessages(context.read<MessagesRepository>()),
+        create: (BuildContext context) => UnreadMessages(
+          context.read<MessagesRepository>(),
+          nudge: context.read<ChatNudge?>(),
+        ),
       ),
     ],
   ],

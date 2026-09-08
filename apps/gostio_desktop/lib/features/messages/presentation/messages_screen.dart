@@ -26,8 +26,8 @@ class MessagesScreen extends StatefulWidget {
 
   final int signedInUserId;
 
-  // An administrator reaches every support thread; a host only the ones they
-  // are in. Asking for their own is what narrows the wider view.
+  // A host panel is the account's own threads about its listings; support is
+  // an administrator's duty and is not carried into it.
   final bool onlyThreadsJoined;
 
   @override
@@ -45,9 +45,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
       create: (BuildContext context) {
         final InboxNotifier inbox = InboxNotifier(
           context.read<ConversationsRepository>(),
-          query: ConversationQuery(
-            joinedBy: widget.onlyThreadsJoined ? widget.signedInUserId : null,
-          ),
+          hub: context.read<ChatHub>(),
+          query: widget.onlyThreadsJoined
+              ? ConversationQuery(
+                  type: ConversationType.direct,
+                  joinedBy: widget.signedInUserId,
+                )
+              : const ConversationQuery(),
         );
         unawaited(inbox.reload());
 
@@ -57,6 +61,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
         callerId: widget.signedInUserId,
         chosen: _open,
         onOpen: _openThread,
+        offersKinds: !widget.onlyThreadsJoined,
       ),
     );
   }
@@ -67,11 +72,15 @@ class _Body extends StatelessWidget {
     required this.callerId,
     required this.chosen,
     required this.onOpen,
+    required this.offersKinds,
   });
 
   final int callerId;
   final Conversation? chosen;
   final ValueChanged<Conversation> onOpen;
+
+  // Only one kind is reachable in a host panel, so there is nothing to narrow.
+  final bool offersKinds;
 
   @override
   Widget build(BuildContext context) {
@@ -87,12 +96,14 @@ class _Body extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          ConversationFilters(
-            applied: inbox.query,
-            isLoading: inbox.isLoading,
-            onChanged: inbox.apply,
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          if (offersKinds) ...<Widget>[
+            ConversationFilters(
+              applied: inbox.query,
+              isLoading: inbox.isLoading,
+              onChanged: inbox.apply,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,

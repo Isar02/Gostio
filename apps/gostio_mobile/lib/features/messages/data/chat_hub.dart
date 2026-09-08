@@ -33,5 +33,10 @@ abstract interface class ChatHub {
   // Connected on the first listen, given up when the listen is cancelled.
   Stream<ChatEvent> watch(int conversationId);
 
+  // The id of a thread this account is in that has just been spoken in, for the
+  // tab badge and the inbox, which are not inside one. Held on its own socket
+  // and given up the same way.
+  Stream<int> watchAccount();
+
   Future<void> close();
 }

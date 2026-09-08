@@ -43,6 +43,9 @@ builder.Services.AddGostioPaymentServices();
 builder.Services.AddGostioReviewServices();
 builder.Services.AddGostioChatServices();
 builder.Services.AddSignalR();
+// One per process, because it holds the open sockets rather than anything a
+// request owns.
+builder.Services.AddSingleton<ChatConnections>();
 builder.Services.AddScoped<IChatBroadcast, ChatBroadcast>();
 builder.Services.AddGostioFavoriteServices();
 builder.Services.AddGostioHostVerificationServices();

@@ -10,4 +10,8 @@ public interface IChatMembership
         bool isAdministrator,
         int conversationId,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<int>> ParticipantsOfAsync(
+        int conversationId,
+        CancellationToken cancellationToken);
 }

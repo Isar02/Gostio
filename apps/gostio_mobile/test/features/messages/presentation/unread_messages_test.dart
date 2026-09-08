@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gostio_mobile/core/state/foreground_poll.dart';
+import 'package:gostio_mobile/features/messages/presentation/chat_nudge.dart';
 import 'package:gostio_mobile/features/messages/presentation/unread_messages.dart';
 
 import '../../../support/messages_double.dart';
@@ -38,6 +39,30 @@ void main() {
     expect(messages.countCalls, 1);
 
     waiting.dispose();
+  });
+
+  // The interval is thirty seconds. What the hub says arrives at once.
+  testWidgets('a nudge from the hub counts again without waiting', (
+    WidgetTester tester,
+  ) async {
+    final MessagesDouble messages = MessagesDouble(unread: 0);
+    final ChatHubDouble hub = ChatHubDouble();
+    final ChatNudge nudge = ChatNudge(hub);
+    final UnreadMessages waiting = UnreadMessages(messages, nudge: nudge);
+
+    await tester.pump();
+    expect(messages.countCalls, 1);
+
+    messages.unread = 3;
+    await hub.touch(7);
+    await tester.pump();
+
+    expect(waiting.unread, 3);
+    expect(messages.countCalls, 2);
+
+    waiting.dispose();
+    nudge.dispose();
+    await hub.close();
   });
 
   // Marking a thread read costs the server the same figure, so it is taken

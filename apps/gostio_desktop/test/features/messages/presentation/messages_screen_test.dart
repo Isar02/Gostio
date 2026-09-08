@@ -82,6 +82,84 @@ void main() {
     await _leave(tester);
   });
 
+  // Support is an administrator's duty and is not carried into a host panel.
+  testWidgets('a host panel asks for its own direct threads only', (
+    WidgetTester tester,
+  ) async {
+    final ConversationsDouble threads = _oneThread();
+
+    await tester.pumpWidget(_screen(threads: threads, onlyThreadsJoined: true));
+    await tester.pumpAndSettle();
+
+    expect(threads.queries.last.type, ConversationType.direct);
+    expect(threads.queries.last.joinedBy, administratorId);
+    expect(find.text('Kind'), findsNothing);
+
+    await _leave(tester);
+  });
+
+  testWidgets(
+    'an administrator panel asks for everything and offers the kind',
+    (WidgetTester tester) async {
+      final ConversationsDouble threads = _oneThread();
+
+      await tester.pumpWidget(_screen(threads: threads));
+      await tester.pumpAndSettle();
+
+      expect(threads.queries.last.type, isNull);
+      expect(threads.queries.last.joinedBy, isNull);
+      expect(find.text('Kind'), findsOneWidget);
+
+      await _leave(tester);
+    },
+  );
+
+  // The inbox is not in the thread's group, so the nudge is what reaches it.
+  testWidgets('a nudge from the hub reads the inbox again', (
+    WidgetTester tester,
+  ) async {
+    final ConversationsDouble threads = _oneThread();
+    final ChatHubDouble hub = ChatHubDouble();
+
+    await tester.pumpWidget(_screen(threads: threads, hub: hub));
+    await tester.pumpAndSettle();
+
+    final int readSoFar = threads.queries.length;
+
+    await hub.touch(9);
+    await tester.pumpAndSettle();
+
+    expect(threads.queries.length, greaterThan(readSoFar));
+
+    await _leave(tester);
+  });
+
+  // The marking answers with what the account is left holding.
+  testWidgets('opening a thread takes what it was holding off the badge', (
+    WidgetTester tester,
+  ) async {
+    final MessagesDouble messages = _messages()
+      ..unread = 7
+      ..unreadAfterMarking = 0;
+
+    final ChatUnreadNotifier waiting = ChatUnreadNotifier(messages);
+
+    await tester.pumpWidget(
+      _screen(threads: _oneThread(), messages: messages, waiting: waiting),
+    );
+    await tester.pumpAndSettle();
+
+    expect(waiting.unread, 7);
+
+    await tester.tap(find.text('Maja Popović').first);
+    await tester.pumpAndSettle();
+
+    expect(waiting.unread, 0);
+
+    await _leave(tester);
+    waiting.dispose();
+  });
+
   testWidgets('choosing a thread reads it, marks it read and draws what was '
       'said', (WidgetTester tester) async {
     final MessagesDouble messages = _messages();
@@ -239,6 +317,7 @@ void main() {
     await _leave(tester);
   });
 
+  // Joining reads the thread once; what stops after that is the interval.
   testWidgets('a thread the hub is carrying says so and stops asking', (
     WidgetTester tester,
   ) async {
@@ -260,7 +339,7 @@ void main() {
     await tester.pump(ThreadNotifier.refreshInterval);
     await tester.pumpAndSettle();
 
-    expect(messages.pagesRead, <int>[1]);
+    expect(messages.pagesRead, <int>[1, 1]);
 
     await _leave(tester);
   });
@@ -288,6 +367,8 @@ Widget _screen({
   required ConversationsDouble threads,
   MessagesDouble? messages,
   ChatHubDouble? hub,
+  ChatUnreadNotifier? waiting,
+  bool onlyThreadsJoined = false,
 }) {
   final MessagesDouble reading = messages ?? MessagesDouble();
 
@@ -296,15 +377,18 @@ Widget _screen({
       Provider<ConversationsRepository>.value(value: threads),
       Provider<MessagesRepository>.value(value: reading),
       Provider<ChatHub>.value(value: hub ?? ChatHubDouble()),
-      ChangeNotifierProvider<ChatUnreadNotifier>(
-        create: (BuildContext context) => ChatUnreadNotifier(reading),
-      ),
+      if (waiting case final ChatUnreadNotifier held)
+        ChangeNotifierProvider<ChatUnreadNotifier>.value(value: held)
+      else
+        ChangeNotifierProvider<ChatUnreadNotifier>(
+          create: (BuildContext context) => ChatUnreadNotifier(reading),
+        ),
     ],
-    child: const MaterialApp(
+    child: MaterialApp(
       home: Scaffold(
         body: MessagesScreen(
           signedInUserId: administratorId,
-          onlyThreadsJoined: false,
+          onlyThreadsJoined: onlyThreadsJoined,
         ),
       ),
     ),

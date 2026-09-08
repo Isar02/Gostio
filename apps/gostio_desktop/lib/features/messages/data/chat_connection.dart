@@ -11,6 +11,7 @@ abstract interface class ChatConnection {
   // Called once, before the connection is started.
   void listen({
     required void Function(List<Object?>? arguments) said,
+    required void Function(List<Object?>? arguments) touched,
     required void Function(Object? failure) lost,
     required void Function() restored,
   });

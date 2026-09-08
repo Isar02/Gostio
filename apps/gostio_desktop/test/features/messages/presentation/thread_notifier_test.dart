@@ -197,6 +197,41 @@ void main() {
     expect(lines.liveFailureMessage, isNull);
   });
 
+  // A socket that was away was told nothing while it was away, and rejoining a
+  // thread is not the same as having been in it. Without this the message stays
+  // on the server until the reader closes the thread and opens it again.
+  test('a thread rejoined reads what was said while it was away', () async {
+    final ChatHubDouble hub = ChatHubDouble();
+    final MessagesDouble messages = MessagesDouble(
+      pagesOfLines: <List<Message>>[
+        <Message>[message(id: 1, sentAt: DateTime.utc(2026, 8, 28, 9))],
+      ],
+    );
+    final ThreadNotifier lines = _thread(messages, hub: hub);
+
+    await lines.open();
+    await hub.say(7, const ChatJoined());
+
+    expect(lines.lines.map((Message line) => line.id), <int>[1]);
+
+    await hub.say(7, const ChatDropped('The socket closed.'));
+
+    messages
+      ..pagesOfLines = <List<Message>>[
+        <Message>[
+          message(id: 2, sentAt: DateTime.utc(2026, 8, 28, 10)),
+          message(id: 1, sentAt: DateTime.utc(2026, 8, 28, 9)),
+        ],
+      ]
+      ..totalCount = 2;
+
+    await hub.say(7, const ChatJoined());
+    await pumpEventQueue();
+
+    expect(lines.lines.map((Message line) => line.id), <int>[1, 2]);
+    expect(lines.isLive, isTrue);
+  });
+
   test('leaving a thread gives up its place at the hub', () async {
     final ChatHubDouble hub = ChatHubDouble();
     final ThreadNotifier lines = ThreadNotifier(

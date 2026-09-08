@@ -8,6 +8,7 @@ import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/paged_list.dart';
 import '../data/conversations_repository.dart';
 import '../data/thread_subject.dart';
+import 'chat_nudge.dart';
 import 'conversation_card.dart';
 import 'inbox_notifier.dart';
 import 'open_thread_button.dart';
@@ -27,8 +28,10 @@ class InboxScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<InboxNotifier>(
-      create: (BuildContext context) =>
-          InboxNotifier(context.read<ConversationsRepository>()),
+      create: (BuildContext context) => InboxNotifier(
+        context.read<ConversationsRepository>(),
+        nudge: context.read<ChatNudge?>(),
+      ),
       child: _Inbox(callerId: callerId),
     );
   }

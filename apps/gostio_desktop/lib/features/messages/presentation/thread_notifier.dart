@@ -39,6 +39,7 @@ class ThreadNotifier extends ScreenNotifier {
   bool _isLive = false;
   bool _isMarkingRead = false;
   bool _readAgain = false;
+  bool _refreshAgain = false;
   int _pagesRead = 0;
   int _totalCount = 0;
   String? _lostLive;
@@ -125,6 +126,10 @@ class ThreadNotifier extends ScreenNotifier {
         _lostLive = null;
         _stopRefreshing();
         publish();
+
+        // Nothing said while the socket was away is delivered to it, so the
+        // newest page is read again rather than trusted.
+        unawaited(_refreshQuietly(repeatWhenBusy: true));
       case ChatDropped(:final String reason):
         _isLive = false;
         _lostLive = reason;
@@ -172,8 +177,11 @@ class ThreadNotifier extends ScreenNotifier {
     publish();
   }
 
-  Future<void> _refreshQuietly() async {
+  Future<void> _refreshQuietly({bool repeatWhenBusy = false}) async {
+    // A read already in flight may have answered before the rejoin.
     if (_isRefreshing) {
+      _refreshAgain = _refreshAgain || repeatWhenBusy;
+
       return;
     }
 
@@ -206,7 +214,17 @@ class ThreadNotifier extends ScreenNotifier {
       // Nobody asked for this read, so nobody is told it did not happen.
     } finally {
       _isRefreshing = false;
+      _repeatRefreshIfNeeded();
     }
+  }
+
+  void _repeatRefreshIfNeeded() {
+    if (!_refreshAgain || _isRefreshing || isDisposed) {
+      return;
+    }
+
+    _refreshAgain = false;
+    unawaited(_refreshQuietly(repeatWhenBusy: true));
   }
 
   bool _hold(Message message) {

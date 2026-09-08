@@ -33,6 +33,24 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  // Muted ink on the brand ground reads as a button that cannot be pressed.
+  testWidgets('the send arrow is drawn against its own ground', (
+    WidgetTester tester,
+  ) async {
+    await openThread(tester, messages: MessagesDouble());
+
+    final IconTheme arrow = tester.widget<IconTheme>(
+      find
+          .ancestor(
+            of: find.byIcon(Icons.send_rounded),
+            matching: find.byType(IconTheme),
+          )
+          .first,
+    );
+
+    expect(arrow.data.color, AppColors.surface);
+  });
+
   Future<void> write(WidgetTester tester, String body) async {
     await tester.enterText(find.byType(TextField), body);
     await tester.pump();

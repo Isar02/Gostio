@@ -1,4 +1,5 @@
 using Gostio.Model.Authorization;
+using Gostio.Model.Enums;
 using Gostio.Model.Exceptions;
 using Gostio.Model.Requests;
 using Microsoft.EntityFrameworkCore;
@@ -180,6 +181,86 @@ public class ConversationMessageTests(DatabaseFixture fixture)
 
         Assert.Equal(inbox.Items.Sum(thread => thread.UnreadCount), badge.Unread);
         Assert.Equal(3, badge.Unread);
+    }
+
+    // Counting a thread nobody put them in gave them a number nothing clears.
+    [Fact]
+    public async Task ASupportThreadAnAdministratorIsNotInIsNoneOfTheirUnread()
+    {
+        var guest = await workspace.AGuestAsync();
+        var onDuty = await workspace.AnAdministratorAsync();
+        var everybodyElse = await workspace.AnAdministratorAsync();
+        var thread = await workspace.ASupportThreadAsync(guest);
+
+        await workspace.SendAsync(guest, RoleNames.Guest, thread, "My refund has not arrived.");
+        await workspace.SendAsync(guest, RoleNames.Guest, thread, "It has been five days.");
+        await workspace.SendAsync(onDuty, RoleNames.Administrator, thread, "It left us Tuesday.");
+
+        // The one who answered is in it; the one who never touched it is not.
+        Assert.Equal(2, (await workspace.UnreadAsync(onDuty, RoleNames.Administrator)).Unread);
+        Assert.Equal(
+            0, (await workspace.UnreadAsync(everybodyElse, RoleNames.Administrator)).Unread);
+
+        // Reachable to both, and the row says what the badge does.
+        var read = await workspace.ReadAsync(everybodyElse, RoleNames.Administrator, thread);
+
+        Assert.Equal(0, read.UnreadCount);
+        Assert.Equal(
+            2, (await workspace.ReadAsync(onDuty, RoleNames.Administrator, thread)).UnreadCount);
+
+        // The guest counts the answer, which is the half that always worked.
+        Assert.Equal(1, (await workspace.UnreadAsync(guest, RoleNames.Guest)).Unread);
+    }
+
+    // Once they have answered, what is said to them counts and reading clears.
+    [Fact]
+    public async Task AnAdministratorWhoAnsweredCountsWhatComesAfterAndCanClearIt()
+    {
+        var guest = await workspace.AGuestAsync();
+        var administrator = await workspace.AnAdministratorAsync();
+        var thread = await workspace.ASupportThreadAsync(guest);
+
+        await workspace.SendAsync(guest, RoleNames.Guest, thread, "My refund has not arrived.");
+        await workspace.SendAsync(
+            administrator, RoleNames.Administrator, thread, "It left us on Tuesday.");
+
+        await workspace.MarkReadAsync(administrator, RoleNames.Administrator, thread);
+
+        Assert.Equal(0, (await workspace.UnreadAsync(administrator, RoleNames.Administrator))
+            .Unread);
+
+        await workspace.SendAsync(guest, RoleNames.Guest, thread, "It arrived, thank you.");
+
+        Assert.Equal(1, (await workspace.UnreadAsync(administrator, RoleNames.Administrator))
+            .Unread);
+
+        var cleared = await workspace.MarkReadAsync(
+            administrator, RoleNames.Administrator, thread);
+
+        Assert.Equal(0, cleared.Unread);
+    }
+
+    // The badge over a host panel counts the kind that panel lists.
+    [Fact]
+    public async Task TheCountNarrowsToTheKindThePanelLists()
+    {
+        var host = await workspace.AHostAsync();
+        var guest = await workspace.AGuestAsync();
+        var direct = await workspace.ADirectThreadAsync(guest, host);
+        var support = await workspace.ASupportThreadAsync(host);
+        var administrator = await workspace.AnAdministratorAsync();
+
+        await workspace.SendAsync(guest, RoleNames.Guest, direct, "Is late arrival fine?");
+        await workspace.SendAsync(
+            administrator, RoleNames.Administrator, support, "Your payout is on its way.");
+
+        Assert.Equal(2, (await workspace.UnreadAsync(host, RoleNames.Host)).Unread);
+        Assert.Equal(
+            1,
+            (await workspace.UnreadAsync(host, RoleNames.Host, ConversationType.Direct)).Unread);
+        Assert.Equal(
+            1,
+            (await workspace.UnreadAsync(host, RoleNames.Host, ConversationType.Support)).Unread);
     }
 
     [Fact]

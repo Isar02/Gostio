@@ -17,6 +17,7 @@ void main() {
     WidgetTester tester, {
     required ConversationsDouble conversations,
     MessagesDouble? messages,
+    ChatHubDouble? chat,
   }) async {
     await tester.pumpWidget(
       underTest(
@@ -24,11 +25,35 @@ void main() {
         auth: AuthDouble(),
         conversations: conversations,
         messages: messages ?? MessagesDouble(),
-        chat: ChatHubDouble(),
+        chat: chat ?? ChatHubDouble(),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  // The inbox is not in the thread's group, so the nudge is what reaches it.
+  testWidgets('a nudge from the hub brings the newest page in', (
+    WidgetTester tester,
+  ) async {
+    final ConversationsDouble conversations = ConversationsDouble(
+      rows: <Conversation>[thread()],
+    );
+    final ChatHubDouble hub = ChatHubDouble();
+
+    await openInbox(tester, conversations: conversations, chat: hub);
+
+    final int readSoFar = conversations.pagesAsked.length;
+
+    conversations.rows.insert(
+      0,
+      thread(id: 42, listingTitle: 'Riverside flat in Tuzla'),
+    );
+    await hub.touch(42);
+    await tester.pumpAndSettle();
+
+    expect(conversations.pagesAsked.length, greaterThan(readSoFar));
+    expect(find.textContaining('Riverside flat in Tuzla'), findsOneWidget);
+  });
 
   testWidgets('a row says who the thread is with, what it is about and the '
       'last thing said in it', (WidgetTester tester) async {

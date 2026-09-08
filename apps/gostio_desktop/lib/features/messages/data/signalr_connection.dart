@@ -19,6 +19,7 @@ class SignalRConnection implements ChatConnection {
           .build();
 
   static const String messageSent = 'MessageSent';
+  static const String threadTouched = 'ThreadTouched';
 
   final HubConnection _connection;
 
@@ -28,11 +29,13 @@ class SignalRConnection implements ChatConnection {
   @override
   void listen({
     required void Function(List<Object?>? arguments) said,
+    required void Function(List<Object?>? arguments) touched,
     required void Function(Object? failure) lost,
     required void Function() restored,
   }) {
     _connection
       ..on(messageSent, said)
+      ..on(threadTouched, touched)
       ..onclose(({Exception? error}) => lost(error))
       ..onreconnecting(({Exception? error}) => lost(error))
       ..onreconnected(({String? connectionId}) => restored());

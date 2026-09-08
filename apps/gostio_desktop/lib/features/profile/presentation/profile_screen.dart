@@ -66,47 +66,45 @@ class _BodyState extends State<_Body> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ProfilePictureField(
-                account: account,
-                isBusy: profile.isWriting,
-                onChosen: _setPicture,
-                onCleared: _clearPicture,
-                errorText: profile.pictureFailureMessage,
-              ),
-              const SizedBox(width: AppSpacing.xl),
-              Expanded(child: _Identity(account: account)),
-            ],
+          ProfilePictureField(
+            account: account,
+            isBusy: profile.isWriting,
+            onChosen: _setPicture,
+            onCleared: _clearPicture,
+            errorText: profile.pictureFailureMessage,
+            beside: _Identity(account: account),
           ),
           const SizedBox(height: AppSpacing.xxl),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: _Section(
-                  title: 'Your details',
-                  caption: 'What the people you host see beside your name.',
-                  child: ProfileDetailsForm(
-                    notifier: profile,
-                    account: account,
-                    onSaved: () => _say('Your details were saved.'),
+          // Stretched, so the two cards end on the same line whichever of them
+          // is the taller.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: _Section(
+                    title: 'Your details',
+                    caption: 'What the people you host see beside your name.',
+                    child: ProfileDetailsForm(
+                      notifier: profile,
+                      account: account,
+                      onSaved: () => _say('Your details were saved.'),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.xxl),
-              Expanded(
-                child: _Section(
-                  title: 'Password',
-                  caption: 'Changing it needs the one you sign in with now.',
-                  child: ProfilePasswordForm(
-                    notifier: profile,
-                    onChanged: () => _say('Your password was changed.'),
+                const SizedBox(width: AppSpacing.xxl),
+                Expanded(
+                  child: _Section(
+                    title: 'Password',
+                    caption: 'Changing it needs the one you sign in with now.',
+                    child: ProfilePasswordForm(
+                      notifier: profile,
+                      onChanged: () => _say('Your password was changed.'),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

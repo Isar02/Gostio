@@ -112,10 +112,11 @@ class _ExperienceFilterFormState extends State<_ExperienceFilterForm> {
           if (options.cities.isNotEmpty)
             FilterGroup(
               label: 'City',
-              child: PickOne<LookupItem>(
+              child: PickOneFromAList<LookupItem>(
                 options: options.cities,
                 nameOf: (LookupItem city) => city.name,
                 selected: _draft.city,
+                anyLabel: 'Any city',
                 onChosen: (LookupItem? city) =>
                     _keep(_draft.replacing(city: city)),
               ),

@@ -25,15 +25,19 @@ import 'stay_filter_sheet.dart';
 // on each switch, so a reader who has read down one catalogue and glanced at
 // the other comes back to where they were.
 //
-// This is the tab's body rather than its screen: the bar over it is the shell's,
-// because the bell in it belongs to every tab and not to this one.
+// The bar over it is the shell's, because the bell in it belongs to every tab;
+// the filters stand in it beside that bell rather than over the results.
 class ExploreScreen extends StatelessWidget {
-  const ExploreScreen({this.resultsHeader, super.key});
+  const ExploreScreen({this.resultsHeader, this.trailing, super.key});
 
   // What another module draws over the results. It scrolls with them rather
   // than standing between the search and the first card, and it is handed in
   // because what is published on this platform is not this feature's.
   final Widget? resultsHeader;
+
+  // What the shell puts in the bar after this screen's own act. Handed in for
+  // the same reason the header above is: it belongs to every tab, not to this.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -56,15 +60,16 @@ class ExploreScreen extends StatelessWidget {
               FilterOptionsNotifier(context.read<FilterOptionsRepository>()),
         ),
       ],
-      child: _Explore(resultsHeader: resultsHeader),
+      child: _Explore(resultsHeader: resultsHeader, trailing: trailing),
     );
   }
 }
 
 class _Explore extends StatefulWidget {
-  const _Explore({this.resultsHeader});
+  const _Explore({this.resultsHeader, this.trailing});
 
   final Widget? resultsHeader;
+  final Widget? trailing;
 
   @override
   State<_Explore> createState() => _ExploreState();
@@ -102,38 +107,59 @@ class _ExploreState extends State<_Explore> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        _Header(
-          field: _field,
-          catalogue: _catalogue,
-          onSearch: _search,
-          onCatalogue: _reveal,
-        ),
-        Expanded(
-          child: IndexedStack(
-            index: _catalogue.index,
-            children: <Widget>[
-              CatalogueResultsView<Accommodation, StayFilters>(
-                catalogue: Catalogue.stays,
-                results: context.read<StayResults>(),
-                onOpenFilters: _openStayFilters,
-                resultsHeader: widget.resultsHeader,
-                itemBuilder: (BuildContext context, Accommodation stay) =>
-                    StayCard(stay),
-              ),
-              CatalogueResultsView<Experience, ExperienceFilters>(
-                catalogue: Catalogue.experiences,
-                results: context.read<ExperienceResults>(),
-                onOpenFilters: _openExperienceFilters,
-                resultsHeader: widget.resultsHeader,
-                itemBuilder: (BuildContext context, Experience term) =>
-                    TermCard(term),
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Explore'),
+        automaticallyImplyLeading: false,
+        actions: <Widget>[
+          _FiltersAction(
+            applied: switch (_catalogue) {
+              Catalogue.stays =>
+                context.watch<StayResults>().query.applied.length,
+              Catalogue.experiences =>
+                context.watch<ExperienceResults>().query.applied.length,
+            },
+            onOpen: switch (_catalogue) {
+              Catalogue.stays => _openStayFilters,
+              Catalogue.experiences => _openExperienceFilters,
+            },
           ),
+          ?widget.trailing,
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: <Widget>[
+            _Header(
+              field: _field,
+              catalogue: _catalogue,
+              onSearch: _search,
+              onCatalogue: _reveal,
+            ),
+            Expanded(
+              child: IndexedStack(
+                index: _catalogue.index,
+                children: <Widget>[
+                  CatalogueResultsView<Accommodation, StayFilters>(
+                    catalogue: Catalogue.stays,
+                    results: context.read<StayResults>(),
+                    resultsHeader: widget.resultsHeader,
+                    itemBuilder: (BuildContext context, Accommodation stay) =>
+                        StayCard(stay),
+                  ),
+                  CatalogueResultsView<Experience, ExperienceFilters>(
+                    catalogue: Catalogue.experiences,
+                    results: context.read<ExperienceResults>(),
+                    resultsHeader: widget.resultsHeader,
+                    itemBuilder: (BuildContext context, Experience term) =>
+                        TermCard(term),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -276,6 +302,32 @@ class _Header extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// The tune icon in the bar, carrying how many filters are in force so a reader
+// who has narrowed the list is told without opening the sheet.
+class _FiltersAction extends StatelessWidget {
+  const _FiltersAction({required this.applied, required this.onOpen});
+
+  final int applied;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onOpen,
+      tooltip: switch (applied) {
+        0 => 'Filters',
+        1 => '1 filter',
+        _ => '$applied filters',
+      },
+      icon: Badge(
+        isLabelVisible: applied > 0,
+        label: Text('$applied'),
+        child: const Icon(Icons.tune_rounded),
       ),
     );
   }

@@ -16,6 +16,7 @@ class ProfilePictureField extends StatefulWidget {
     required this.onChosen,
     required this.onCleared,
     this.errorText,
+    this.beside,
     super.key,
   });
 
@@ -24,6 +25,9 @@ class ProfilePictureField extends StatefulWidget {
   final ValueChanged<ImageUpload> onChosen;
   final VoidCallback onCleared;
   final String? errorText;
+
+  // What stands next to the picture rather than under it.
+  final Widget? beside;
 
   @override
   State<ProfilePictureField> createState() => _ProfilePictureFieldState();
@@ -40,11 +44,20 @@ class _ProfilePictureFieldState extends State<ProfilePictureField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        AccountAvatar(
-          userId: widget.account.id,
-          name: widget.account.fullName,
-          hasImage: widget.account.hasProfileImage,
-          size: AppSizes.avatarLarge,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            AccountAvatar(
+              userId: widget.account.id,
+              name: widget.account.fullName,
+              hasImage: widget.account.hasProfileImage,
+              size: AppSizes.avatarLarge,
+            ),
+            if (widget.beside case final Widget beside) ...<Widget>[
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(child: beside),
+            ],
+          ],
         ),
         const SizedBox(height: AppSpacing.md),
         Row(

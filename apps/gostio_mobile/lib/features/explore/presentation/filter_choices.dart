@@ -35,6 +35,38 @@ class PickOne<T extends Object> extends StatelessWidget {
   }
 }
 
+// One of a set too long to lay out as chips, which a list of cities is.
+class PickOneFromAList<T extends Object> extends StatelessWidget {
+  const PickOneFromAList({
+    required this.options,
+    required this.nameOf,
+    required this.selected,
+    required this.onChosen,
+    required this.anyLabel,
+    super.key,
+  });
+
+  final List<T> options;
+  final String Function(T option) nameOf;
+  final T? selected;
+  final ValueChanged<T?> onChosen;
+  final String anyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<T?>(
+      initialValue: selected,
+      isExpanded: true,
+      items: <DropdownMenuItem<T?>>[
+        DropdownMenuItem<T?>(child: Text(anyLabel)),
+        for (final T option in options)
+          DropdownMenuItem<T?>(value: option, child: Text(nameOf(option))),
+      ],
+      onChanged: onChosen,
+    );
+  }
+}
+
 // Any of a set. Every named one has to be there rather than any of them, which
 // is what the API does with the ids and what the group above this says.
 class PickMany<T extends Object> extends StatelessWidget {

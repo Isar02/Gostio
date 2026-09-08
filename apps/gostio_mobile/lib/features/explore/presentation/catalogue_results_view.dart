@@ -21,7 +21,6 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
     required this.catalogue,
     required this.results,
     required this.itemBuilder,
-    required this.onOpenFilters,
     this.resultsHeader,
     super.key,
   });
@@ -29,7 +28,6 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
   final Catalogue catalogue;
   final PagedNotifier<TItem, TQuery> results;
   final Widget Function(BuildContext context, TItem item) itemBuilder;
-  final VoidCallback onOpenFilters;
 
   // Carried through to the list, which scrolls it away with the first cards.
   final Widget? resultsHeader;
@@ -44,11 +42,8 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
 
         return Column(
           children: <Widget>[
-            _FilterBar<TQuery>(
-              applied: applied,
-              onOpenFilters: onOpenFilters,
-              onRemove: results.apply,
-            ),
+            if (applied.isNotEmpty)
+              _FilterBar<TQuery>(applied: applied, onRemove: results.apply),
             Expanded(
               child: PagedList<TItem>(
                 items: results.items,
@@ -84,14 +79,9 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
 
 class _FilterBar<TQuery extends ListingFilters<TQuery>>
     extends StatelessWidget {
-  const _FilterBar({
-    required this.applied,
-    required this.onOpenFilters,
-    required this.onRemove,
-  });
+  const _FilterBar({required this.applied, required this.onRemove});
 
   final List<AppliedFilter<TQuery>> applied;
-  final VoidCallback onOpenFilters;
   final ValueChanged<TQuery> onRemove;
 
   @override
@@ -103,46 +93,23 @@ class _FilterBar<TQuery extends ListingFilters<TQuery>>
         AppSpacing.lg,
         AppSpacing.sm,
       ),
-      child: Row(
-        children: <Widget>[
-          OutlinedButton.icon(
-            // A button in this bar is as wide as its words. The full-width
-            // minimum every other button in the client is given would ask for
-            // the whole row and leave the chips beside it nowhere to go.
-            style: const ButtonStyle(
-              minimumSize: WidgetStatePropertyAll<Size>(
-                Size(0, AppSizes.touchTarget),
-              ),
-            ),
-            onPressed: onOpenFilters,
-            icon: const Icon(Icons.tune_rounded, size: AppSizes.iconSmall),
-            label: Text(
-              applied.isEmpty ? 'Filters' : 'Filters (${applied.length})',
-            ),
-          ),
-          if (applied.isNotEmpty)
-            Expanded(
-              // The chips run off the edge rather than wrapping onto a second
-              // line: the bar sits over the results and a filter added should
-              // not push a card off the screen.
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.only(left: AppSpacing.sm),
-                child: Row(
-                  children: <Widget>[
-                    for (final AppliedFilter<TQuery> filter in applied)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: AppChip.removable(
-                          filter.label,
-                          onRemove: () => onRemove(filter.without),
-                        ),
-                      ),
-                  ],
+      // The chips run off the edge rather than wrapping onto a second line: the
+      // bar sits over the results and a filter added should not push a card off
+      // the screen.
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: <Widget>[
+            for (final AppliedFilter<TQuery> filter in applied)
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: AppChip.removable(
+                  filter.label,
+                  onRemove: () => onRemove(filter.without),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

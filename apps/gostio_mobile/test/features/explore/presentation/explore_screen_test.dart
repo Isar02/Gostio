@@ -41,7 +41,7 @@ void main() {
   }
 
   Future<void> openFilters(WidgetTester tester) async {
-    await tester.tap(find.text('Filters'));
+    await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pumpAndSettle();
   }
 
@@ -54,6 +54,22 @@ void main() {
     );
     await tester.tap(find.text(label));
     await tester.pump();
+  }
+
+  // The cities are a dropdown rather than a wall of chips, so one is picked
+  // the way a dropdown is.
+  Future<void> chooseCity(WidgetTester tester, String name) async {
+    final Finder field = find.byType(DropdownButtonFormField<LookupItem?>);
+
+    await tester.dragUntilVisible(
+      field,
+      find.byType(SingleChildScrollView).first,
+      const Offset(0, -120),
+    );
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(name).last);
+    await tester.pumpAndSettle();
   }
 
   Future<void> apply(WidgetTester tester) async {
@@ -170,11 +186,11 @@ void main() {
     final CatalogueDouble catalogue = await openExplore(tester);
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
     await apply(tester);
 
     expect(catalogue.lastStayFilters.city?.name, 'Mostar');
-    expect(find.text('Filters (1)'), findsOneWidget);
+    expect(find.byTooltip('1 filter'), findsOneWidget);
     expect(find.text('Mostar'), findsOneWidget);
   });
 
@@ -184,7 +200,7 @@ void main() {
     final CatalogueDouble catalogue = await openExplore(tester);
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
     await choose(tester, 'House');
 
     expect(catalogue.stayFilters, hasLength(1));
@@ -196,14 +212,14 @@ void main() {
     final CatalogueDouble catalogue = await openExplore(tester);
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
     await apply(tester);
 
     await tester.tap(find.text('Mostar'));
     await tester.pumpAndSettle();
 
     expect(catalogue.lastStayFilters, const StayFilters());
-    expect(find.text('Filters'), findsOneWidget);
+    expect(find.byTooltip('Filters'), findsOneWidget);
   });
 
   // The sheet is the surface that holds the draft, so it is the surface that
@@ -214,7 +230,7 @@ void main() {
     final CatalogueDouble catalogue = await openExplore(tester);
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
 
@@ -246,13 +262,13 @@ void main() {
     final CatalogueDouble catalogue = await openExplore(tester);
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Leave'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Filters'), findsOneWidget);
+    expect(find.byTooltip('Filters'), findsOneWidget);
     expect(catalogue.stayFilters, hasLength(1));
   });
 
@@ -264,7 +280,7 @@ void main() {
     final CatalogueDouble catalogue = await openExplore(tester);
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
 
     await tester.drag(find.text('Filter stays'), const Offset(0, 600));
     await tester.pumpAndSettle();
@@ -304,7 +320,7 @@ void main() {
     );
 
     await openFilters(tester);
-    await choose(tester, 'Mostar');
+    await chooseCity(tester, 'Mostar');
     await apply(tester);
 
     expect(find.text('No stays match'), findsOneWidget);

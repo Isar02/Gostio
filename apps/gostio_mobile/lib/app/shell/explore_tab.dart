@@ -5,7 +5,8 @@ import '../../features/explore/presentation/explore_screen.dart';
 import '../../features/news/data/news_repository.dart';
 import '../../features/news/presentation/news_notifier.dart';
 import '../../features/news/presentation/news_strip.dart';
-import 'tab_app_bar.dart';
+import '../../features/notifications/presentation/notification_bell.dart';
+import '../named_trip_screen.dart';
 
 // The tab the client opens on. The screen under the bar is the explore
 // feature's own and knows nothing of the shell, so this is where the two meet
@@ -22,9 +23,9 @@ class ExploreTab extends StatelessWidget {
     return ChangeNotifierProvider<NewsNotifier>(
       create: (BuildContext context) =>
           NewsNotifier(context.read<NewsRepository>()),
-      child: const Scaffold(
-        appBar: TabAppBar('Explore'),
-        body: SafeArea(child: ExploreScreen(resultsHeader: NewsStrip())),
+      child: ExploreScreen(
+        resultsHeader: const NewsStrip(),
+        trailing: NotificationBell(openBooking: NamedTripScreen.open),
       ),
     );
   }

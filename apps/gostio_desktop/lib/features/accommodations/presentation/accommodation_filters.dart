@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
 import '../../../core/widgets/multi_select_field.dart';
@@ -189,19 +188,12 @@ class _AccommodationFiltersState extends State<AccommodationFilters> {
                 _change(() => _category = category),
           ),
         ),
-        FilterField(
-          label: 'Price from',
-          width: AppSizes.filterFieldNarrow,
-          child: _amount(_minPrice),
-        ),
-        FilterField(
-          label: 'Price to',
-          width: AppSizes.filterFieldNarrow,
-          child: _amount(_maxPrice),
+        FilterPair(
+          FilterField(label: 'Price from', child: _amount(_minPrice)),
+          FilterField(label: 'Price to', child: _amount(_maxPrice)),
         ),
         FilterField(
           label: 'Guests at least',
-          width: AppSizes.filterFieldNarrow,
           child: FilterTextField(
             controller: _minGuests,
             formatters: <TextInputFormatter>[InputFormats.whole],

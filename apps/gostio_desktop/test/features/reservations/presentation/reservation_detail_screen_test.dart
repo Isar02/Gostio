@@ -192,8 +192,8 @@ void main() {
     expect(find.byTooltip('This booking is already confirmed.'), findsOne);
   });
 
-  // The read that follows a move is said in a line under the header. Taking
-  // the booking off the screen for it would blank a page that is still true.
+  // Taking the booking off the screen for the read that follows a move would
+  // blank a page that is still true. The actions say the read is running.
   testWidgets('a booking stays on screen while the page is read again', (
     WidgetTester tester,
   ) async {
@@ -210,14 +210,13 @@ void main() {
 
     expect(find.byType(LoadingState), findsNothing);
     expect(find.text('Ana Marić'), findsWidgets);
-    expect(find.byType(LinearProgressIndicator), findsOne);
     expect(_confirm(tester).onPressed, isNull);
 
     bookings.releaseTheRead();
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.text('Ana Marić'), findsWidgets);
   });
 
   // Leaving mid-write would hand the list a row about to be wrong, and the

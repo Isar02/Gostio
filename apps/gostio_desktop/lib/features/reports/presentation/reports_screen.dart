@@ -58,10 +58,6 @@ class _Body extends StatelessWidget {
             trailing: const _Actions(),
           ),
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: AppSizes.stroke,
-            child: reports.isLoading ? const LinearProgressIndicator() : null,
-          ),
           Expanded(child: _Document(reports: reports)),
         ],
       ),

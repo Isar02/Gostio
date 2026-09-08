@@ -14,7 +14,11 @@ import 'payment_notifier.dart';
 // not offered a button at all, which is the one place this screen may not
 // trust itself: the state comes off the booking rather than off the sheet.
 class PayBar extends StatelessWidget {
-  const PayBar({super.key});
+  const PayBar({this.cancel, super.key});
+
+  // Offered by the screen rather than decided here: what a booking may be told
+  // is the booking's business, not the payment's.
+  final Widget? cancel;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +28,9 @@ class PayBar extends StatelessWidget {
     // for, is not owed anything: there is no figure to carry and no button to
     // carry it beside.
     if (!payment.isOwed) {
-      return const SizedBox.shrink();
+      return cancel == null
+          ? const SizedBox.shrink()
+          : BottomActionBar(action: cancel!);
     }
 
     return Column(
@@ -33,6 +39,7 @@ class PayBar extends StatelessWidget {
         if (_notice(payment) case (final String message, final Tone tone))
           _PaymentNotice(message, tone: tone),
         BottomActionBar(
+          above: cancel,
           label: AppNumbers.money(payment.booking.totalPrice),
           detail: payment.isPayable ? 'Due now' : null,
           action: FilledButton(

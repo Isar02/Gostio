@@ -11,12 +11,14 @@ class FilterBar extends StatelessWidget {
     required this.filters,
     this.onClear,
     this.trailing,
+    this.crossAxisAlignment = WrapCrossAlignment.end,
     super.key,
   });
 
   final List<Widget> filters;
   final VoidCallback? onClear;
   final Widget? trailing;
+  final WrapCrossAlignment crossAxisAlignment;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +36,7 @@ class FilterBar extends StatelessWidget {
             child: Wrap(
               spacing: AppSpacing.md,
               runSpacing: AppSpacing.md,
-              crossAxisAlignment: WrapCrossAlignment.end,
+              crossAxisAlignment: crossAxisAlignment,
               children: <Widget>[
                 ...filters,
                 if (onClear case final VoidCallback clear)
@@ -63,12 +65,14 @@ class FilterField extends StatelessWidget {
     required this.label,
     required this.child,
     this.width = AppSizes.filterField,
+    this.errorText,
     super.key,
   });
 
   final String label;
   final Widget child;
   final double width;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +84,48 @@ class FilterField extends StatelessWidget {
         children: <Widget>[
           Text(label, style: Theme.of(context).textTheme.labelSmall),
           const SizedBox(height: AppSpacing.xs),
-          child,
+          // Every control is given the same height, or a bar of fields that
+          // are naturally a few pixels apart hangs its labels on a ragged line.
+          SizedBox(height: AppSizes.control, child: child),
+          // Validation grows below the control without taking room from its value.
+          if (errorText case final String error)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                top: AppSpacing.xs,
+              ),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  error,
+                  style: Theme.of(context).inputDecorationTheme.errorStyle,
+                ),
+              ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+// Two fields that read as one range, kept together. The outer bar would
+// otherwise leave "from" at the end of a row and "to" at the start of the next.
+class FilterPair extends StatelessWidget {
+  const FilterPair(this.from, this.to, {super.key});
+
+  final Widget from;
+  final Widget to;
+
+  @override
+  Widget build(BuildContext context) {
+    // A wrap of its own rather than a row: on a bar too narrow for both, the
+    // two stack under each other instead of running off the edge.
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.md,
+      crossAxisAlignment: WrapCrossAlignment.start,
+      children: <Widget>[from, to],
     );
   }
 }

@@ -185,7 +185,7 @@ void main() {
     await open(tester, finished(), reviews: reviews);
     await tester.tap(find.widgetWithText(TextButton, 'Take it down'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Keep it'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Keep it'));
     await tester.pumpAndSettle();
 
     expect(reviews.takenDown, isEmpty);

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
 import '../../listings/presentation/listing_status.dart';
@@ -165,19 +164,12 @@ class _ExperienceFiltersState extends State<ExperienceFilters> {
                 _change(() => _category = category),
           ),
         ),
-        FilterField(
-          label: 'Price from',
-          width: AppSizes.filterFieldNarrow,
-          child: _amount(_minPrice),
-        ),
-        FilterField(
-          label: 'Price to',
-          width: AppSizes.filterFieldNarrow,
-          child: _amount(_maxPrice),
+        FilterPair(
+          FilterField(label: 'Price from', child: _amount(_minPrice)),
+          FilterField(label: 'Price to', child: _amount(_maxPrice)),
         ),
         FilterField(
           label: 'Minutes at most',
-          width: AppSizes.filterFieldNarrow,
           child: FilterTextField(
             controller: _maxDuration,
             formatters: <TextInputFormatter>[InputFormats.whole],

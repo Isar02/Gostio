@@ -85,6 +85,8 @@ void main() {
   testWidgets('a range the server would refuse is said under its date', (
     WidgetTester tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final ReportsDouble reports = ReportsDouble();
     await tester.pumpWidget(_screen(reports));
     await tester.pumpAndSettle();
@@ -99,6 +101,33 @@ void main() {
     expect(find.text('A report cannot end before it starts.'), findsOneWidget);
     expect(find.text('Nothing to build yet'), findsOneWidget);
     expect(_enabled(tester, 'Print'), isFalse);
+
+    final Finder date = find.text(AppDates.day(DateTime(2020, 1, 1)));
+    final Rect dateBounds = tester.getRect(date);
+    final Rect errorBounds = tester.getRect(
+      find.text('A report cannot end before it starts.'),
+    );
+    expect(dateBounds.height, greaterThanOrEqualTo(18));
+    expect(errorBounds.top, greaterThan(dateBounds.bottom));
+    expect(
+      tester.getTopLeft(find.text('From')).dy,
+      tester.getTopLeft(find.text('To')).dy,
+    );
+    expect(
+      tester.getTopLeft(find.text('Report')).dy,
+      tester.getTopLeft(find.text('To')).dy,
+    );
+
+    await tester.tap(date);
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    await notifier.applyRange(notifier.range.endingOn(notifier.range.from));
+    await tester.pumpAndSettle();
+    expect(find.text('A report cannot end before it starts.'), findsNothing);
+    expect(_enabled(tester, 'Print'), isTrue);
   });
 
   testWidgets('a document on screen is one both buttons can render', (

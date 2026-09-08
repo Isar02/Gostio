@@ -38,10 +38,6 @@ class InboxList extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-          SizedBox(
-            height: AppSizes.stroke,
-            child: inbox.isLoading ? const LinearProgressIndicator() : null,
-          ),
           if (failure != null && inbox.items.isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(AppSpacing.sm),

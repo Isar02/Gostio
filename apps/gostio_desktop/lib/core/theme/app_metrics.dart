@@ -49,13 +49,12 @@ abstract final class AppSizes {
   static const double statusColumn = 112;
   static const double dateColumn = 112;
   static const double numericColumn = 120;
+  static const double actionColumn = 96;
 
   static const double topBar = 56;
   static const double navigation = 248;
 
   static const double filterField = 200;
-  static const double filterFieldNarrow = 120;
-  static const double filterFieldWide = 280;
   static const double photoTile = 168;
   static const double photoTileHeight = 126;
   static const double photoCover = 360;

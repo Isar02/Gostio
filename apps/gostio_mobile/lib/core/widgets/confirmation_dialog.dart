@@ -56,15 +56,26 @@ class _ConfirmationDialog extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       actionsPadding: const EdgeInsets.all(AppSpacing.lg),
       content: Text(message),
+      // One column rather than the row a dialog lays its actions out in:
+      // stacked and the same width, a thumb reaching for the way out cannot
+      // land on the act instead.
       actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelLabel),
-        ),
-        FilledButton(
-          style: isDestructive ? _destructive : null,
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(confirmLabel),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            OutlinedButton(
+              style: isDestructive ? null : _wayOut,
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(cancelLabel),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            FilledButton(
+              style: isDestructive ? _destructive : null,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(confirmLabel),
+            ),
+          ],
         ),
       ],
     );
@@ -75,6 +86,14 @@ class _ConfirmationDialog extends StatelessWidget {
       (Set<WidgetState> states) => states.contains(WidgetState.pressed)
           ? AppColors.dangerDeep
           : AppColors.danger,
+    ),
+  );
+
+  // Red only where the act being agreed to is not: two red buttons say nothing.
+  static final ButtonStyle _wayOut = ButtonStyle(
+    foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.danger),
+    side: const WidgetStatePropertyAll<BorderSide>(
+      BorderSide(color: AppColors.danger),
     ),
   );
 }

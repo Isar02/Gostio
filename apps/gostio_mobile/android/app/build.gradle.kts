@@ -28,15 +28,6 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-
-    // One payment plugin publishes lint rules whose classpath pulls an artifact
-    // Google does not serve publicly, so lintVitalAnalyzeRelease cannot resolve
-    // its own dependencies. This waiver also removes Android checks over the
-    // manifest, resources and Gradle configuration; Dart analysis remains a
-    // separate gate and does not cover those Android files.
-    lint {
-        checkReleaseBuilds = false
-    }
 }
 
 kotlin {

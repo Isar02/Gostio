@@ -43,7 +43,7 @@ class TableColumn<T> {
   final bool numeric;
 }
 
-class RecordTable<T> extends StatelessWidget {
+class RecordTable<T> extends StatefulWidget {
   const RecordTable({
     required this.columns,
     required this.rows,
@@ -60,6 +60,26 @@ class RecordTable<T> extends StatelessWidget {
   final Widget? footer;
 
   @override
+  State<RecordTable<T>> createState() => _RecordTableState<T>();
+}
+
+class _RecordTableState<T> extends State<RecordTable<T>> {
+  int? _chosen;
+
+  // A row a reader has landed on, kept by position rather than by row: the
+  // list is read again under them and the row they chose is the one there.
+  void _choose(int index) => setState(() => _chosen = index);
+
+  @override
+  void didUpdateWidget(RecordTable<T> old) {
+    super.didUpdateWidget(old);
+
+    if (_chosen case final int chosen when chosen >= widget.rows.length) {
+      _chosen = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -70,21 +90,23 @@ class RecordTable<T> extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
-          _Header<T>(columns: columns),
+          _Header<T>(columns: widget.columns, opens: widget.onRowOpen != null),
           Expanded(
-            child: rows.isEmpty
-                ? empty ?? const _NothingToShow()
+            child: widget.rows.isEmpty
+                ? widget.empty ?? const _NothingToShow()
                 : ListView.builder(
-                    itemCount: rows.length,
+                    itemCount: widget.rows.length,
                     itemExtent: AppSizes.tableRow,
                     itemBuilder: (BuildContext context, int index) => _Row<T>(
-                      columns: columns,
-                      row: rows[index],
-                      onOpen: onRowOpen,
+                      columns: widget.columns,
+                      row: widget.rows[index],
+                      isChosen: index == _chosen,
+                      onChoose: () => _choose(index),
+                      onOpen: widget.onRowOpen,
                     ),
                   ),
           ),
-          if (footer case final Widget footer) footer,
+          if (widget.footer case final Widget footer) footer,
         ],
       ),
     );
@@ -92,9 +114,10 @@ class RecordTable<T> extends StatelessWidget {
 }
 
 class _Header<T> extends StatelessWidget {
-  const _Header({required this.columns});
+  const _Header({required this.columns, required this.opens});
 
   final List<TableColumn<T>> columns;
+  final bool opens;
 
   @override
   Widget build(BuildContext context) {
@@ -110,21 +133,32 @@ class _Header<T> extends StatelessWidget {
         ),
       ),
       child: Row(
-        children: _laidOut<T>(
-          columns,
-          (int index, TableColumn<T> column) =>
-              Text(column.label, style: style),
-        ),
+        children: <Widget>[
+          ..._laidOut<T>(
+            columns,
+            (int index, TableColumn<T> column) =>
+                Text(column.label, style: style),
+          ),
+          if (opens) const SizedBox(width: AppSizes.actionColumn),
+        ],
       ),
     );
   }
 }
 
 class _Row<T> extends StatelessWidget {
-  const _Row({required this.columns, required this.row, this.onOpen});
+  const _Row({
+    required this.columns,
+    required this.row,
+    required this.isChosen,
+    required this.onChoose,
+    this.onOpen,
+  });
 
   final List<TableColumn<T>> columns;
   final T row;
+  final bool isChosen;
+  final VoidCallback onChoose;
   final void Function(T row)? onOpen;
 
   @override
@@ -132,31 +166,61 @@ class _Row<T> extends StatelessWidget {
     final TextStyle body =
         Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
 
-    return InkWell(
-      // A row opens on a double click, which is what a desktop table does and
-      // what keeps a single click free to mean nothing but a stop on the way.
-      onDoubleTap: onOpen == null ? null : () => onOpen!(row),
-      hoverColor: AppColors.hover,
-      child: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.border,
-              width: AppSizes.hairline,
+    // The Edit stands outside the row's own gesture rather than inside it: a
+    // double tap above it holds the arena, and a button under that waits for
+    // the window to close before it answers.
+    return Container(
+      decoration: BoxDecoration(
+        color: isChosen ? AppColors.selected : null,
+        border: const Border(
+          bottom: BorderSide(color: AppColors.border, width: AppSizes.hairline),
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: InkWell(
+              // A single click answers, so the table is never silent; the
+              // double click opens, which is what a desktop table does.
+              onTap: onOpen == null ? null : onChoose,
+              onDoubleTap: onOpen == null
+                  ? null
+                  : () {
+                      onChoose();
+                      onOpen!(row);
+                    },
+              hoverColor: AppColors.hover,
+              child: Row(
+                children: _laidOut<T>(
+                  columns,
+                  (int index, TableColumn<T> column) => DefaultTextStyle(
+                    style: body,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    child: column.cell(context, row),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-        child: Row(
-          children: _laidOut<T>(
-            columns,
-            (int index, TableColumn<T> column) => DefaultTextStyle(
-              style: body,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              child: column.cell(context, row),
+          if (onOpen case final void Function(T row) open)
+            SizedBox(
+              width: AppSizes.actionColumn,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.md),
+                  child: TextButton(
+                    onPressed: () {
+                      onChoose();
+                      open(row);
+                    },
+                    child: const Text('Edit'),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }

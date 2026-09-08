@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/date_field.dart';
 import '../../../core/widgets/filter_bar.dart';
@@ -32,10 +31,10 @@ class ReportFilters extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilterBar(
       trailing: trailing,
+      crossAxisAlignment: WrapCrossAlignment.start,
       filters: <Widget>[
         FilterField(
           label: 'Report',
-          width: AppSizes.filterFieldWide,
           child: AppDropdown<ReportKind>(
             value: kind,
             values: ReportKind.values,
@@ -43,29 +42,31 @@ class ReportFilters extends StatelessWidget {
             onChanged: onShowReport,
           ),
         ),
-        FilterField(
-          label: 'From',
-          child: DateField(
-            value: range.from,
-            isClearable: false,
-            onChanged: (DateTime? day) {
-              if (day != null) {
-                onApplyRange(range.startingOn(day));
-              }
-            },
+        FilterPair(
+          FilterField(
+            label: 'From',
+            child: DateField(
+              value: range.from,
+              isClearable: false,
+              onChanged: (DateTime? day) {
+                if (day != null) {
+                  onApplyRange(range.startingOn(day));
+                }
+              },
+            ),
           ),
-        ),
-        FilterField(
-          label: 'To',
-          child: DateField(
-            value: range.to,
-            isClearable: false,
+          FilterField(
+            label: 'To',
             errorText: range.refusal,
-            onChanged: (DateTime? day) {
-              if (day != null) {
-                onApplyRange(range.endingOn(day));
-              }
-            },
+            child: DateField(
+              value: range.to,
+              isClearable: false,
+              onChanged: (DateTime? day) {
+                if (day != null) {
+                  onApplyRange(range.endingOn(day));
+                }
+              },
+            ),
           ),
         ),
         if (kind == ReportKind.listings)

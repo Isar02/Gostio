@@ -12,9 +12,12 @@ import '../named_trip_screen.dart';
 // many tabs the reader moves through, and what a notice opens is named here
 // because the two features it stands between meet in this layer.
 class TabAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const TabAppBar(this.title, {super.key});
+  const TabAppBar(this.title, {this.action, super.key});
 
   final String title;
+
+  // A tab's own act, standing before the bell every tab shares.
+  final Widget? action;
 
   @override
   Size get preferredSize => const Size.fromHeight(AppSizes.appBar);
@@ -24,7 +27,10 @@ class TabAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(title),
       automaticallyImplyLeading: false,
-      actions: <Widget>[NotificationBell(openBooking: NamedTripScreen.open)],
+      actions: <Widget>[
+        ?action,
+        NotificationBell(openBooking: NamedTripScreen.open),
+      ],
     );
   }
 }

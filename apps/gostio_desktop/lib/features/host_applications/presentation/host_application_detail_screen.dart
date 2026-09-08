@@ -62,12 +62,6 @@ class _Detail extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _Header(notifier: notifier, request: request),
-        SizedBox(
-          height: AppSizes.stroke,
-          child: notifier.isBusy
-              ? const LinearProgressIndicator(minHeight: AppSizes.stroke)
-              : null,
-        ),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),

@@ -411,7 +411,9 @@ void main() {
 
     expect(catalogue.pagesAsked.last, 2);
 
-    catalogue.merge(_page(1, <String>['Listing 0', ...first.take(19)], total: 41));
+    catalogue.merge(
+      _page(1, <String>['Listing 0', ...first.take(19)], total: 41),
+    );
 
     catalogue.answer(
       _page(2, <String>[

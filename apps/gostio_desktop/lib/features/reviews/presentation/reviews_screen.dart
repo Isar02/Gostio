@@ -84,10 +84,6 @@ class _Body extends StatelessWidget {
             AppNotice(failure),
           ],
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: AppSizes.stroke,
-            child: reviews.isLoading ? const LinearProgressIndicator() : null,
-          ),
           Expanded(
             child: RecordTable<Review>(
               columns: _columns,

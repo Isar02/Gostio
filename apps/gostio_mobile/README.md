@@ -71,12 +71,19 @@ plugin needs ProGuard rules kept beside it; turning minification on means
 carrying the payment package's rules with it, or the card sheet fails at runtime
 in a build that compiled cleanly.
 
-Android's own lint is off for the release build. It runs only there, and one
-payment plugin publishes lint rules that pull an artifact Google does not serve
-publicly, so `lintVitalAnalyzeRelease` cannot resolve its own classpath. This is
-a deliberate waiver, not equivalent coverage: it also removes Android checks
-over the manifest, XML resources and Gradle configuration. The Dart analyzer
-remains a separate gate over the Dart sources.
+Android's own release lint runs and reports no issues. It needs one narrow
+exclusion to get that far: the payment plugin publishes lint rules of its own,
+and their classpath pulls `com.google.android.gms:play-services-tapandpay`,
+which Google serves only to approved partners, so `:stripe_android`'s
+`lintVitalAnalyzeRelease` cannot resolve it from any public repository. The root
+`build.gradle.kts` drops that one lint jar from every `*LintChecksClasspath`.
+
+What is given up is Stripe's own extra lint rules over Stripe's own module. What
+is kept is every Android check that gates a release build — over this
+application's manifest, XML resources and Gradle configuration — which is what
+was lost while lint was switched off wholesale. The exclusion touches the lint
+classpath only; the payment SDK the application compiles and ships against is
+untouched.
 
 A release build is not done until it has been installed and driven:
 

@@ -90,12 +90,6 @@ class _Body extends StatelessWidget {
             AppNotice(failure),
           ],
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: AppSizes.stroke,
-            child: accommodations.isLoading
-                ? const LinearProgressIndicator()
-                : null,
-          ),
           Expanded(
             child: RecordTable<Accommodation>(
               columns: _columns,

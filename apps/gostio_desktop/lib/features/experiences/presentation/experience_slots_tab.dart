@@ -76,10 +76,6 @@ class _Terms extends StatelessWidget {
             AppNotice(failure),
           ],
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: AppSizes.stroke,
-            child: slots.isLoading ? const LinearProgressIndicator() : null,
-          ),
           Expanded(
             child: RecordTable<ExperienceSlot>(
               columns: _columns,
@@ -155,7 +151,6 @@ class _Window extends StatelessWidget {
       filters: <Widget>[
         FilterField(
           label: 'From',
-          width: AppSizes.filterField,
           child: DateField(
             value: window.from,
             hint: 'The first term',
@@ -170,7 +165,6 @@ class _Window extends StatelessWidget {
         ),
         FilterField(
           label: 'To',
-          width: AppSizes.filterField,
           child: DateField(
             value: window.to,
             hint: 'The last term',

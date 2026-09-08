@@ -131,25 +131,24 @@ class _Trip extends StatelessWidget {
               const SizedBox(height: AppSpacing.xxl),
               completedContent!,
             ],
-            // A booking the server would refuse to move is not offered the
-            // move: what has ended has ended, and a payment still in the air
-            // is not a booking to call off while it lands.
-            if ((booking.standing?.canBeCancelled ?? false) &&
-                payment.stage == PaymentStage.idle &&
-                !cancelling.isBusy) ...<Widget>[
-              const SizedBox(height: AppSpacing.xxl),
-              OutlinedButton(
-                style: _destructive,
-                onPressed: () => unawaited(_cancel(context, payment)),
-                child: const Text('Cancel this booking'),
-              ),
-            ],
           ],
         ),
       ),
+      // A booking the server would refuse to move is not offered the move, and
+      // the move it is offered stands with the payment rather than up the page.
       bottomNavigationBar: cancelling.isBusy
           ? const SizedBox.shrink()
-          : const PayBar(),
+          : PayBar(
+              cancel:
+                  (booking.standing?.canBeCancelled ?? false) &&
+                      payment.stage == PaymentStage.idle
+                  ? OutlinedButton(
+                      style: _destructive,
+                      onPressed: () => unawaited(_cancel(context, payment)),
+                      child: const Text('Cancel this booking'),
+                    )
+                  : null,
+            ),
     );
   }
 

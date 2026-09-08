@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/date_field.dart';
 import '../../../core/widgets/filter_bar.dart';
@@ -129,7 +128,6 @@ class _ReservationFiltersState extends State<ReservationFilters> {
       filters: <Widget>[
         FilterField(
           label: 'Listing',
-          width: AppSizes.filterFieldWide,
           child: AppOptionalDropdown<ListingChoice>(
             anyLabel: 'Any listing',
             value: _listing,
@@ -159,38 +157,42 @@ class _ReservationFiltersState extends State<ReservationFilters> {
         ),
         // The two edges bound each other's picker: a window that ends before
         // it starts is one the API refuses.
-        FilterField(
-          label: 'Taken from',
-          child: DateField(
-            value: _from,
-            hint: 'Any day',
-            lastDate: _to,
-            onChanged: (DateTime? from) => _change(() => _from = from),
+        FilterPair(
+          FilterField(
+            label: 'Taken from',
+            child: DateField(
+              value: _from,
+              hint: 'Any day',
+              lastDate: _to,
+              onChanged: (DateTime? from) => _change(() => _from = from),
+            ),
+          ),
+          FilterField(
+            label: 'Taken to',
+            child: DateField(
+              value: _to,
+              hint: 'Any day',
+              firstDate: _from,
+              onChanged: (DateTime? to) => _change(() => _to = to),
+            ),
           ),
         ),
-        FilterField(
-          label: 'Taken to',
-          child: DateField(
-            value: _to,
-            hint: 'Any day',
-            firstDate: _from,
-            onChanged: (DateTime? to) => _change(() => _to = to),
+        FilterPair(
+          FilterField(
+            label: 'Arrives on',
+            child: DateField(
+              value: _arrivesOn,
+              hint: 'Any day',
+              onChanged: (DateTime? day) => _change(() => _arrivesOn = day),
+            ),
           ),
-        ),
-        FilterField(
-          label: 'Arrives on',
-          child: DateField(
-            value: _arrivesOn,
-            hint: 'Any day',
-            onChanged: (DateTime? day) => _change(() => _arrivesOn = day),
-          ),
-        ),
-        FilterField(
-          label: 'Departs on',
-          child: DateField(
-            value: _departsOn,
-            hint: 'Any day',
-            onChanged: (DateTime? day) => _change(() => _departsOn = day),
+          FilterField(
+            label: 'Departs on',
+            child: DateField(
+              value: _departsOn,
+              hint: 'Any day',
+              onChanged: (DateTime? day) => _change(() => _departsOn = day),
+            ),
           ),
         ),
       ],

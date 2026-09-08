@@ -68,27 +68,10 @@ class _Detail extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _Header(notifier: notifier, booking: booking),
-        _Progress(isRunning: notifier.isLoading),
         Expanded(
           child: _Panels(notifier: notifier, booking: booking),
         ),
       ],
-    );
-  }
-}
-
-class _Progress extends StatelessWidget {
-  const _Progress({required this.isRunning});
-
-  final bool isRunning;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: AppSizes.stroke,
-      child: isRunning
-          ? const LinearProgressIndicator(minHeight: AppSizes.stroke)
-          : null,
     );
   }
 }

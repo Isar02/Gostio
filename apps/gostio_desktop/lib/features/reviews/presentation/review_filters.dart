@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gostio_core/gostio_core.dart';
 
-import '../../../core/theme/app_metrics.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/filter_bar.dart';
 import '../../listings/data/listing_choice.dart';
@@ -97,7 +96,6 @@ class _ReviewFiltersState extends State<ReviewFilters> {
       filters: <Widget>[
         FilterField(
           label: 'Listing',
-          width: AppSizes.filterFieldWide,
           child: AppOptionalDropdown<ListingChoice>(
             anyLabel: 'Any listing',
             value: _listing,
@@ -108,26 +106,26 @@ class _ReviewFiltersState extends State<ReviewFilters> {
           ),
         ),
         // The two edges bound each other's list.
-        FilterField(
-          label: 'Rating from',
-          width: AppSizes.filterFieldNarrow,
-          child: AppOptionalDropdown<int>(
-            anyLabel: 'Any',
-            value: _lowest,
-            values: _upTo(_highest),
-            labels: _stars,
-            onChanged: (int? lowest) => _change(() => _lowest = lowest),
+        FilterPair(
+          FilterField(
+            label: 'Rating from',
+            child: AppOptionalDropdown<int>(
+              anyLabel: 'Any',
+              value: _lowest,
+              values: _upTo(_highest),
+              labels: _stars,
+              onChanged: (int? lowest) => _change(() => _lowest = lowest),
+            ),
           ),
-        ),
-        FilterField(
-          label: 'Rating to',
-          width: AppSizes.filterFieldNarrow,
-          child: AppOptionalDropdown<int>(
-            anyLabel: 'Any',
-            value: _highest,
-            values: _from(_lowest),
-            labels: _stars,
-            onChanged: (int? highest) => _change(() => _highest = highest),
+          FilterField(
+            label: 'Rating to',
+            child: AppOptionalDropdown<int>(
+              anyLabel: 'Any',
+              value: _highest,
+              values: _from(_lowest),
+              labels: _stars,
+              onChanged: (int? highest) => _change(() => _highest = highest),
+            ),
           ),
         ),
       ],

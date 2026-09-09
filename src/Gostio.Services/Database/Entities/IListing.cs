@@ -6,5 +6,9 @@ public interface IListing : IEntity
 
     string Title { get; set; }
 
+    // Both listings are somewhere, and the free-text search reads the place as
+    // well as the name, so the city is part of what a listing is here.
+    City City { get; set; }
+
     bool IsActive { get; set; }
 }

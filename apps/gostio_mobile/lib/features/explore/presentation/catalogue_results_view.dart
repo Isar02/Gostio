@@ -30,6 +30,8 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
   final Widget Function(BuildContext context, TItem item) itemBuilder;
 
   // Carried through to the list, which scrolls it away with the first cards.
+  // It belongs to the catalogue at rest: a reader who has asked for Sarajevo
+  // wants the answers, not what the platform published this week.
   final Widget? resultsHeader;
 
   @override
@@ -49,7 +51,9 @@ class CatalogueResultsView<TItem, TQuery extends ListingFilters<TQuery>>
                 items: results.items,
                 totalCount: results.totalCount,
                 itemBuilder: itemBuilder,
-                header: resultsHeader,
+                header: query.title == null && applied.isEmpty
+                    ? resultsHeader
+                    : null,
                 onMore: results.more,
                 isLoading: results.isLoading,
                 isAppending: results.isAppending,

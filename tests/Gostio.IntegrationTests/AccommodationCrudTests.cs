@@ -278,6 +278,39 @@ public class AccommodationCrudTests(DatabaseFixture fixture)
         Assert.Equal([wanted.Id], page.Items.Select(item => item.Id));
     }
 
+    // The words over the results are the only field a guest is given, and a
+    // place is the first thing they type into it.
+    [Fact]
+    public async Task ASearchNarrowsByCityName()
+    {
+        var host = await fixture.AddUserAsync(Password, RoleNames.Host);
+        var references = await ReferencesAsync();
+        var elsewhere = references with
+        {
+            CityId = await fixture.EnsureCityAsync("Mostar"),
+        };
+
+        var wanted = await AsAsync(
+            Caller(host, RoleNames.Host),
+            listings => listings.CreateAsync(
+                ListingRequests.New(references, "A studio by the river"),
+                CancellationToken.None));
+
+        await AsAsync(
+            Caller(host, RoleNames.Host),
+            listings => listings.CreateAsync(
+                ListingRequests.New(elsewhere, "A studio by the bridge"),
+                CancellationToken.None));
+
+        var page = await AsAsync(
+            Caller(host, RoleNames.Host),
+            listings => listings.SearchAsync(
+                new AccommodationSearchRequest { HostId = host, Title = "Sarajevo" },
+                CancellationToken.None));
+
+        Assert.Equal([wanted.Id], page.Items.Select(item => item.Id));
+    }
+
     [Fact]
     public async Task ADeletedListingTakesItsPhotosAndAvailabilityWithIt()
     {

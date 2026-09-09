@@ -75,9 +75,14 @@ internal abstract class ListingService<TListing, TResponse, TSearch, TCreate, TU
     {
         query = Access.Visible(query);
 
-        if (Trimmed(search.Title) is string title)
+        // One field over the results, and a guest types a place into it as
+        // readily as a name. Matching the title alone answers "Sarajevo" with
+        // nothing while Sarajevo listings sit in the table, so the words are
+        // tried against the city as well.
+        if (Trimmed(search.Title) is string words)
         {
-            query = query.Where(listing => listing.Title.Contains(title));
+            query = query.Where(listing =>
+                listing.Title.Contains(words) || listing.City.Name.Contains(words));
         }
 
         if (search.HostId is int hostId)
